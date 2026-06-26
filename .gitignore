@@ -31,3 +31,7 @@ AI_Engine/venv/
 AI_Engine/env/
 AI_Engine/__pycache__/
 A I _ E n g i n e / . v e n v /
+
+# Bỏ qua các thư mục template cũ
+fontend_app_temple/
+fontend_web_temple/
