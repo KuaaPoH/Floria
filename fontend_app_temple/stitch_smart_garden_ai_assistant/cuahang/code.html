@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Cửa Hàng - Smart Garden</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#00e676",
+                    "on-error-container": "#93000a",
+                    "surface": "#f2fcef",
+                    "secondary-fixed-dim": "#91d78a",
+                    "on-surface-variant": "#3b4a3d",
+                    "on-primary-fixed-variant": "#005226",
+                    "surface-container-low": "#ecf7e9",
+                    "surface-container": "#e6f1e4",
+                    "inverse-primary": "#00e475",
+                    "tertiary-container": "#ffba79",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f2fcef",
+                    "primary-fixed": "#62ff96",
+                    "surface-dim": "#d2ddd0",
+                    "tertiary-fixed-dim": "#fdb878",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "secondary-container": "#acf4a4",
+                    "on-primary-fixed": "#00210b",
+                    "tertiary-fixed": "#ffdcbf",
+                    "primary": "#006d35",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#acf4a4",
+                    "on-background": "#151e16",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#151e16",
+                    "background": "#f2fcef",
+                    "on-tertiary-container": "#794810",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e1ebde",
+                    "inverse-on-surface": "#e9f4e7",
+                    "on-secondary-container": "#307231",
+                    "inverse-surface": "#29332a",
+                    "primary-fixed-dim": "#00e475",
+                    "outline-variant": "#bacbb9",
+                    "tertiary": "#86521b",
+                    "surface-variant": "#dbe5d9",
+                    "on-secondary-fixed-variant": "#0c5216",
+                    "on-secondary-fixed": "#002203",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#6a3c03",
+                    "surface-container-highest": "#dbe5d9",
+                    "outline": "#6b7b6c",
+                    "on-tertiary-fixed": "#2d1600",
+                    "surface-tint": "#006d35",
+                    "on-primary-container": "#00612e",
+                    "secondary": "#2a6b2c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-margin": "32px",
+                    "container-padding": "20px",
+                    "card-padding": "24px",
+                    "stack-gap": "16px"
+            },
+            "fontFamily": {
+                    "title-md": ["Be Vietnam Pro"],
+                    "label-sm": ["Be Vietnam Pro"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Be Vietnam Pro"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "600"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-1px", "fontWeight": "700"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f2fcef;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32 overflow-x-hidden">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl border-b border-white/20 shadow-sm flex justify-between items-center px-container-padding h-16">
+<div class="flex items-center gap-3">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Cửa Hàng</h1>
+</div>
+<div class="relative active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-primary text-[28px]">shopping_cart</span>
+<span class="absolute -top-1 -right-1 bg-error text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full border-2 border-surface">2</span>
+</div>
+</header>
+<main class="mt-16 px-container-padding pt-6 space-y-8">
+<!-- Search Bar -->
+<section class="relative">
+<div class="flex items-center bg-white/80 backdrop-blur-md rounded-2xl px-4 py-3 shadow-sm border border-white/50">
+<span class="material-symbols-outlined text-on-surface-variant/50 mr-3">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface p-0 placeholder:text-on-surface-variant/40" placeholder="Tìm kiếm thuốc, phân bón..." type="text"/>
+</div>
+</section>
+<!-- Categories -->
+<section>
+<div class="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5">
+<button class="flex-shrink-0 px-6 py-2 rounded-full bg-primary-container text-on-primary-container font-title-md transition-all neon-glow">Tất cả</button>
+<button class="flex-shrink-0 px-6 py-2 rounded-full glass-panel text-on-surface-variant font-title-md transition-all active:scale-95">Trừ Sâu</button>
+<button class="flex-shrink-0 px-6 py-2 rounded-full glass-panel text-on-surface-variant font-title-md transition-all active:scale-95">Trị Nấm</button>
+<button class="flex-shrink-0 px-6 py-2 rounded-full glass-panel text-on-surface-variant font-title-md transition-all active:scale-95">Phân Bón</button>
+<button class="flex-shrink-0 px-6 py-2 rounded-full glass-panel text-on-surface-variant font-title-md transition-all active:scale-95">Dụng Cụ</button>
+</div>
+</section>
+<!-- Promo Banner -->
+<section>
+<div class="relative w-full aspect-[21/9] rounded-lg overflow-hidden bg-gradient-to-br from-primary-container via-[#fdfc47] to-tertiary-container p-6 flex flex-col justify-center items-start shadow-lg">
+<!-- Background Pattern / Illustration -->
+<div class="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none">
+<img class="w-full h-full object-contain object-right" data-alt="A stylized digital illustration of lush green coffee plant leaves with a few vibrant red berries, rendered in a clean minimalist vector style against a soft gradient background. The aesthetic is modern, scientific, and high-tech, fitting for an agricultural tech marketplace banner." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvZ6YWt8t6aQlKPQdDLjPDtltWEJvTWvRjwSYi7ZrPN7mrFq_sjVH-WDVIZML9ZAQsXIQaDrW8X91sj7odNTg-Z6Rm6ACxhdZs6-lHOABuz1699ZB55HLCaOlTufvyjdeLQVL-vYoFOIaSX7XlS8jXF1Z7GuU53vYOD9N2IPt-FnJK3wqgco1aiaYVTuluzxLgMwWJgDz_Sa1y12yESfQve5M0KNT3aBrEtLMCkRKT8QBWPHTmVMBek7R3ILMCCbrdpQgsODpzfvc"/>
+</div>
+<div class="relative z-10 space-y-2 max-w-[65%]">
+<h2 class="font-headline-lg-mobile text-on-primary-container leading-tight">Giảm 20% Thuốc Trị Đốm Lá</h2>
+<p class="font-body-md text-on-primary-container/80">Áp dụng cho đơn hàng từ 500k</p>
+<button class="mt-2 px-6 py-2 bg-on-primary-container text-white rounded-full font-title-md active:scale-95 transition-transform">Mua ngay</button>
+</div>
+</div>
+</section>
+<!-- Product Grid -->
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-lg-mobile text-primary">Gợi ý cho bạn</h3>
+<button class="text-primary font-title-md text-sm">Xem tất cả</button>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Product Card 1 -->
+<div class="glass-panel p-3 rounded-lg space-y-3 flex flex-col shadow-sm">
+<div class="aspect-square rounded-2xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A premium commercial product photography shot of a sleek white biological pesticide bottle labeled Bio-Alpha, sitting on a clean glass surface with a single vibrant green leaf beside it. Soft high-key lighting, bright white and neon mint green accents, high-end laboratory aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcpFMTnNXPCw62kbVO_hzUDDUD9PxuRbrqK8B-AA1sc_yxoNrvE2xzhMoJvK9p2g6qUOsK1QRCEApQDy-dKeSH2mOO7I5Qbgm3NVWNmFKcVWQRWhup6WnBfiavgMBVzudx4ENkCqoeIU5Arp9mkgfaPzDkzcU9TXq83yZahuJue9DZ_5F-iwtopE3Pcp8kM431D0t7qc_YqHYHOKzr6UsGXOX71myCZQf3G9Sx6eF1zjNipqG_agOY_7vLJ-Mz_11n9047mUNRPRY"/>
+</div>
+<div class="flex-1 space-y-1">
+<p class="font-title-md text-sm line-clamp-2 text-on-background">Thuốc Trừ Nấm Bio-Alpha</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary fill-[1]">star</span>
+<span class="text-xs font-label-sm text-on-surface-variant">4.8</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-white/30">
+<span class="font-headline-lg-mobile text-primary text-base">135.000 đ</span>
+<button class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="glass-panel p-3 rounded-lg space-y-3 flex flex-col shadow-sm">
+<div class="aspect-square rounded-2xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A clean product shot of an organic liquid fertilizer bottle with a minimalist green label. The bottle is placed in a bright, sunlit greenhouse environment with blurred tropical plants in the background. High contrast, high-tech agricultural design style, premium glassmorphism feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABnQkgUeQzfvppz2etDFiNLplcD2UiG87zNKl0Vj1_MLwOlRfrSLV_JhG6Mursb2pclHgHqmgDx_ANfGjZpmBCCjFx50nB8YdVBkKWvG-gP3NUCNv7wRTRREzEGbAq4NMZrVUNGHJAlaxpV7N8w-84pxjMJ1GxCR2UVNJhQLNbjrmoZtisTGH6tHdPJfU6TbE87ubKStFjboIJLW-VovN3C3ZEqEhgBPag9ZBU49Fi0YnUfEN_FhNTxgaok_tud0J67lJ694LHWkw"/>
+</div>
+<div class="flex-1 space-y-1">
+<p class="font-title-md text-sm line-clamp-2 text-on-background">Phân Bón Hữu Cơ Nano-Grow</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary fill-[1]">star</span>
+<span class="text-xs font-label-sm text-on-surface-variant">4.9</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-white/30">
+<span class="font-headline-lg-mobile text-primary text-base">210.000 đ</span>
+<button class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="glass-panel p-3 rounded-lg space-y-3 flex flex-col shadow-sm">
+<div class="aspect-square rounded-2xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Close-up of a high-end agricultural moisture sensor tool with a digital display showing a green checkmark. Minimalist white plastic casing, metallic probes, glowing neon mint interface indicators. Soft studio lighting on a pristine white background with gentle green shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8gQtQ7rpv13wo5Xjpo8gDd7B-GyYllpARl0OWp64TxBFmG_t_QhyyLJVEh77g-YZvPnY_GQbX22yN0KR9EsPRya3c5i5GumnrZCdUOOEf02IdZ8mhKtXCXpzjHmp4pvhpWntg-Ffagmlg3VBbHmSXvwXBYxIbsz2G01uXgjFmvM-CC4q1nAK_GvA2kTrknOT6ETzL5qgSFa7hnKPgLMLLxEi7CHllTMc-k-zfFpHZ2mS-aLwHl6rwZVjh6SZxpSxhIoc6CuXylvQ"/>
+</div>
+<div class="flex-1 space-y-1">
+<p class="font-title-md text-sm line-clamp-2 text-on-background">Máy Đo Độ Ẩm Smart-Probe</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary fill-[1]">star</span>
+<span class="text-xs font-label-sm text-on-surface-variant">4.7</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-white/30">
+<span class="font-headline-lg-mobile text-primary text-base">450.000 đ</span>
+<button class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="glass-panel p-3 rounded-lg space-y-3 flex flex-col shadow-sm">
+<div class="aspect-square rounded-2xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Commercial photography of professional pruning shears with ergonomic matte black handles and polished steel blades. The tool is resting on a textured wooden block surrounded by soft green foliage. Lighting is crisp and modern, emphasizing the precision and high quality of the equipment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMLU-E1YRQX44nJjxPa6KHq7WK1xNCZLM-TDkQZs9_MRYRBfdTKAohVuIFVDApVM4WCYyYdTULcH3v0mc0NZSUD-a-PGRpmP09sNa6gNjyzkwQoy7GLlbkP0PKWmV80zPuIfLj1eZqA3eRDBtvnu2m0qksMVpARsSalZzCChEC4kIrU4FwnrNjTb-rtNyIhal_Do7RahvodEBva1KF7gCa6kF7t7a70DuehGIesZpYHbv22bYOYI9J8S_jp4houNoFmAGzVvpNBUY"/>
+</div>
+<div class="flex-1 space-y-1">
+<p class="font-title-md text-sm line-clamp-2 text-on-background">Bộ Kéo Tỉa Cành Precision-X</p>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary fill-[1]">star</span>
+<span class="text-xs font-label-sm text-on-surface-variant">4.6</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-white/30">
+<span class="font-headline-lg-mobile text-primary text-base">89.000 đ</span>
+<button class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg bg-white/70 backdrop-blur-3xl border-t border-white/30 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] flex justify-around items-end pb-6 pt-3 px-4">
+<div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Trang Chủ</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">gleaf</span>
+<span class="font-label-sm text-label-sm">Khu Vườn</span>
+</div>
+<!-- Central Scan Button -->
+<div class="relative -top-6">
+<div class="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,230,118,0.4)] active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-on-primary-container text-[32px]">camera</span>
+</div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-label-sm text-label-sm text-on-surface-variant/60">Quét</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary relative after:content-[''] after:absolute after:-bottom-1 after:w-1 after:h-1 after:bg-primary-container after:rounded-full after:shadow-[0_0_8px_#00e676]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="font-label-sm text-label-sm">Cửa Hàng</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary transition-colors active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Cá Nhân</span>
+</div>
+</nav>
+<script>
+        // Simple Micro-interactions for Category Toggles
+        document.querySelectorAll('button.flex-shrink-0').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('button.flex-shrink-0').forEach(b => {
+                    b.classList.remove('bg-primary-container', 'text-on-primary-container', 'neon-glow');
+                    b.classList.add('glass-panel', 'text-on-surface-variant');
+                });
+                this.classList.add('bg-primary-container', 'text-on-primary-container', 'neon-glow');
+                this.classList.remove('glass-panel', 'text-on-surface-variant');
+            });
+        });
+
+        // Search focus interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        const searchContainer = searchInput.parentElement;
+        searchInput.addEventListener('focus', () => {
+            searchContainer.classList.add('ring-2', 'ring-primary-container/30', 'border-primary-container/50');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchContainer.classList.remove('ring-2', 'ring-primary-container/30', 'border-primary-container/50');
+        });
+    </script>
+</body></html>

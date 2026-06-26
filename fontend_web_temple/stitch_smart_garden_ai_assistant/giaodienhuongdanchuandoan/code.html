@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BotaniScan - Chẩn Đoán Bệnh</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#794810",
+                        "secondary-container": "#5cfd80",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#00e475",
+                        "on-secondary-container": "#00732c",
+                        "on-secondary-fixed": "#002108",
+                        "primary": "#006d35",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#3b4a3d",
+                        "tertiary": "#86521b",
+                        "surface-dim": "#d9dadb",
+                        "on-secondary-fixed-variant": "#00531e",
+                        "error-container": "#ffdad6",
+                        "outline": "#6b7b6c",
+                        "on-primary-container": "#00612e",
+                        "primary-fixed": "#62ff96",
+                        "primary-container": "#00e676",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#bacbb9",
+                        "surface-variant": "#e1e3e4",
+                        "secondary-fixed": "#69ff87",
+                        "surface-container-high": "#e7e8e9",
+                        "secondary-fixed-dim": "#3ce36a",
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "inverse-primary": "#00e475",
+                        "on-primary-fixed": "#00210b",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-container": "#edeeef",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#006d35",
+                        "secondary": "#006e2a",
+                        "tertiary-fixed-dim": "#fdb878",
+                        "on-surface": "#191c1d",
+                        "on-primary-fixed-variant": "#005226",
+                        "background": "#f8f9fa",
+                        "tertiary-container": "#ffba79",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary-fixed": "#ffdcbf",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f3f4f5",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface": "#ffffff", // Pure white override based on prompt
+                        "on-tertiary-fixed-variant": "#6a3c03",
+                        "on-tertiary-fixed": "#2d1600"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "columns": "12",
+                        "max-width": "1440px",
+                        "margin": "80px",
+                        "gutter": "24px",
+                        "base-unit": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "display-lg": ["60px", { "lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-xl": ["72px", { "lineHeight": "84px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        }
+        .upload-zone-dashed {
+            border: 2px dashed #1B5E20; /* Deep Emerald Green */
+            background-color: #F1FBEE; /* Soft light-green tint */
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col overflow-hidden">
+<!-- GLOBAL NAVIGATION (TOP NAVBAR) -->
+<header class="w-full glass-card h-20 flex-shrink-0 flex items-center justify-between px-8 z-40 border-b border-outline-variant/30 sticky top-0">
+<div class="flex items-center">
+<span class="font-display-lg text-[28px] leading-tight font-extrabold text-primary tracking-tight">BotaniScan</span>
+</div>
+<nav class="flex items-center gap-2">
+<a class="flex items-center gap-2 px-4 py-2 rounded-full text-on-surface-variant hover:bg-black/5 transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-label-md text-[15px]">Trang Chủ</span>
+</a>
+<a class="flex items-center gap-2 px-4 py-2 rounded-full text-on-surface-variant hover:bg-black/5 transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">yard</span>
+<span class="font-label-md text-[15px]">Khu Vườn</span>
+</a>
+<!-- Active State -->
+<a class="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-container/20 text-on-primary-container transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">biotech</span>
+<span class="font-label-md text-[15px] font-bold">Chẩn Đoán</span>
+</a>
+<a class="flex items-center gap-2 px-4 py-2 rounded-full text-on-surface-variant hover:bg-black/5 transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+<span class="font-label-md text-[15px]">Cửa Hàng</span>
+</a>
+<a class="flex items-center gap-2 px-4 py-2 rounded-full text-on-surface-variant hover:bg-black/5 transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">person</span>
+<span class="font-label-md text-[15px]">Cá Nhân</span>
+</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full hover:bg-black/5 flex items-center justify-center transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="flex items-center gap-3 p-2 rounded-full border border-outline-variant/20 hover:bg-surface-container-low transition-all cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary-container/30 flex items-center justify-center text-primary font-bold text-sm">U</div>
+</div>
+</div>
+</header>
+<!-- MAIN WORKSPACE -->
+<main class="flex-1 flex flex-col overflow-y-auto">
+<!-- TOP HEADER -->
+<div class="w-full pt-8 pb-6 px-12 z-30">
+<h1 class="font-headline-sm text-[24px] font-bold text-[#333333] mb-2">Trang Chủ / Chẩn Đoán Bệnh</h1>
+<p class="font-body-md text-[14px] text-on-surface-variant">Tải ảnh lá cây bị tổn thương để AI phân tích tức thì.</p>
+</div>
+<!-- MAIN CONTENT: SPLIT LAYOUT -->
+<div class="flex-1 px-12 pb-12 flex gap-8 max-w-max-width mx-auto w-full">
+<!-- LEFT PANEL (60% Width) -->
+<div class="w-3/5 flex flex-col gap-8">
+<!-- Drag & Drop Zone -->
+<div class="upload-zone-dashed rounded-[24px] h-[400px] flex flex-col items-center justify-center cursor-pointer hover:bg-[#E8F8E5] transition-colors relative group">
+<div class="absolute inset-0 bg-primary-container/5 rounded-[24px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+<span class="material-symbols-outlined text-[64px] text-primary-container drop-shadow-[0_0_15px_rgba(0,230,118,0.4)] mb-6">cloud_upload</span>
+<h2 class="font-headline-sm text-[20px] font-bold text-on-surface mb-2">Kéo thả ảnh vào đây</h2>
+<p class="font-body-md text-on-surface-variant mb-4">
+                        hoặc click để <span class="text-primary font-semibold hover:underline">Chọn File từ máy tính</span>
+</p>
+<p class="font-body-md text-[12px] text-outline">Hỗ trợ JPG, PNG (Tối đa 10MB)</p>
+</div>
+<!-- AI Engine Selector -->
+<div class="flex flex-col gap-4">
+<h3 class="font-label-md text-lg text-on-surface">Động cơ AI</h3>
+<div class="grid grid-cols-3 gap-4">
+<!-- Basic Card -->
+<button class="glass-card rounded-2xl p-4 text-left border border-outline-variant hover:border-primary transition-colors focus:ring-2 focus:ring-primary-container outline-none">
+<span class="material-symbols-outlined text-primary mb-2 block">speed</span>
+<div class="font-label-md text-base mb-1">Basic</div>
+<div class="font-body-md text-xs text-on-surface-variant">Nhanh, độ chính xác cơ bản.</div>
+</button>
+<!-- DeepVision Card (Selected) -->
+<button class="glass-card rounded-2xl p-4 text-left border-2 border-primary bg-primary-container/10 relative overflow-hidden focus:ring-2 focus:ring-primary-container outline-none">
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-bl-full -mr-8 -mt-8"></div>
+<span class="material-symbols-outlined text-primary mb-2 block" style="font-variation-settings: 'FILL' 1;">troubleshoot</span>
+<div class="font-label-md text-base text-primary font-bold mb-1">DeepVision</div>
+<div class="font-body-md text-xs text-on-surface-variant">Độ chính xác cao, khuyên dùng.</div>
+</button>
+<!-- Ultra AI (Locked) -->
+<button class="glass-card rounded-2xl p-4 text-left border border-outline-variant/50 bg-surface-container-lowest/50 opacity-80 cursor-not-allowed relative">
+<div class="absolute top-3 right-3 w-6 h-6">
+<img alt="" class="w-full h-full object-contain drop-shadow-sm" data-alt="A small 3D rendering of a shiny gold crown, luxury style, pure white background, studio lighting." src="https://lh3.googleusercontent.com/aida/AP1WRLs-N2eCOgbr8hbZiLfTa4iHszKAJOFUGlZ-9Hsuivs5J83sxXQW9m_4jMa88pJ8YaFs6AyXVCuV-OrMUAyXRSVd_s2ENh4vkYxiUcM1oEUUsiu84ZlHIjCenqVmHFrQ8bFeYxwgDYQAKGUuwLWjRUTqtV9oLpQQL7hJQx_qLYQxWuB6wRJQlswkHiUk33HNqnhWsxsw9Ll_7C6jreAXr0p6HBOtY0p1xAToLA04vsLuvtxAM6SRIm3kEQ"/>
+</div>
+<span class="material-symbols-outlined text-outline mb-2 block">auto_awesome</span>
+<div class="font-label-md text-base text-outline mb-1">Ultra AI</div>
+<div class="font-body-md text-xs text-outline">Phân tích đa lớp sâu. Yêu cầu Pro.</div>
+</button>
+</div>
+</div>
+</div>
+<!-- RIGHT PANEL (40% Width) -->
+<div class="w-2/5 flex flex-col">
+<div class="glass-card rounded-[24px] p-6 flex flex-col h-full relative overflow-hidden">
+<!-- Subtle background decoration -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">info</span>
+<h2 class="font-headline-sm text-lg font-bold">Hướng Dẫn Tải Ảnh Chuẩn</h2>
+</div>
+<!-- Mini Illustration -->
+<div class="w-full h-48 bg-surface-container-low rounded-xl mb-6 flex items-center justify-center border border-outline-variant/30 overflow-hidden relative">
+<img alt="" class="w-full h-full object-cover" data-alt="A modern 3D illustration showing a smartphone scanning a green leaf with a glowing laser line, demonstrating the correct way to frame and capture a plant leaf for AI analysis. Clean light background, premium aesthetic." src="https://lh3.googleusercontent.com/aida/AP1WRLt___mLU2_355fqQTpgOp5ydiaWx40DQq9O220rNYeRGgqO6MTZAVb7Rmtxj7e18YnFrmKyAbHYctZOi6LyO2ovqCQicsKgHovtWLzoM2CDCESvLTXf7ovPYCGDcMCjKXZMZcr_nxpmdMCpV2vnmkWGgQW4NqJZTMpK-lYFo3gWxuYO_QMjwaD-4U6cJuTiE2wVqlqlimV250IktORKUByfI3PRSrlFNe-dQudXXJWiYYYIDcxxFcrAPA0"/>
+</div>
+<!-- Guidelines -->
+<div class="space-y-4 flex-1">
+<!-- Do's -->
+<div class="bg-[#F1FBEE] rounded-xl p-4 border border-[#C8E6C9]">
+<h3 class="font-label-md text-primary mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                                Nên làm
+                            </h3>
+<ul class="font-body-md text-sm text-on-surface-variant space-y-2 pl-6 list-disc marker:text-primary">
+<li>Chụp cận cảnh rõ nét phần lá bị bệnh.</li>
+<li>Đảm bảo ánh sáng tự nhiên, đủ sáng.</li>
+<li>Đặt lá ở trung tâm khung hình.</li>
+</ul>
+</div>
+<!-- Don'ts -->
+<div class="bg-error-container/30 rounded-xl p-4 border border-error-container">
+<h3 class="font-label-md text-error mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">cancel</span>
+                                Tránh làm
+                            </h3>
+<ul class="font-body-md text-sm text-on-surface-variant space-y-2 pl-6 list-disc marker:text-error">
+<li>Ảnh mờ, rung lắc khi chụp.</li>
+<li>Chụp ngược sáng hoặc quá tối.</li>
+<li>Hậu cảnh quá lộn xộn, nhiều lá chồng chéo.</li>
+</ul>
+</div>
+</div>
+<!-- Action Button -->
+<div class="mt-8">
+<button class="w-full py-4 rounded-full bg-surface-variant text-outline font-label-md text-base cursor-not-allowed transition-all" disabled="">
+                            Bắt Đầu Phân Tích
+                        </button>
+<!-- Note: To make active, change to: bg-primary-container text-on-primary-container shadow-lg hover:shadow-xl hover:-translate-y-0.5 -->
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>BotaniScan - Register</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&amp;family=Plus+Jakarta+Sans:wght@700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "on-background": "#151e16",
+                        "inverse-on-surface": "#e9f4e7",
+                        "primary-fixed-dim": "#00e475",
+                        "on-primary-fixed-variant": "#005226",
+                        "on-secondary-fixed-variant": "#0c5216",
+                        "surface-dim": "#d2ddd0",
+                        "surface": "#f2fcef",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e6f1e4",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f2fcef",
+                        "secondary": "#2a6b2c",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#00e475",
+                        "surface-container-highest": "#dbe5d9",
+                        "primary-fixed": "#62ff96",
+                        "primary": "#006d35",
+                        "secondary-container": "#acf4a4",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#ffba79",
+                        "outline-variant": "#bacbb9",
+                        "on-primary-container": "#00612e",
+                        "inverse-surface": "#29332a",
+                        "tertiary-fixed": "#ffdcbf",
+                        "primary-container": "#00e676",
+                        "background": "#ffffff", /* Force pure white for background */
+                        "on-secondary-fixed": "#002203",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e1ebde",
+                        "on-tertiary-fixed-variant": "#6a3c03",
+                        "on-secondary-container": "#307231",
+                        "surface-container-low": "#ecf7e9",
+                        "secondary-fixed": "#acf4a4",
+                        "secondary-fixed-dim": "#91d78a",
+                        "on-tertiary-fixed": "#2d1600",
+                        "on-surface": "#151e16",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#794810",
+                        "surface-tint": "#006d35",
+                        "tertiary": "#86521b",
+                        "surface-variant": "#dbe5d9",
+                        "tertiary-fixed-dim": "#fdb878",
+                        "outline": "#6b7b6c",
+                        "on-surface-variant": "#3b4a3d",
+                        "on-primary-fixed": "#00210b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-margin": "32px",
+                        "container-padding": "20px",
+                        "stack-gap": "16px",
+                        "card-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "title-md": ["Be Vietnam Pro"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "600" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-1px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 230, 118, 0.05);
+        }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid theme('colors.outline-variant');
+            transition: all 0.3s ease;
+        }
+        
+        .glass-input:focus-within {
+            border-color: theme('colors.primary-container');
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.2);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-glow {
+            box-shadow: 0 4px 20px rgba(0, 230, 118, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-glow:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 10px rgba(0, 230, 118, 0.2);
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen flex flex-col justify-center items-center overflow-hidden">
+<!-- Background Decor (Subtle organic shapes) -->
+<div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+<div class="absolute -top-32 -right-32 w-96 h-96 bg-primary-container/5 rounded-full blur-[80px]"></div>
+<div class="absolute bottom-0 -left-32 w-80 h-80 bg-primary/5 rounded-full blur-[60px]"></div>
+</div>
+<!-- Main Container -->
+<main class="w-full max-w-md px-container-padding z-10 flex flex-col items-center">
+<!-- Header Section -->
+<div class="flex flex-col items-center mb-section-margin w-full">
+<div class="w-24 h-24 mb-6 rounded-full glass-panel flex items-center justify-center overflow-hidden">
+<img alt="BotaniScan Logo" class="w-20 h-20 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBSkvaUlt25sCqCbeFBqwyTPNH8fvSsSyykQRxMvOUe4_4JhvyxnbODG-O1IK02LoTaeuncN6BoS91f2pS4_92iAt-pYqEcNg4zzpVK7Zxv4g74LHJvwVAHBSPasjULmPkGbaKzmoibN0-YNq36t5fMhL2kBKmU-Vcg3mf-qWA3lWe8IPRiYq7sX20I9ruAm7ByvWa5_yWliM4PTTBRRyPuSjSYwAyDP-99UEHMsucf3cUaErnmlJJOEsH_Y5mNtDe_W6WcUBD0Ds">
+</div>
+<h1 class="font-display-lg text-display-lg text-primary tracking-tight mb-2">
+                BotaniScan
+            </h1>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">
+                Tạo tài khoản mới
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant text-center px-4">
+                Bắt đầu hành trình xanh cùng chúng tôi.
+            </p>
+</div>
+<!-- Registration Form -->
+<form class="w-full glass-panel rounded-lg p-card-padding flex flex-col gap-stack-gap">
+<!-- Full Name Input -->
+<div class="glass-input rounded-[16px] flex items-center px-4 py-3">
+<span class="material-symbols-outlined text-outline mr-3" data-icon="person">person</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-outline flex-1 p-0 outline-none" placeholder="Họ và Tên" type="text">
+</div>
+<!-- Email Input -->
+<div class="glass-input rounded-[16px] flex items-center px-4 py-3">
+<span class="material-symbols-outlined text-outline mr-3" data-icon="mail">mail</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-outline flex-1 p-0 outline-none" placeholder="Email" type="email">
+</div>
+<!-- Password Input -->
+<div class="glass-input rounded-[16px] flex items-center px-4 py-3">
+<span class="material-symbols-outlined text-outline mr-3" data-icon="lock">lock</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-outline flex-1 p-0 outline-none" placeholder="Mật khẩu" type="password">
+<button class="text-outline hover:text-primary transition-colors ml-2" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+<!-- Register Button -->
+<button class="w-full bg-primary-container text-[#004d26] font-title-md text-title-md py-4 rounded-full mt-4 btn-glow flex justify-center items-center" type="submit">
+                Đăng Ký
+            </button>
+</form>
+<!-- Footer Link -->
+<div class="mt-8 text-center font-body-md text-body-md">
+<span class="text-on-surface-variant">Đã có tài khoản?</span>
+<a class="text-primary font-title-md text-title-md ml-1 hover:text-primary-container transition-colors" href="#">
+                Đăng nhập
+            </a>
+</div>
+</main>
+<script>
+        // Simple script to toggle password visibility
+        document.addEventListener('DOMContentLoaded', () => {
+            const visibilityBtn = document.querySelector('button[type="button"]');
+            const passwordInput = document.querySelector('input[type="password"]');
+            const iconSpan = visibilityBtn.querySelector('.material-symbols-outlined');
+
+            if(visibilityBtn && passwordInput && iconSpan) {
+                visibilityBtn.addEventListener('click', () => {
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        iconSpan.textContent = 'visibility_off';
+                    } else {
+                        passwordInput.type = 'password';
+                        iconSpan.textContent = 'visibility';
+                    }
+                });
+            }
+        });
+    </script>
+</body></html>

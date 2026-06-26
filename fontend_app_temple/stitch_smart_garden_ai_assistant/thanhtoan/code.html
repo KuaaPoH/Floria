@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Thanh Toán - AgriSmart Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#dbe5d9",
+                    "surface-container-highest": "#dbe5d9",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdcbf",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#00210b",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#006d35",
+                    "on-surface-variant": "#3b4a3d",
+                    "inverse-surface": "#29332a",
+                    "secondary-fixed": "#acf4a4",
+                    "on-tertiary-container": "#794810",
+                    "tertiary-fixed-dim": "#fdb878",
+                    "on-secondary-fixed-variant": "#0c5216",
+                    "outline-variant": "#bacbb9",
+                    "error-container": "#ffdad6",
+                    "tertiary": "#86521b",
+                    "primary": "#006d35",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#ecf7e9",
+                    "on-secondary-container": "#307231",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#62ff96",
+                    "on-tertiary-fixed-variant": "#6a3c03",
+                    "on-surface": "#151e16",
+                    "surface-dim": "#d2ddd0",
+                    "primary-fixed-dim": "#00e475",
+                    "inverse-primary": "#00e475",
+                    "surface": "#f2fcef",
+                    "surface-container": "#e6f1e4",
+                    "on-error-container": "#93000a",
+                    "secondary-container": "#acf4a4",
+                    "on-tertiary-fixed": "#2d1600",
+                    "secondary-fixed-dim": "#91d78a",
+                    "on-primary-fixed-variant": "#005226",
+                    "outline": "#6b7b6c",
+                    "inverse-on-surface": "#e9f4e7",
+                    "surface-container-high": "#e1ebde",
+                    "secondary": "#2a6b2c",
+                    "background": "#f2fcef",
+                    "tertiary-container": "#ffba79",
+                    "on-secondary-fixed": "#002203",
+                    "on-primary-container": "#00612e",
+                    "on-background": "#151e16",
+                    "surface-bright": "#f2fcef",
+                    "primary-container": "#00e676"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-margin": "32px",
+                    "container-padding": "20px",
+                    "stack-gap": "16px",
+                    "card-padding": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Be Vietnam Pro"],
+                    "title-md": ["Be Vietnam Pro"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-1px", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "600"}],
+                    "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Be Vietnam Pro', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .font-plus { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .neo-shadow {
+            box-shadow: 0 4px 30px rgba(0, 230, 118, 0.08);
+        }
+        .active-glow {
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
+        }
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom, 24px);
+        }
+        input:focus {
+            outline: none;
+            border-color: #00e676 !important;
+            box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-3xl border-b border-white/20 px-container-padding h-16 flex items-center justify-between">
+<button class="w-10 h-10 flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back_ios_new">arrow_back_ios_new</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface-variant tracking-tight">Thanh Toán</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</header>
+<main class="flex-1 mt-16 px-container-padding pb-40 overflow-y-auto">
+<!-- Summary Section -->
+<section class="mt-stack-gap">
+<div class="bg-primary-container/20 border border-primary/10 rounded-lg p-card-padding flex justify-between items-center neo-shadow">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider">Đang đăng ký</span>
+<h2 class="font-title-md text-title-md text-on-surface">BotaniScan PRO (Hàng Năm)</h2>
+</div>
+<div class="text-right">
+<p class="font-plus font-bold text-[20px] text-primary">560.000 đ</p>
+<p class="text-[12px] text-on-surface-variant/70">/năm</p>
+</div>
+</div>
+</section>
+<!-- Selection Heading -->
+<section class="mt-section-margin">
+<h3 class="font-title-md text-title-md mb-4">Chọn phương thức thanh toán</h3>
+<div class="flex flex-col gap-3">
+<!-- Option 1: Credit Card (Expanded) -->
+<div class="glass-card rounded-lg border-primary/30 p-4 active-glow ring-2 ring-primary/20 transition-all">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="credit_card">credit_card</span>
+<span class="font-title-md text-body-md font-semibold">Thẻ Tín Dụng / Ghi Nợ</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center bg-primary">
+<div class="w-2.5 h-2.5 rounded-full bg-white"></div>
+</div>
+</div>
+<!-- Form Inputs -->
+<div class="flex flex-col gap-4">
+<div class="relative">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5 ml-1">Số thẻ</label>
+<div class="relative">
+<input class="w-full bg-white/50 border border-outline-variant/30 rounded-full px-5 py-3.5 pr-12 text-body-md" placeholder="0000 0000 0000 0000" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-primary/60" data-icon="photo_camera">photo_camera</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5 ml-1">Ngày hết hạn</label>
+<input class="w-full bg-white/50 border border-outline-variant/30 rounded-full px-5 py-3.5 text-body-md" placeholder="MM/YY" type="text"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5 ml-1">CVV</label>
+<input class="w-full bg-white/50 border border-outline-variant/30 rounded-full px-5 py-3.5 text-body-md" placeholder="***" type="password"/>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5 ml-1">Tên in trên thẻ</label>
+<input class="w-full bg-white/50 border border-outline-variant/30 rounded-full px-5 py-3.5 text-body-md uppercase" placeholder="NGUYEN VAN A" type="text"/>
+</div>
+</div>
+</div>
+<!-- Option 2: MoMo -->
+<div class="glass-card rounded-lg border border-outline-variant/20 p-4 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#A50064] flex items-center justify-center">
+<span class="text-white font-bold text-xs">MoMo</span>
+</div>
+<span class="font-body-md font-medium text-on-surface">Ví MoMo</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<!-- Option 3: ZaloPay -->
+<div class="glass-card rounded-lg border border-outline-variant/20 p-4 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#008FE5] flex items-center justify-center">
+<span class="text-white font-bold text-xs">Zalo</span>
+</div>
+<span class="font-body-md font-medium text-on-surface">ZaloPay</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<!-- Option 4: Apple Pay -->
+<div class="glass-card rounded-lg border border-outline-variant/20 p-4 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center">
+<svg class="w-6 h-6 fill-white" viewbox="0 0 384 512"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"></path></svg>
+</div>
+<span class="font-body-md font-medium text-on-surface">Apple Pay</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+</div>
+</section>
+<!-- Trust Badge -->
+<div class="mt-10 flex flex-col items-center justify-center gap-2 opacity-60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+<p class="font-label-sm text-[11px] uppercase tracking-widest">Thanh toán bảo mật</p>
+</div>
+<p class="text-[10px] text-center max-w-[240px]">Dữ liệu của bạn được mã hóa 256-bit theo tiêu chuẩn ngân hàng quốc tế.</p>
+</div>
+</main>
+<!-- Bottom CTA Action -->
+<footer class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-3xl px-container-padding safe-bottom pt-4 z-50">
+<button class="w-full bg-primary text-white font-plus font-bold text-body-md py-4 rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-transform flex items-center justify-center gap-2 mb-2">
+            Xác Nhận &amp; Thanh Toán
+            <span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- iOS Home Indicator Simulation -->
+<div class="h-1 w-32 bg-on-surface/10 rounded-full mx-auto mt-4 mb-2"></div>
+</footer>
+<!-- Simple Interactivity -->
+<script>
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // In a real app, this would handle state management
+                // This is just a UI preview
+            });
+        });
+
+        // Add subtle scroll shadow effect to header
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('shadow-sm');
+            } else {
+                header.classList.remove('shadow-sm');
+            }
+        });
+    </script>
+</body></html>

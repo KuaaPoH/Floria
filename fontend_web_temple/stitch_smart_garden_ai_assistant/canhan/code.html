@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BotaniScan - Hồ sơ cá nhân</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#00210b",
+                        "tertiary-fixed": "#ffdcbf",
+                        "secondary": "#006e2a",
+                        "surface-container": "#edeeef",
+                        "surface-dim": "#d9dadb",
+                        "surface": "#f8f9fa",
+                        "outline": "#6b7b6c",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-fixed-variant": "#005226",
+                        "surface-bright": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#00531e",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "on-secondary-fixed": "#002108",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#00732c",
+                        "on-primary-container": "#00612e",
+                        "secondary-container": "#5cfd80",
+                        "secondary-fixed": "#69ff87",
+                        "primary": "#006d35",
+                        "surface-container-high": "#e7e8e9",
+                        "on-surface-variant": "#3b4a3d",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#3ce36a",
+                        "surface-tint": "#006d35",
+                        "on-background": "#191c1d",
+                        "on-tertiary-fixed-variant": "#6a3c03",
+                        "on-tertiary-container": "#794810",
+                        "primary-fixed": "#62ff96",
+                        "on-tertiary-fixed": "#2d1600",
+                        "on-surface": "#191c1d",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#00e475",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-on-surface": "#f0f1f2",
+                        "tertiary-fixed-dim": "#fdb878",
+                        "outline-variant": "#bacbb9",
+                        "tertiary-container": "#ffba79",
+                        "inverse-surface": "#2e3132",
+                        "primary-fixed-dim": "#00e475",
+                        "error": "#ba1a1a",
+                        "tertiary": "#86521b",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#00e676"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin": "80px",
+                        "base-unit": "8px",
+                        "columns": "12",
+                        "gutter": "24px",
+                        "max-width": "1440px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["60px", { "lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-xl": ["72px", { "lineHeight": "84px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        }
+        .pro-banner {
+            background: linear-gradient(135deg, theme('colors.primary-container') 0%, theme('colors.primary') 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .pro-banner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-20deg);
+            animation: shine 4s infinite;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopNavBar -->
+<header class="bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl text-primary dark:text-primary-fixed font-body-md text-body-md fixed top-0 w-full z-50 border-b border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hidden md:block">
+<div class="flex justify-between items-center h-20 px-margin max-w-max-width mx-auto">
+<div class="flex items-center gap-8">
+<a class="font-display-lg text-display-lg font-extrabold text-primary dark:text-primary-fixed" href="#" style="font-size: 24px; line-height: 32px;">BotaniScan</a>
+<nav class="flex gap-6">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Trang chủ</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Khu vườn</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Chẩn đoán</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Trợ lý AI</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Tìm kiếm..." type="text"/>
+</div>
+<button class="p-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 bg-white/10 dark:bg-black/10 rounded-full transition-all active:scale-95 duration-200 border-b-2 border-primary dark:border-primary-fixed pb-1">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[100px] pb-24 px-margin max-w-max-width mx-auto w-full">
+<!-- Profile Header & Banner Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-12">
+<!-- Profile Info Card -->
+<div class="md:col-span-4 glass-card rounded-xl p-8 flex flex-col items-center text-center">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-6 border-4 border-white shadow-lg">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLtBsemPCzRKDV_bP3sjcDaQ7yaQ4IO68OyhbVMcbydnt4PDoFil_xBFrg_23saDAzMA3cfoySfghywEYQ-P0x87PiljmcWZI0yn2PLLtzNdNwVjiODOVZgmKi7vhCe6DoizJiymkNyPbenjaT9zc5je0j0wGb9T_xOOQ-Lt_63eiL9vlVLC7IciWt-LfUWMENosGCxlQ092C2B-eHS8I1KsXfiuH62a9coioMonp0xWTpI_JMuB2JfYwgg"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">Tuấn Nguyễn</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">tuan.nguyen@example.com</p>
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md py-2 px-6 rounded-full transition-all duration-200 w-full mb-4">
+                    Chỉnh sửa hồ sơ
+                </button>
+<div class="flex gap-4 w-full justify-center">
+<div class="text-center">
+<p class="font-headline-sm text-headline-sm text-primary">12</p>
+<p class="font-label-md text-label-md text-on-surface-variant text-xs">Cây trồng</p>
+</div>
+<div class="w-px bg-outline-variant"></div>
+<div class="text-center">
+<p class="font-headline-sm text-headline-sm text-primary">45</p>
+<p class="font-label-md text-label-md text-on-surface-variant text-xs">Chẩn đoán</p>
+</div>
+</div>
+</div>
+<!-- PRO Banner & Quick Stats -->
+<div class="md:col-span-8 flex flex-col gap-gutter">
+<!-- PRO Banner -->
+<div class="pro-banner rounded-xl p-8 text-on-primary shadow-lg flex items-center justify-between h-40">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-tertiary-fixed" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+<h2 class="font-headline-sm text-headline-sm text-tertiary-fixed font-bold">BotaniScan PRO</h2>
+</div>
+<p class="font-body-lg text-body-lg text-on-primary/90 max-w-md">Mở khóa chẩn đoán không giới hạn và nhận tư vấn chuyên sâu từ chuyên gia thực vật học.</p>
+</div>
+<button class="bg-white text-primary font-label-md text-label-md py-3 px-8 rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 whitespace-nowrap">
+                        Nâng cấp ngay
+                    </button>
+</div>
+<!-- Recent Activity Mini Bento -->
+<div class="grid grid-cols-2 gap-gutter flex-grow">
+<div class="glass-card rounded-lg p-6 flex flex-col justify-between">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined">local_florist</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface">Cây vừa quét</h3>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">Monstera Deliciosa</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">2 giờ trước - Khỏe mạnh</p>
+</div>
+</div>
+<div class="glass-card rounded-lg p-6 flex flex-col justify-between">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center text-on-error-container">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface">Cần chú ý</h3>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">Lan Hồ Điệp</p>
+<p class="font-body-md text-body-md text-error text-sm">Phát hiện đốm lá</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Settings Groups Grid -->
+<h2 class="font-headline-md text-headline-md text-on-surface mb-8">Cài đặt &amp; Tùy chỉnh</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Account Settings -->
+<div class="glass-card rounded-xl p-6">
+<div class="flex items-center gap-3 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-primary">manage_accounts</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Tài khoản</h3>
+</div>
+<ul class="space-y-2">
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Thông tin cá nhân</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Bảo mật &amp; Mật khẩu</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Quản lý gói PRO</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</li>
+</ul>
+</div>
+<!-- Preferences Settings -->
+<div class="glass-card rounded-xl p-6">
+<div class="flex items-center gap-3 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-primary">settings_suggest</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Tùy chỉnh</h3>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center justify-between p-3">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Thông báo đẩy</p>
+<p class="text-xs text-on-surface-variant">Lịch tưới nước, bón phân</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</li>
+<li class="flex items-center justify-between p-3">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Giao diện tối</p>
+<p class="text-xs text-on-surface-variant">Tự động theo hệ thống</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Ngôn ngữ (Tiếng Việt)</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</button>
+</li>
+</ul>
+</div>
+<!-- Support & About -->
+<div class="glass-card rounded-xl p-6">
+<div class="flex items-center gap-3 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-primary">support_agent</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Hỗ trợ &amp; Ứng dụng</h3>
+</div>
+<ul class="space-y-2">
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Trung tâm trợ giúp</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">open_in_new</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Gửi phản hồi</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chat</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors group">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Điều khoản dịch vụ</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">description</span>
+</button>
+</li>
+<li class="mt-8 pt-4 border-t border-outline-variant">
+<button class="w-full flex items-center justify-center gap-2 p-3 rounded-lg hover:bg-error-container text-error transition-colors group">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Đăng xuất</span>
+</button>
+</li>
+</ul>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-surface-container-highest text-primary dark:text-primary-fixed font-body-md text-body-md w-full py-12 border-t border-outline-variant dark:border-outline">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter px-margin max-w-max-width mx-auto">
+<div>
+<p class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed mb-4">BotaniScan</p>
+<p class="text-on-surface-variant dark:text-surface-variant">© 2024 BotaniScan. All rights reserved.</p>
+</div>
+<div class="flex flex-col gap-2">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300" href="#">Liên hệ</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300" href="#">Điều khoản</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300" href="#">Bảo mật</a>
+</div>
+<div class="flex flex-col gap-2">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300" href="#">Facebook</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300" href="#">Instagram</a>
+</div>
+</div>
+</footer>
+</body></html>

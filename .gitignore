@@ -1,0 +1,33 @@
+# Bỏ qua các file mô hình AI quá nặng
+AI_Engine/models/*.keras
+AI_Engine/models/*.h5
+
+# Bỏ qua thư mục IDE
+.vscode/
+.idea/
+
+# Bỏ qua các thư mục build của Flutter
+my_ai_plant_app/build/
+my_ai_plant_app/.dart_tool/
+my_ai_plant_app/windows/flutter/ephemeral/
+my_ai_plant_app/linux/flutter/ephemeral/
+my_ai_plant_app/macos/Flutter/ephemeral/
+*.iml
+
+# Bỏ qua các thư mục build của Java Spring Boot (nếu có)
+Backend/target/
+Backend/.mvn/
+
+# Bỏ qua các thư mục node_modules của Web
+web_frontend_app/node_modules/
+web_frontend_app/.next/
+
+# Bỏ qua các môi trường ảo Python
+AI_Engine/.venv/
+.pub-cache/
+serviceAccountKey.json
+google-services.json
+AI_Engine/venv/
+AI_Engine/env/
+AI_Engine/__pycache__/
+A I _ E n g i n e / . v e n v /

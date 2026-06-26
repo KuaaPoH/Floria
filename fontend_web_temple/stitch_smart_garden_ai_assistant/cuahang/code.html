@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cửa Hàng - BotaniScan</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#fdb878",
+                        "on-secondary-fixed": "#002108",
+                        "on-primary-fixed": "#00210b",
+                        "inverse-primary": "#00e475",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#d9dadb",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#5cfd80",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#006d35",
+                        "surface-tint": "#006d35",
+                        "outline-variant": "#bacbb9",
+                        "primary-fixed": "#62ff96",
+                        "on-secondary-container": "#00732c",
+                        "tertiary-fixed": "#ffdcbf",
+                        "on-tertiary-container": "#794810",
+                        "background": "#f8f9fa",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-low": "#f3f4f5",
+                        "on-surface": "#191c1d",
+                        "surface": "#f8f9fa",
+                        "surface-container-high": "#e7e8e9",
+                        "secondary": "#006e2a",
+                        "on-primary-container": "#00612e",
+                        "surface-bright": "#f8f9fa",
+                        "error": "#ba1a1a",
+                        "primary-container": "#00e676",
+                        "secondary-fixed": "#69ff87",
+                        "on-tertiary-fixed": "#2d1600",
+                        "outline": "#6b7b6c",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-secondary-fixed-variant": "#00531e",
+                        "tertiary": "#86521b",
+                        "secondary-fixed-dim": "#3ce36a",
+                        "on-surface-variant": "#3b4a3d",
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-primary-fixed-variant": "#005226",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#edeeef",
+                        "on-tertiary-fixed-variant": "#6a3c03",
+                        "surface-variant": "#e1e3e4",
+                        "tertiary-container": "#ffba79",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#00e475"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width": "1440px",
+                        "columns": "12",
+                        "margin": "80px",
+                        "gutter": "24px",
+                        "base-unit": "8px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["60px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "headline-md": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                        "headline-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-xl": ["72px", {"lineHeight": "84px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: theme('colors.background');
+            color: theme('colors.on-surface');
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        }
+
+        .glass-nav {
+            background: rgba(248, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Utility classes for Material Icons */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col relative pt-20">
+<!-- Top Navigation Area -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-b border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hidden md:flex">
+<div class="flex justify-between items-center h-20 px-margin max-w-max-width mx-auto w-full">
+<div class="flex items-center gap-8">
+<!-- Brand -->
+<a class="font-display-lg text-display-lg font-extrabold text-primary dark:text-primary-fixed tracking-tight" href="#" style="font-size: 32px; line-height: 40px;">
+                    BotaniScan
+                </a>
+<!-- Search -->
+<div class="relative hidden lg:block w-64 ml-4">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50">search</span>
+<input class="w-full h-10 pl-12 pr-4 bg-white/50 border border-white/60 rounded-full focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder-on-surface-variant/50 font-body-md text-body-md text-on-surface" placeholder="Tìm kiếm..." type="text"/>
+</div>
+</div>
+<!-- Links -->
+<div class="flex items-center gap-8">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Trang chủ</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Khu vườn</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Chẩn đoán</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Trợ lý AI</a>
+<a class="font-body-md text-body-md text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1" href="#">Cửa hàng</a>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all active:scale-95 duration-200 text-primary dark:text-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+<button class="p-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all active:scale-95 duration-200 text-primary dark:text-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 hover:border-primary-container transition-colors ml-2">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A clean, modern headshot of a user smiling subtly, well-lit in a studio setting with a light background, suitable for a premium tech app profile picture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBV33OwAYVKKpxQbjvA7qzum-cXBWCwVBeuexLd8JQnDqB40vm-D9wjLSBoDIDzP4Q9aFWc8nubSb9CdKdAOnlCNnjn3HJs9Rp3NiausZnhoPDC_E0kQS3gGKlbFihEBG3b4kxhXYB9MUcs_qlQEZZ1l2YUBqlp23mDAXF3d9gQPHuFrTKJ1FIwh_lU6z3zQipRKT7H-CEvj8SbfEOK44QQGUx4zBwXc1WdslU6ur7uWbUodyyxfmlRpEZ_XGiPYA97lEDBHA66DOY"/>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-max-width mx-auto px-margin py-12 flex flex-col gap-16">
+<!-- Hero Section -->
+<section class="w-full rounded-xl overflow-hidden relative shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/40 h-[400px] flex items-center">
+<!-- Background Image -->
+<div class="absolute inset-0 w-full h-full" data-alt="A highly professional, well-lit promotional lifestyle image featuring premium plant care products, such as an elegant glass spray bottle for leaf spot treatment, sitting next to a lush, healthy Monstera plant. The background is a vibrant, smooth gradient blending from deep pure neon mint green to bright, soft sunny yellow, conveying a sense of vitality, freshness, and high-end botanical care. The lighting is soft and studio-quality, emphasizing the pristine cleanliness of the products." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC0CjggxRQrkmYnyQnM9WTwr76ixcqba-9PLOIF9k4gWDQMHcKKH5OJ1suHpUcCQV7n--lQbE317KYUNHw43LrVApfZJ4KXYySoOSzA7btnzORkaiKG9RWi28ONB--Ib2mPjQpGmXYWgrs_y508EDJ_qHMaqLveTiSNv4dxLxzDhzloFCXusilOBfduzmFYIonzquQPdf1iztJSDyi-fKcStPWEM4c-w9602kn9MGGnbUWe28RsgbAeaMrbrrlpmGlwZ4PVlo8acqQ')"></div>
+<!-- Glass Overlay for Text Readability -->
+<div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
+<div class="relative z-20 w-full md:w-1/2 px-12 md:px-24 flex flex-col gap-6">
+<span class="font-label-md text-label-md text-primary-container uppercase tracking-widest">Khuyến mãi đặc biệt</span>
+<h1 class="font-headline-lg text-headline-lg text-white drop-shadow-md">Giảm 20% cho<br/>Thuốc Trị Đốm Lá</h1>
+<p class="font-body-lg text-body-lg text-white/90 drop-shadow-sm max-w-md">Bảo vệ khu vườn của bạn với dòng sản phẩm cao cấp, an toàn và hiệu quả tức thì.</p>
+<div>
+<button class="bg-primary-container hover:bg-secondary-fixed text-on-primary-container font-label-md text-label-md px-8 py-4 rounded-full transition-all duration-300 shadow-[0_4px_16px_rgba(0,230,118,0.3)] hover:shadow-[0_8px_24px_rgba(0,230,118,0.5)] active:scale-95 inline-flex items-center gap-2">
+                        Mua ngay
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Search & Filter Area -->
+<section class="flex flex-col gap-8 w-full">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6">
+<h2 class="font-headline-md text-headline-md text-on-surface">Khám phá sản phẩm</h2>
+<!-- Main Store Search -->
+<div class="relative w-full md:w-96 glass-card rounded-full overflow-hidden">
+<span class="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-on-surface-variant/60">search</span>
+<input class="w-full h-14 pl-14 pr-6 bg-transparent border-none focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant/50" placeholder="Tìm kiếm dụng cụ, phân bón..." type="text"/>
+<div class="absolute inset-0 rounded-full border border-transparent focus-within:border-primary-container focus-within:shadow-[0_0_15px_rgba(0,230,118,0.2)] pointer-events-none transition-all"></div>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex flex-wrap gap-4 items-center">
+<button class="px-6 py-3 rounded-full font-label-md text-label-md transition-all duration-200 bg-primary-container text-on-primary-container shadow-sm">
+                    Tất cả
+                </button>
+<button class="px-6 py-3 rounded-full font-label-md text-label-md transition-all duration-200 glass-card text-on-surface-variant hover:bg-white/80 border hover:border-primary-container/50">
+                    Thuốc Trừ Sâu
+                </button>
+<button class="px-6 py-3 rounded-full font-label-md text-label-md transition-all duration-200 glass-card text-on-surface-variant hover:bg-white/80 border hover:border-primary-container/50">
+                    Phân Bón Hữu Cơ
+                </button>
+<button class="px-6 py-3 rounded-full font-label-md text-label-md transition-all duration-200 glass-card text-on-surface-variant hover:bg-white/80 border hover:border-primary-container/50">
+                    Dụng Cụ Chăm Sóc
+                </button>
+<div class="ml-auto">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full glass-card text-on-surface-variant hover:text-primary transition-colors border">
+<span class="material-symbols-outlined text-sm">tune</span>
+<span class="font-label-md text-label-md">Lọc thêm</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Product Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter w-full">
+<!-- Product Card 1 -->
+<article class="glass-card rounded-[2rem] p-4 flex flex-col gap-4 group hover:-translate-y-1 transition-transform duration-300">
+<div class="w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white/50 relative">
+<img alt="Phân Bón Hữu Cơ Đa Năng" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A beautifully composed, high-resolution product shot of a premium organic fertilizer bottle. The bottle has a clean, minimalist label with subtle green accents. It sits on a pristine white marble surface, illuminated by soft, natural-looking studio light that casts a gentle shadow, emphasizing a modern, light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBs-vva9V36bh41s32tqs9Ph-agKJKR5YWAIccEloYqRC_3Y8aRNH-FoS9evQAo87I6l-TGx5PTqIgOfom5a-YOVnmAc-1QHAoqVXVJikAS4JvrrZI7MPxVPnTX6NhLgOgfB1-jennn8uelF6C-S8PtPfXtWVmIcymLaKo21OFj6U_1Lg2-RRJPoH92yROS2O_5YUK9AxXZsgjWZUK0pmWRshcTg9arXcPwibAdZn10-_jS-Ho8iNXum6xSHPgiMqAnxcDVRdOMOU"/>
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 shadow-sm border border-white/50">
+<span class="material-symbols-outlined text-tertiary-fixed-dim fill text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md text-on-surface text-sm">4.8</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<span class="font-label-md text-on-surface-variant text-xs uppercase tracking-wider">Phân Bón Hữu Cơ</span>
+<h3 class="font-headline-sm text-[20px] leading-[28px] text-on-surface truncate">Phân Bón Hữu Cơ Cao Cấp</h3>
+<p class="font-headline-sm text-primary mt-1">150.000 ₫</p>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-3 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary hover:text-white transition-colors duration-300 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+                        Thêm vào giỏ
+                    </button>
+</div>
+</article>
+<!-- Product Card 2 -->
+<article class="glass-card rounded-[2rem] p-4 flex flex-col gap-4 group hover:-translate-y-1 transition-transform duration-300">
+<div class="w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white/50 relative">
+<img alt="Thuốc Trừ Sâu Sinh Học" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A clean, high-fidelity image of a sleek, modern spray bottle used for plant pest control, featuring a matte white finish with a neon mint green nozzle. The bottle is placed against an airy, pure white background with subtle, diffused lighting creating a soft glassmorphism shadow effect." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuqoya1Cicfti59igpd0259cEIBEynHP1wNEEejMp7mQ6Sk-G6PyjILtnrPnPKd5b-P6jCixeXgbH8HHpVNeYkVlJas7auXWX7qRuFvwhGDMVgnZHAHut5-ap8u1iUT5t7GUJqOaoMa25CJGlEUHqJ3mFiEDYfqSisyqe1zxHQmMLEbduMjYwG2jq1ufaYRl4EHPi4DO_Sv3H-5irBrNdAoZL1q3Qjnvpmw-_oZDphrQM-8HcQnkV0zqLvbak6nmkWiAhC7GUF0AE"/>
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 shadow-sm border border-white/50">
+<span class="material-symbols-outlined text-tertiary-fixed-dim fill text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md text-on-surface text-sm">4.9</span>
+</div>
+<div class="absolute top-3 left-3 bg-error text-white font-label-md text-xs px-2 py-1 rounded-md">
+                        -20%
+                    </div>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<span class="font-label-md text-on-surface-variant text-xs uppercase tracking-wider">Thuốc Trừ Sâu</span>
+<h3 class="font-headline-sm text-[20px] leading-[28px] text-on-surface truncate">Thuốc Trị Đốm Lá Thảo Mộc</h3>
+<div class="flex items-center gap-2 mt-1">
+<p class="font-headline-sm text-primary">85.000 ₫</p>
+<p class="font-body-md text-on-surface-variant line-through text-sm">106.000 ₫</p>
+</div>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-3 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary hover:text-white transition-colors duration-300 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+                        Thêm vào giỏ
+                    </button>
+</div>
+</article>
+<!-- Product Card 3 -->
+<article class="glass-card rounded-[2rem] p-4 flex flex-col gap-4 group hover:-translate-y-1 transition-transform duration-300">
+<div class="w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white/50 relative">
+<img alt="Bộ Dụng Cụ Làm Vườn Mini" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="An elegant set of stainless steel indoor gardening tools, including a small trowel and pruning shears with pale wood handles. The tools are neatly arranged on a clean, white surface with a slight blur in the background, exuding a premium, modern, light-mode tech aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDubEr28x6RSYuPPtcsyk1FB7fndQUs79EQssxCXHf4ECvFrwOVDZiDUu_c0MxRDjsA40E6yYmpOoFhinuHbSeZnRT2E47Fqc0YnXbWDdueJLriio39gitoxtKUFn-4LaJeYLMAuE90xEtBMWbWt-vy3d2qzkLCzUt3bV7osD6JvOXoOgGrXXQSuxWp085O7VcEaZwggDD3Spyne3unakp5AuCsudIgmNVfVYVmwtNG0Ifv4BsUWB4AE2C1zDNwTYG3Yb0hLMMmG1w"/>
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 shadow-sm border border-white/50">
+<span class="material-symbols-outlined text-tertiary-fixed-dim fill text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md text-on-surface text-sm">4.7</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<span class="font-label-md text-on-surface-variant text-xs uppercase tracking-wider">Dụng Cụ Chăm Sóc</span>
+<h3 class="font-headline-sm text-[20px] leading-[28px] text-on-surface truncate">Bộ Dụng Cụ Làm Vườn Mini</h3>
+<p class="font-headline-sm text-primary mt-1">220.000 ₫</p>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-3 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary hover:text-white transition-colors duration-300 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+                        Thêm vào giỏ
+                    </button>
+</div>
+</article>
+<!-- Product Card 4 -->
+<article class="glass-card rounded-[2rem] p-4 flex flex-col gap-4 group hover:-translate-y-1 transition-transform duration-300">
+<div class="w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white/50 relative">
+<img alt="Đất Trồng Trộn Sẵn Dinh Dưỡng" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A premium indoor plant soil mix packaged in an eco-friendly, minimalist white paper bag with elegant typography. The bag sits in a bright, pristine studio setting. A soft shadow anchors it to the surface, aligning perfectly with a high-end, clean tech light-mode visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsQWeL2bwu55zZHfK4Fb35pDEeswCppRSxzU8HJpaYzNKD2MkThdp0WArpci_A9rjXgtqEbZqaykkrQ8Eg7EeGHZX2cUu-ttZyKL_ZQjcQWKl4CQo6BHaG_zu9xy9qjiAG7HaqmXDvF2DlMaEqGTsSC6JVTlSjqDYitNjsUdyXwUBIYWEt6-GIHnV-M2ZEDsxxYE-Yn4WmAZv9uOrWy6xKoIclP4kb8VOjDeU_zfAslY9F0zkyUexBJU86JlBDGXPSDk3OwVUkPFo"/>
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 shadow-sm border border-white/50">
+<span class="material-symbols-outlined text-tertiary-fixed-dim fill text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md text-on-surface text-sm">4.6</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<span class="font-label-md text-on-surface-variant text-xs uppercase tracking-wider">Đất Trồng</span>
+<h3 class="font-headline-sm text-[20px] leading-[28px] text-on-surface truncate">Đất Trồng Dinh Dưỡng Monstera</h3>
+<p class="font-headline-sm text-primary mt-1">65.000 ₫</p>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-3 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary hover:text-white transition-colors duration-300 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
+                        Thêm vào giỏ
+                    </button>
+</div>
+</article>
+</section>
+<!-- Pagination (Lightweight) -->
+<div class="flex justify-center items-center gap-2 mt-8">
+<button class="w-10 h-10 rounded-full flex items-center justify-center glass-card hover:border-primary text-on-surface-variant transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center bg-primary-container text-on-primary-container font-label-md">1</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center glass-card hover:border-primary text-on-surface font-label-md transition-colors">2</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center glass-card hover:border-primary text-on-surface font-label-md transition-colors">3</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center glass-card hover:border-primary text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</main>
+<!-- Footer Area -->
+<footer class="bg-surface-container dark:bg-surface-container-highest w-full py-12 border-t border-outline-variant dark:border-outline mt-16">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter px-margin max-w-max-width mx-auto">
+<div class="flex flex-col gap-4">
+<span class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">
+                    BotaniScan
+                </span>
+<p class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant max-w-xs">
+                    Giải pháp chăm sóc cây cảnh thông minh bằng AI, mang đến không gian xanh tươi mát cho ngôi nhà của bạn.
+                </p>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-label-md text-label-md text-on-surface font-bold">Liên kết nhanh</h4>
+<div class="flex flex-col gap-2">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors transition-all duration-300 w-fit" href="#">Liên hệ</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors transition-all duration-300 w-fit" href="#">Điều khoản</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors transition-all duration-300 w-fit" href="#">Bảo mật</a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-label-md text-label-md text-on-surface font-bold">Kết nối với chúng tôi</h4>
+<div class="flex flex-col gap-2">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors transition-all duration-300 w-fit" href="#">Facebook</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors transition-all duration-300 w-fit" href="#">Instagram</a>
+</div>
+</div>
+</div>
+<div class="px-margin max-w-max-width mx-auto mt-12 pt-6 border-t border-outline-variant/30 text-center md:text-left">
+<p class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant">© 2024 BotaniScan. All rights reserved.</p>
+</div>
+</footer>
+</body></html>

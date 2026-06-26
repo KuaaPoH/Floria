@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BotaniScan - Trang chủ &amp; Khu vườn số</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#00210b",
+                        "tertiary-fixed": "#ffdcbf",
+                        "secondary": "#006e2a",
+                        "surface-container": "#edeeef",
+                        "surface-dim": "#d9dadb",
+                        "surface": "#f8f9fa",
+                        "outline": "#6b7b6c",
+                        "surface-variant": "#e1e3e4",
+                        "on-primary-fixed-variant": "#005226",
+                        "surface-bright": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#00531e",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "on-secondary-fixed": "#002108",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#00732c",
+                        "on-primary-container": "#00612e",
+                        "secondary-container": "#5cfd80",
+                        "secondary-fixed": "#69ff87",
+                        "primary": "#006d35",
+                        "surface-container-high": "#e7e8e9",
+                        "on-surface-variant": "#3b4a3d",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#3ce36a",
+                        "surface-tint": "#006d35",
+                        "on-background": "#191c1d",
+                        "on-tertiary-fixed-variant": "#6a3c03",
+                        "on-tertiary-container": "#794810",
+                        "primary-fixed": "#62ff96",
+                        "on-tertiary-fixed": "#2d1600",
+                        "on-surface": "#191c1d",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#00e475",
+                        "surface-container-low": "#f3f4f5",
+                        "inverse-on-surface": "#f0f1f2",
+                        "tertiary-fixed-dim": "#fdb878",
+                        "outline-variant": "#bacbb9",
+                        "tertiary-container": "#ffba79",
+                        "inverse-surface": "#2e3132",
+                        "primary-fixed-dim": "#00e475",
+                        "error": "#ba1a1a",
+                        "tertiary": "#86521b",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#00e676"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin": "80px",
+                        "base-unit": "8px",
+                        "columns": "12",
+                        "gutter": "24px",
+                        "max-width": "1440px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["60px", { "lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-xl": ["72px", { "lineHeight": "84px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        }
+        .btn-primary {
+            background-color: #00e676;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md min-h-screen pt-20">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-b border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+<div class="flex justify-between items-center h-20 px-margin max-w-max-width mx-auto">
+<div class="flex items-center gap-4">
+<span class="font-display-lg text-display-lg font-extrabold text-primary dark:text-primary-fixed" style="font-size: 32px; line-height: 40px;">BotaniScan</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 font-label-md text-label-md" href="#">Trang chủ</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-label-md text-label-md" href="#">Khu vườn</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-label-md text-label-md" href="#">Chẩn đoán</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-label-md text-label-md" href="#">Trợ lý AI</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined text-on-surface">notifications</span>
+</button>
+<button class="p-2 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined text-on-surface">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="max-w-max-width mx-auto px-margin py-12 grid grid-cols-12 gap-gutter">
+<!-- Main Content Area -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-8">
+<!-- Welcome Banner -->
+<section class="glass-panel rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl"></div>
+<div class="flex-1 z-10">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-4">Chào buổi sáng, Người làm vườn</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-6">Khu vườn của bạn đang phát triển tốt. Có 2 cây cần được tưới nước hôm nay.</p>
+<button class="btn-primary px-6 py-3 rounded-full font-label-md text-label-md flex items-center gap-2 w-max">
+<span class="material-symbols-outlined" data-weight="fill">add</span>
+                        Thêm cây mới
+                    </button>
+</div>
+<div class="w-48 h-48 md:w-64 md:h-64 flex-shrink-0 z-10">
+<img alt="Mầm cây 3D" class="w-full h-full object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida/AP1WRLuRARSgnzFowzmnBzIsItc1sM0H3F2I2wUAg4dknFiQg_5J_0PuayAGF5NybhF3Qs8d6vN-1GyQ3zvLcxuy72Xtiwzr0hBIa8RJWOsXnJjfJER5ARCPwZwPX1VuFKjLl2w5TYSLsqdj1YhquKHt_IeyOEIoq7iUAySzfoFVAO8IbKcQPVYX_Is1TnB4O0nnsXYaP4uhalSw08kjF6OnQ6Oj6_16CcwyZJLycU3GA3ItW4l6RB0f6QYryQ"/>
+</div>
+</section>
+<!-- Garden Grid -->
+<section>
+<div class="flex justify-between items-end mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface">Khu vườn số</h2>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1 hover:text-primary-fixed transition-colors">
+                        Xem tất cả <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Plant Card 1 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-1 transition-transform duration-300">
+<div class="flex gap-4">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A macro shot of a vibrant green Monstera Deliciosa leaf with intricate natural perforations, set against a clean, light-mode pure white background. The lighting is soft and diffused, highlighting the glossy texture of the leaf. High-end botanical aesthetic, perfectly styled for a premium mobile app UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKSPO51JX2wODk_N2gyq9OM2tR0QjskM42koRXGjOlRy6zxKjHY4gCv4z-ItZeFyjaJSYBCll9iAO919vaE8URseMRRRK_SSiM4MQaVKjxeKoya3vKEIPWs7YBsByYM3eyVAROUJgGjc9Qw0n8F4BfznIGFBlvTLl-yUFfQbvFiAxlUdRbUrjj4wdi-LNhwaSccUw5jEagQJ9XvpX8QzGdI-5CIQnvWIzIZ6wabPEgf8v5F35bK9vmfiO8ZWGVH_Nv34BVfrgmm7o"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Monstera Deliciosa</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Trầu bà nam mỹ</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-surface-container-high rounded-full font-label-md text-[12px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">water_drop</span>
+                                        Cần nước
+                                    </span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex-1 py-2 border border-outline-variant rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">Tưới nước</button>
+<button class="flex-1 py-2 border border-outline-variant rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">Chi tiết</button>
+</div>
+</div>
+<!-- Plant Card 2 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-1 transition-transform duration-300">
+<div class="flex gap-4">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A beautiful, healthy Fiddle Leaf Fig (Ficus lyrata) potted in a modern white ceramic planter. The image is brightly lit, showcasing the large, violin-shaped leaves with distinct veining. The background is pure white, creating a clean, premium, and airy light-mode feel suitable for a high-end digital garden interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ71GFo9Hnsj7gQ8gWqRnKo5-bW0IhON8i7M5e_QufveNIkXpIQvT-I5RWXSJf-9ANgeIKJx4GVgtmyh4jVWcVR0kV-5ywEWTbPHm3ih4GV_lv3Wk8_130L4q_ceIaaS72LxMbg1bzbMGG40LE2vRm1FNtgJkvSCrck5D9nOYLC5mU_HhHrnMDe_XDtB_o_LoRUnnnriN8uRsvQMndnCjqGVomb-u1yM4VuZ10P0Z6wb5XxIwQBQCXKvvFWvACMhEX8XXhD0i-Wck"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Ficus Lyrata</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Bàng singapore</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-[#00e676]/10 rounded-full font-label-md text-[12px] text-primary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                        Khỏe mạnh
+                                    </span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex-1 py-2 border border-outline-variant rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">Ghi chép</button>
+<button class="flex-1 py-2 border border-outline-variant rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">Chi tiết</button>
+</div>
+</div>
+<!-- Plant Card 3 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-1 transition-transform duration-300">
+<div class="flex gap-4">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A delicate and elegant Peace Lily (Spathiphyllum) with stark white spathes and dark green glossy leaves. The lighting is studio-quality, casting very soft, minimal shadows to emphasize a floating, ethereal look. Set in a premium, light-mode pure white environment, perfectly suited for an airy glassmorphism UI layout." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaiaK79hwEiHBLniGMplVbRdz3ZtVH3yhovsCOssk_Og3qOA7z6mu_SASZGHEiizX2rCDpQdowSCfK0gP0f7BMSkiv_IN0fDxCL-7OmO7xRVtbygYm-Bs6XUl7bUd3vq7-nm-hcax2FhgX6j0YQ_l2FEKLjIaCwDviQwUGNxUvhzWB2TLl4auKFgksT2-_wEVS9nOdbsx2kE9PN2cHe91zmTC85ZjPISHNiCeEVSJxwn4QhUzZ44YsV7vG-7THPKDl_32s7GT1msE"/>
+</div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Spathiphyllum</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Lan ý</p>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-error-container rounded-full font-label-md text-[12px] text-on-error-container">
+<span class="material-symbols-outlined text-[16px]">wb_sunny</span>
+                                        Thiếu sáng
+                                    </span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex-1 py-2 btn-primary rounded-full font-label-md text-label-md">Di chuyển</button>
+<button class="flex-1 py-2 border border-outline-variant rounded-full text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">Chi tiết</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar - Care Schedule -->
+<aside class="col-span-12 lg:col-span-4">
+<div class="glass-panel rounded-xl p-6 sticky top-28">
+<div class="flex items-center justify-between mb-6 border-b border-outline-variant pb-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+                        Lịch chăm sóc
+                    </h2>
+<span class="font-label-md text-label-md text-on-surface-variant">Hôm nay</span>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Task Item -->
+<div class="flex items-start gap-4 p-4 rounded-lg bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-on-secondary-container">water_drop</span>
+</div>
+<div class="flex-1">
+<h4 class="font-label-md text-label-md text-on-surface group-hover:text-primary transition-colors">Tưới nước Monstera</h4>
+<p class="font-body-md text-[14px] text-on-surface-variant mt-1">200ml nước, tưới đều quanh gốc.</p>
+</div>
+<button class="w-8 h-8 rounded-full border-2 border-outline-variant flex items-center justify-center hover:bg-primary hover:border-primary transition-all">
+<span class="material-symbols-outlined text-[16px] text-transparent hover:text-white">check</span>
+</button>
+</div>
+<!-- Task Item -->
+<div class="flex items-start gap-4 p-4 rounded-lg bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-[#ffba79]/20 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[#794810]">nutrition</span>
+</div>
+<div class="flex-1">
+<h4 class="font-label-md text-label-md text-on-surface group-hover:text-primary transition-colors">Bón phân Bàng Singapore</h4>
+<p class="font-body-md text-[14px] text-on-surface-variant mt-1">Phân bón NPK pha loãng.</p>
+</div>
+<button class="w-8 h-8 rounded-full border-2 border-outline-variant flex items-center justify-center hover:bg-primary hover:border-primary transition-all">
+<span class="material-symbols-outlined text-[16px] text-transparent hover:text-white">check</span>
+</button>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-outline-variant">
+<button class="w-full py-3 rounded-full border border-primary text-primary font-label-md text-label-md hover:bg-primary/5 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add_task</span>
+                        Thêm lịch trình
+                    </button>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant dark:border-outline mt-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter px-margin max-w-max-width mx-auto">
+<div class="flex flex-col gap-4">
+<span class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">BotaniScan</span>
+<p class="font-body-md text-body-md text-on-surface-variant">© 2024 BotaniScan. All rights reserved.</p>
+</div>
+<div class="flex gap-8 md:col-span-2 md:justify-end">
+<div class="flex flex-col gap-2">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-body-md text-body-md" href="#">Liên hệ</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-body-md text-body-md" href="#">Điều khoản</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-body-md text-body-md" href="#">Bảo mật</a>
+</div>
+<div class="flex flex-col gap-2">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-body-md text-body-md" href="#">Facebook</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-300 font-body-md text-body-md" href="#">Instagram</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>
