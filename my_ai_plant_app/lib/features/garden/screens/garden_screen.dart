@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'plant_detail_screen.dart';
+import '../../../core/widgets/custom_image.dart';
 
 class GardenScreen extends StatefulWidget {
   const GardenScreen({super.key});
@@ -10,25 +11,72 @@ class GardenScreen extends StatefulWidget {
 }
 
 class _GardenScreenState extends State<GardenScreen> {
-  int _activeTabIndex = 0;
-  final List<String> _tabs = ["Tất cả", "Phòng khách", "Ban công", "Bàn làm việc"];
+  int _activeZoneIndex = 0;
+  final List<String> _zones = ["Tất cả", "Phòng khách", "Ban công"];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFFBF9F6), // surface
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 10, bottom: 30, left: 20, right: 20),
+          padding: const EdgeInsets.only(top: 16, bottom: 24, left: 20, right: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context),
-              const SizedBox(height: 25),
-              _buildStatusWidget(context),
-              const SizedBox(height: 25),
-              _buildFilterTabs(context),
-              const SizedBox(height: 20),
+              Text(
+                'BỘ SƯU TẬP CỦA BẠN',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2,
+                  color: const Color(0xFF6A756B),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Quản lý khu vườn',
+                style: GoogleFonts.inter(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1B1C1A),
+                  letterSpacing: -1,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Thanh tìm kiếm
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFE4E2DF)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF364534).withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                ),
+                child: TextField(
+                  style: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF1B1C1A)),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm kiếm cây, góc vườn...',
+                    hintStyle: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF747871)),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFF747871), size: 22),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildAttentionSection(),
+              const SizedBox(height: 32),
+              _buildMyGardensSection(),
+              const SizedBox(height: 32),
+              _buildZoneFilters(),
+              const SizedBox(height: 16),
               _buildPlantGrid(context),
             ],
           ),
@@ -37,130 +85,246 @@ class _GardenScreenState extends State<GardenScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildAttentionSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Khu Vườn Của Bạn',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF006D35),
+          'Cần chú ý',
+          style: GoogleFonts.inter(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1B1C1A),
           ),
         ),
+        const SizedBox(height: 12),
         Container(
-          width: 40,
-          height: 40,
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF00E676).withValues(alpha: 0.2),
-            shape: BoxShape.circle,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE4E2DF)),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00E676).withValues(alpha: 0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 0),
+                color: const Color(0xFF364534).withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               )
             ],
           ),
-          child: IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFF006D35)),
-            onPressed: () {},
+          child: Row(
+            children: [
+              CustomImage(
+                imageUrl: 'https://picsum.photos/seed/plant1/400/400',
+                width: 72,
+                height: 72,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'NHÀ BỐ MẸ • BAN CÔNG',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF747871),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Bàng Singapore',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.water_drop, size: 14, color: Color(0xFFE06C00)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Đất quá khô, cần tưới',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFFE06C00),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF364534),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.check, color: Colors.white, size: 20),
+                  onPressed: () {},
+                ),
+              ),
+            ],
           ),
         )
       ],
     );
   }
 
-  Widget _buildStatusWidget(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 0.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF00E676).withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.water_drop, color: Color(0xFF006D35)),
+  Widget _buildMyGardensSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Khu vườn của tôi',
+          style: GoogleFonts.inter(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1B1C1A),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'CẦN CHĂM SÓC',
-                  style: GoogleFonts.beVietnamPro(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF3B4A3D),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Trạng thái: 2 cây cần tưới nước hôm nay',
-                  style: GoogleFonts.beVietnamPro(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF151E16),
-                  ),
-                ),
-              ],
-            ),
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          child: Row(
+            children: [
+              _buildGardenCard(true, "Nhà của tôi", "12 cây"),
+              const SizedBox(width: 16),
+              _buildGardenCard(false, "Nhà bố mẹ", "5 cây"),
+              const SizedBox(width: 16),
+              _buildAddGardenCard(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGardenCard(bool isActive, String title, String subtitle) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF364534) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: isActive ? null : Border.all(color: const Color(0xFFE4E2DF)),
+        boxShadow: isActive ? [
+          BoxShadow(
+            color: const Color(0xFF364534).withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           )
+        ] : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: isActive ? Colors.white : const Color(0xFF1B1C1A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              color: isActive ? Colors.white.withOpacity(0.8) : const Color(0xFF747871),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTabs(BuildContext context) {
+  Widget _buildAddGardenCard() {
+    return Container(
+      width: 120,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFC4C8BF),
+          width: 2,
+        ),
+        color: Colors.transparent,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 32, height: 32,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE4E2DF),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.add, size: 20, color: Color(0xFF444842)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Thêm vườn',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF444842),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildZoneFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
       child: Row(
-        children: List.generate(_tabs.length, (index) {
-          final isActive = _activeTabIndex == index;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _activeTabIndex = index;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF00E676) : Colors.white.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: isActive ? [
-                  BoxShadow(
-                    color: const Color(0xFF00E676).withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 0),
-                  )
-                ] : null,
-              ),
-              child: Text(
-                _tabs[index],
-                style: GoogleFonts.beVietnamPro(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? const Color(0xFF00612E) : const Color(0xFF3B4A3D),
+        children: List.generate(_zones.length, (index) {
+          final isActive = _activeZoneIndex == index;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => setState(() => _activeZoneIndex = index),
+              child: Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isActive ? const Color(0xFF364534) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: isActive ? null : Border.all(color: const Color(0xFFE4E2DF)),
+                  boxShadow: isActive ? [
+                    BoxShadow(
+                      color: const Color(0xFF364534).withOpacity(0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ] : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _zones[index],
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                    color: isActive ? Colors.white : const Color(0xFF444842),
+                  ),
                 ),
               ),
             ),
@@ -173,35 +337,20 @@ class _GardenScreenState extends State<GardenScreen> {
   Widget _buildPlantGrid(BuildContext context) {
     final bool isTablet = MediaQuery.of(context).size.width > 600;
     
-    // Fake data matching the HTML
     final List<Map<String, dynamic>> plants = [
       {
-        "title": "Cây Trầu Bà",
+        "title": "Monstera",
         "location": "Phòng khách",
-        "status": "Khỏe",
-        "statusColor": const Color(0xFF00E676),
-        "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuA88Aldot9yyznxt0McJxoduq5TmNHos1QLXh8vg7BmIEmQaGvpHggrJs_krzQf0jPFYthMHCfeBadBnCpyHvkbEgLJP4PU1JWpBcpQZeMH8wwpuQd9vbHE2F1EJNwEMs5NihKPJS_pYGdshl-KRmJ43l5av0ZKnlS_ouSUw5kcMX9xFUv2arPvnllUysZJvcfeDaZcLE4tD62GNnnSj_VO2EWELEUANSmnaAb92T7RRxqN0sJfOABROsngEW7M_WxZAVhYxzultm4",
+        "status": "Khỏe mạnh",
+        "statusColor": const Color(0xFF4CAF50),
+        "imageUrl": "https://picsum.photos/seed/plant2/400/400",
       },
       {
-        "title": "Cây Kim Tiền",
+        "title": "Lưỡi hổ",
         "location": "Ban công",
-        "status": "Cần chú ý",
-        "statusColor": Colors.orange,
-        "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCG3csOpdf8jP6MfGzXsp1r9g1vbgSLMDdLJLz2LlzHCwFQ7f55zhBeK6P1-5v8Wl-2JJO1LZRuugc_oFFv977RAeDtr2E15WZARNLbvxDi0oNVDTAmz3Y-P6GWjWRxt5mcQiJNfdkHStuzHnS1f59Ld2Z1Brl4bOynyNowbpucDefNoSueLd9_0SDQ39dK7X04dRQ96PMrlVjKsDHexqNV0HnB4eYWtLkiJU8Wvz600k8IojBb64fM7QnZyQugd9WLn_NE0eZA0pM",
-      },
-      {
-        "title": "Cây Trầu Bà Nam Mỹ",
-        "location": "Phòng khách",
-        "status": "Khỏe",
-        "statusColor": const Color(0xFF00E676),
-        "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAHkPVhh2WQZrXjsl0HcyIMdTjbeQcORXv7cjsIza-AFNrti0vsxHcFrg10w02V2Wt2ZuKb4Zn0KLnRGdpw8B5oVZtITRynuWFHjcjzPRb0NKpXEenw2twDkSY4a5vbwmvVP1alqgoJITUeV7vGAi34ykbvXeANrS7b47Frl9hPlmgwdXwr3dPGVU0o3xYa39mS5_sD9YKHBned_vQmz7IqeR1bONLzUbNDh9JERA82NvVtU-zkaOj6gJTHxSoudQag16ksO5p9icI",
-      },
-      {
-        "title": "Cây Lưỡi Hổ",
-        "location": "Bàn làm việc",
-        "status": "Cần chú ý",
-        "statusColor": Colors.orange,
-        "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuChj1RU6v8wi9Ca9ACTZ4ll-zYCTsBn1lpv0zDufZNrS-MRhm_KKDnqAJwuocIDs-rMl3vXKh4VKr84c1l-dSc_o4hMyukIH7VxS18Yq46WGKFlIY4xLKwkssO-5aTg_1uEkmSCtFRqatdsQdds9i7ygpjgWvuPjHjxOACO7YIN1JdfAdXGUsAEhBFW9GSc-FGwI1zpWnTF7P2eunoqRo8ltUDNJeU2Lcsv95RXoAaS1KFIwB3OyBMW3eAmOD00VdaZXb2fSvQhzqw",
+        "status": "Khỏe mạnh",
+        "statusColor": const Color(0xFF4CAF50),
+        "imageUrl": "https://picsum.photos/seed/plant3/400/400",
       },
     ];
 
@@ -212,13 +361,50 @@ class _GardenScreenState extends State<GardenScreen> {
         crossAxisCount: isTablet ? 4 : 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.75, // Adjust according to image size
+        childAspectRatio: 0.85, 
       ),
-      itemCount: plants.length,
+      itemCount: plants.length + 1, // +1 for "Thêm cây"
       itemBuilder: (context, index) {
-        final plant = plants[index];
-        return _buildPlantCard(context, plant);
+        if (index == plants.length) {
+          return _buildAddPlantCard();
+        }
+        return _buildPlantCard(context, plants[index]);
       },
+    );
+  }
+
+  Widget _buildAddPlantCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFD4E8CE).withOpacity(0.3), // secondary-container / 30
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF364534).withOpacity(0.2),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 48, height: 48,
+            decoration: const BoxDecoration(
+              color: Color(0xFF364534),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.add, size: 24, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Thêm cây',
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF364534),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -231,96 +417,96 @@ class _GardenScreenState extends State<GardenScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    image: DecorationImage(
-                      image: NetworkImage(plant["imageUrl"]),
-                      fit: BoxFit.cover,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE4E2DF)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF364534).withOpacity(0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  CustomImage(
+                    imageUrl: plant["imageUrl"],
+                    width: double.infinity,
+                    height: double.infinity,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  Positioned(
+                    top: 8, left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(
+                              color: plant["statusColor"],
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            plant["status"],
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1B1C1A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    plant["location"].toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF747871),
+                      letterSpacing: 0.5,
                     ),
                   ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 2),
+                  Text(
+                    plant["title"],
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1B1C1A),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: plant["statusColor"],
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: plant["statusColor"].withOpacity(0.5),
-                                blurRadius: 4,
-                              )
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          plant["status"].toUpperCase(),
-                          style: GoogleFonts.beVietnamPro(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF3B4A3D),
-                          ),
-                        ),
-                      ],
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                )
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            plant["title"],
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF151E16),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            plant["location"],
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 11,
-              color: const Color(0xFF3B4A3D),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 }

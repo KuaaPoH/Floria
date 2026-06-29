@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import 'plant_diary_screen.dart';
+import '../../../core/widgets/custom_image.dart';
 import '../../scan/screens/scan_screen.dart';
 
 class PlantDetailScreen extends StatelessWidget {
@@ -11,245 +13,314 @@ class PlantDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(context),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildActionRow(context),
-                  const SizedBox(height: 30),
-                  _buildBiologyGrid(context),
-                  const SizedBox(height: 30),
-                  _buildReminders(context),
-                  const SizedBox(height: 30),
-                  _buildStats(context),
-                  const SizedBox(height: 40),
-                ],
-              ),
+      backgroundColor: const Color(0xFFFBF9F6), // background
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: Column(
+              children: [
+                _buildHeroImage(context),
+                Transform.translate(
+                  offset: const Offset(0, -48), // Overlap image by 48px
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildMainInfoCard(),
+                        const SizedBox(height: 24),
+                        _buildQuickActions(context),
+                        const SizedBox(height: 32),
+                        _buildCareSchedule(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          )
+          ),
+          _buildTopBar(context),
         ],
       ),
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 340,
-      pinned: true,
-      backgroundColor: const Color(0xFFF5F7FA),
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.8),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.more_horiz, color: Colors.black, size: 20),
-              onPressed: () {},
-            ),
-          ),
-        )
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              plant["imageUrl"] ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuBiZs5eUGXmj0jlx6gFHEYNBjCo7qFQPjazLiMR7P_kGJSgq9_swlNr_-j08tqMX1KACvRRzHnOd2N_FQQPvOx4mF3AqGrBNXI-kHcJJVH2rbFj3FHfzbwmcX-IjO0kXdPEtj62UqrPh9UsQgAisEnQvAPxam024yQMHeuKcR2myhxMw9zn-3hZtLUqF0XgWKEOEr5jEZfETawOHYhRbBhP1jsl2Qn9KasfcCUPvqmjdaXezxB9EKD85pd6eHhZTI52uRGSXZlXelo",
-              fit: BoxFit.cover,
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    const Color(0xFFF5F7FA).withValues(alpha: 1),
-                    const Color(0xFFF5F7FA).withValues(alpha: 0.0),
-                  ],
-                  stops: const [0.0, 0.4],
+  Widget _buildTopBar(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 8,
+      left: 16,
+      right: 16,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.keyboard_arrow_left, color: Color(0xFF1B1C1A), size: 24),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00E676).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
+          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.more_horiz, color: Color(0xFF1B1C1A), size: 24),
+                  onPressed: () {},
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroImage(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+      child: Stack(
+        children: [
+          SizedBox(
+            height: 360,
+            width: double.infinity,
+            child: CustomImage(
+              imageUrl: plant["imageUrl"] ?? "https://picsum.photos/seed/plant4/400/400",
+              width: double.infinity,
+              height: 360,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.4)],
+                  stops: const [0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: const Color(0xFFE4E2DF)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF364534).withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plant["title"] ?? "Bàng Singapore",
+                      style: GoogleFonts.inter(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1B1C1A),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
-                        const Icon(Icons.verified, color: Color(0xFF006D35), size: 16),
+                        const Icon(Icons.location_on, size: 14, color: Color(0xFF747871)),
                         const SizedBox(width: 4),
-                        Text(
-                          "Sức khỏe: Tốt 98%",
-                          style: GoogleFonts.beVietnamPro(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF006D35),
+                        Expanded(
+                          child: Text(
+                            "Nhà của tôi • ${plant["location"] ?? 'Ban công'}",
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: const Color(0xFF747871),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    plant["title"] ?? "Cây Trầu Bà",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  )
-                ],
+                  ],
+                ),
               ),
-            )
-          ],
-        ),
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F2E3), // Light green bg
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle, color: Color(0xFF364534), size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      plant["status"] ?? "Khỏe mạnh",
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF364534),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: Color(0xFFE4E2DF), height: 1),
+          ),
+          Row(
+            children: [
+              _buildMetricItem(Icons.light_mode, "Nắng bán phần"),
+              _buildMetricItem(Icons.water_drop, "Tưới 2 lần/tuần"),
+              _buildMetricItem(Icons.device_thermostat, "18-28°C"),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildActionRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ScanScreen()));
-            },
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.photo_camera, color: Color(0xFF006D35)),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Quét Bệnh",
-                    style: GoogleFonts.beVietnamPro(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF006D35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const PlantDiaryScreen()));
-            },
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.menu_book, color: Color(0xFF006D35)),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Nhật Ký",
-                    style: GoogleFonts.beVietnamPro(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF006D35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBiologyGrid(BuildContext context) {
-    return Row(
-      children: [
-        _buildBioCard(Icons.wb_sunny, "Ánh sáng", "Ưa bóng râm", const Color(0xFFFDB878), const Color(0xFF86521B)),
-        const SizedBox(width: 12),
-        _buildBioCard(Icons.water_drop, "Tưới nước", "3 ngày/lần", const Color(0xFF91D78A), const Color(0xFF2A6B2C)),
-        const SizedBox(width: 12),
-        _buildBioCard(Icons.thermostat, "Nhiệt độ", "20-25°C", const Color(0xFF62FF96), const Color(0xFF006D35)),
-      ],
-    );
-  }
-
-  Widget _buildBioCard(IconData icon, String title, String value, Color bgColor, Color iconColor) {
+  Widget _buildMetricItem(IconData icon, String text) {
     return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 40, height: 40,
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF4F8F3),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: const Color(0xFF364534), size: 20),
+          ),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF1B1C1A),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionBtn(
+            icon: Icons.photo_camera,
+            label: "Quét bệnh",
+            isPrimary: false,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen())),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionBtn(
+            icon: Icons.menu_book,
+            label: "Nhật ký",
+            isPrimary: false,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlantDiaryScreen())),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionBtn(
+            icon: Icons.auto_awesome,
+            label: "Floria AI",
+            isPrimary: true,
+            iconColor: const Color(0xFFFFD700), // Gold star
+            onTap: () {},
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionBtn({
+    required IconData icon,
+    required String label,
+    required bool isPrimary,
+    Color? iconColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.7),
+          color: isPrimary ? const Color(0xFF364534) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
+          border: isPrimary ? null : Border.all(color: const Color(0xFFE4E2DF)),
+          boxShadow: isPrimary ? [
+            BoxShadow(
+              color: const Color(0xFF364534).withOpacity(0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            )
+          ] : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
           ],
         ),
         child: Column(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: bgColor.withValues(alpha: 0.3), shape: BoxShape.circle),
-              child: Icon(icon, color: iconColor, size: 20),
+            Icon(
+              icon,
+              color: iconColor ?? (isPrimary ? Colors.white : const Color(0xFF364534)),
+              size: 24,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              title.toUpperCase(),
-              style: GoogleFonts.beVietnamPro(fontSize: 10, color: const Color(0xFF3B4A3D), letterSpacing: 0.5),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isPrimary ? Colors.white : const Color(0xFF1B1C1A),
+              ),
             ),
           ],
         ),
@@ -257,7 +328,7 @@ class PlantDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReminders(BuildContext context) {
+  Widget _buildCareSchedule() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -265,141 +336,170 @@ class PlantDetailScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Lịch Chăm Sóc",
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              "Lịch chăm sóc",
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B1C1A),
+              ),
             ),
-            Text(
-              "Xem tất cả",
-              style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF006D35)),
+            Row(
+              children: [
+                Text(
+                  "Xem tất cả",
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF364534),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, size: 18, color: Color(0xFF364534)),
+              ],
             ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildReminderItem(Icons.water_drop, "Tưới nước", "Hôm nay, 08:00 AM", const Color(0xFF006D35), true),
-        const SizedBox(height: 12),
-        _buildReminderItem(Icons.eco, "Bón phân NPK", "Còn 3 ngày nữa", const Color(0xFF86521B), false),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE4E2DF)),
+          ),
+          child: Column(
+            children: [
+              _buildTaskItem(
+                icon: Icons.water_drop,
+                title: "Tưới nước",
+                time: "16:00 Hôm nay",
+                timeIcon: Icons.schedule,
+                timeColor: const Color(0xFFEA580C), // orange-600
+                isDone: false,
+                isLast: false,
+              ),
+              _buildTaskItem(
+                icon: Icons.eco,
+                title: "Bón phân",
+                time: "Đã hoàn thành lúc 08:30",
+                timeIcon: Icons.done,
+                timeColor: const Color(0xFF747871),
+                isDone: true,
+                isLast: true,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFC4C8BF),
+              width: 2,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add, color: Color(0xFF747871), size: 18),
+              const SizedBox(width: 8),
+              Text(
+                "Thiết lập lịch định kỳ",
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF747871),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildReminderItem(IconData icon, String title, String time, Color color, bool isDone) {
+  Widget _buildTaskItem({
+    required IconData icon,
+    required String title,
+    required String time,
+    required IconData timeIcon,
+    required Color timeColor,
+    required bool isDone,
+    required bool isLast,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: color, width: 4)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-        ],
+        color: isDone ? const Color(0xFFF5F3F0) : Colors.transparent, // surface-container-low
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(isLast ? 0 : 16),
+          topRight: Radius.circular(isLast ? 0 : 16),
+          bottomLeft: Radius.circular(isLast ? 16 : 0),
+          bottomRight: Radius.circular(isLast ? 16 : 0),
+        ),
+        border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFE4E2DF))),
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: color),
+          Opacity(
+            opacity: isDone ? 0.6 : 1.0,
+            child: Container(
+              width: 40, height: 40,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE4E2DF),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: const Color(0xFF364534), size: 20),
+            ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.beVietnamPro(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF3B4A3D)),
-                ),
-              ],
+            child: Opacity(
+              opacity: isDone ? 0.6 : 1.0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF1B1C1A),
+                      decoration: isDone ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(timeIcon, size: 14, color: timeColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        time,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: timeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           Container(
-            width: 28,
-            height: 28,
+            width: 24, height: 24,
             decoration: BoxDecoration(
-              color: isDone ? color : Colors.transparent,
+              color: isDone ? const Color(0xFF364534) : Colors.transparent,
               shape: BoxShape.circle,
-              border: Border.all(color: isDone ? color : Colors.grey.shade400, width: 2),
+              border: Border.all(color: isDone ? const Color(0xFF364534) : const Color(0xFF747871), width: 2),
             ),
             child: isDone ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
-          )
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStats(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 140,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-              ],
-            ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Tăng trưởng", style: GoogleFonts.beVietnamPro(fontSize: 12, color: const Color(0xFF3B4A3D))),
-                    const Spacer(),
-                    Text("+12%", style: GoogleFonts.plusJakartaSans(fontSize: 32, fontWeight: FontWeight.bold, color: const Color(0xFF006D35))),
-                    Text("So với tháng trước", style: GoogleFonts.beVietnamPro(fontSize: 11, color: const Color(0xFF3B4A3D))),
-                  ],
-                ),
-                Positioned(
-                  right: -10,
-                  bottom: -10,
-                  child: Icon(Icons.trending_up, size: 80, color: Colors.black.withValues(alpha: 0.03)),
-                )
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Container(
-            height: 140,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-              ],
-            ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Độ ẩm đất", style: GoogleFonts.beVietnamPro(fontSize: 12, color: const Color(0xFF3B4A3D))),
-                    const Spacer(),
-                    Text("65%", style: GoogleFonts.plusJakartaSans(fontSize: 32, fontWeight: FontWeight.bold, color: const Color(0xFF2A6B2C))),
-                    Text("Mức lý tưởng", style: GoogleFonts.beVietnamPro(fontSize: 11, color: const Color(0xFF3B4A3D))),
-                  ],
-                ),
-                Positioned(
-                  right: -10,
-                  bottom: -10,
-                  child: Icon(Icons.water_drop, size: 80, color: Colors.black.withValues(alpha: 0.03)),
-                )
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

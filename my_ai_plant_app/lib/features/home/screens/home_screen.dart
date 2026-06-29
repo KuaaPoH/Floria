@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../core/widgets/custom_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../scan/screens/scan_screen.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
@@ -12,287 +14,240 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _activeTab = 0; // 0: Phong Khach, 1: Ban Cong
-  
-  // Danh sach cac task va trang thai hoan thanh
+  // Tasks from design
   final List<Map<String, dynamic>> _tasks = [
     {
       "id": 1,
-      "title": "Tưới nước - Cây Trầu Bà",
-      "subtitle": "Còn 2 giờ",
-      "isCompleted": false,
-      "icon": Icons.water_drop,
-      "color": Color(0xFF0F9D58)
+      "title": "Phun sương cho Calathea",
+      "time": "08:30 Sáng",
+      "isCompleted": true,
+      "image": "https://picsum.photos/seed/plant6/400/400"
     },
     {
       "id": 2,
-      "title": "Phơi nắng - Xương rồng",
-      "subtitle": "Hoàn thành lúc 08:00",
-      "isCompleted": true,
-      "icon": Icons.wb_sunny,
-      "color": Colors.orange
+      "title": "Kiểm tra đất Bàng Singapore",
+      "time": "14:00 Chiều",
+      "isCompleted": false,
+      "image": null
     }
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Lay kich thuoc man hinh de responsive
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isTablet = screenWidth > 600;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F5),
+      backgroundColor: const Color(0xFFFBF9F6), // surface
       body: SafeArea(
-        child: widget.isEmbedded
-            ? SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 30, top: 10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(context),
-                      const SizedBox(height: 25),
-                      _buildQuickActions(context),
-                      const SizedBox(height: 28),
-                      _buildMyGardenSection(context, isTablet),
-                      const SizedBox(height: 28),
-                      _buildAIAssistantSection(context),
-                      const SizedBox(height: 28),
-                      _buildTodayScheduleSection(context),
-                    ],
-                  ),
-                ),
-              )
-            : Stack(
-                children: [
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 100, top: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(context),
-                          const SizedBox(height: 25),
-                          _buildQuickActions(context),
-                          const SizedBox(height: 28),
-                          _buildMyGardenSection(context, isTablet),
-                          const SizedBox(height: 28),
-                          _buildAIAssistantSection(context),
-                          const SizedBox(height: 28),
-                          _buildTodayScheduleSection(context),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildBottomNavBar(context),
-                  ),
-                ],
-              ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 24, top: 16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 24),
+                _buildHeroCard(context),
+                const SizedBox(height: 32),
+                _buildMyGardenSection(context),
+                const SizedBox(height: 32),
+                _buildAIAssistantSection(context),
+                const SizedBox(height: 32),
+                _buildTodayScheduleSection(context),
+                const SizedBox(height: 32),
+                _buildCamNangXanhSection(context),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  // --- WIDGET BUILDERS ---
-
   Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Row(
-            children: [
-              // Profile Image (Avatar)
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    )
-                  ],
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBoEP6Mw3WISxPYa4X52x0k_gQNHNxat7gcgrO6ci0m5cWStQlqJPFAhUSe9Y7YlU4sUBaTyj3mxy1f9UCb7jXwsVswvaF8ZkXCnLVEOrESdgMfTwm9VykZNpmJKviiLAYGieV6_4FoRAO9Vfzzc3CMDWr9II79MptIOEdNyFlBSNd_PNDAC1FYQN8n767Fi3qLyNHTXSGrHaptO0TxUNkzbbhTlLGxaNdRehSIdypMSRSPxjcz5QI34PO48rd-B-QQJWn_AEFCxLY'
-                    ),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Xin chào,',
-                      style: GoogleFonts.beVietnamPro(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      'Nông Nghiệp Thông Minh',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF006D35),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Nút chuông thông báo
-        Stack(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 0.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF00E676).withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.notifications_outlined, size: 20, color: Color(0xFF0F9D58)),
-                onPressed: () {},
+            Text(
+              'Xin chào,',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF747871),
+                letterSpacing: 0.5,
               ),
             ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF00E676),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF00E676),
-                      blurRadius: 4,
-                    )
-                  ],
-                ),
+            const SizedBox(height: 4),
+            Text(
+              'Trần Ngọc Hải',
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1B1C1A),
+                height: 1.2,
               ),
-            )
+            ),
           ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBF9F6),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE4E2DF)),
+          ),
+          child: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Hôm nay có',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF444842),
+                    ),
+                  ),
+                  Text(
+                    'việc cần làm',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1B1C1A),
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF364534), // primary
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '03',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            ],
+          ),
         )
       ],
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    return Row(
-      children: [
-        // Nut 1: Nhan dien cay
-        Expanded(
-          child: _buildActionCard(
-            context: context,
-            title: "Nhận Diện Cây",
-            icon: Icons.eco,
-            iconColor: const Color(0xFF0F9D58),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ScanScreen()),
-              );
-            },
-          ),
+  Widget _buildHeroCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 280,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        image: const DecorationImage(
+          image: NetworkImage('https://picsum.photos/seed/plant7/400/400'),
+          fit: BoxFit.cover,
+          onError: null, // Avoid breaking completely if hero image fails
         ),
-        const SizedBox(width: 15),
-        // Nut 2: Chan doan benh
-        Expanded(
-          child: _buildActionCard(
-            context: context,
-            title: "Chẩn Đoán Bệnh",
-            icon: Icons.medical_services,
-            iconColor: Colors.red[400]!,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ScanScreen()),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionCard({
-    required BuildContext context,
-    required String title,
-    required IconData icon,
-    required Color iconColor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF364534).withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            )
-          ],
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              const Color(0xFF1B1C1A).withOpacity(0.8),
+            ],
+          ),
         ),
+        padding: const EdgeInsets.all(20),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 54,
-              height: 54,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, size: 28, color: iconColor),
+              child: Text(
+                'Biên tập cho sáng nay',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             Text(
-              title,
-              style: GoogleFonts.beVietnamPro(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+              'Chăm vừa đủ, để góc\nxanh luôn đẹp',
+              style: GoogleFonts.inter(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                height: 1.2,
               ),
             ),
+            const SizedBox(height: 16),
+            Container(
+              height: 1,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildHeroStat(Icons.water_drop_outlined, "Độ ổn định: 92%"),
+                const SizedBox(width: 16),
+                _buildHeroStat(Icons.schedule, "Lần tưới: 18:00"),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildHeroStat(Icons.wb_sunny_outlined, "Ánh sáng: Mềm"),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMyGardenSection(BuildContext context, bool isTablet) {
+  Widget _buildHeroStat(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white, size: 14),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMyGardenSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -300,106 +255,50 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Khu Vườn Của Tôi",
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+              "Khu vườn của tôi",
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B1C1A),
               ),
             ),
-            TextButton(
-              onPressed: () {},
-              child: Text(
-                "XEM TẤT CẢ",
-                style: GoogleFonts.beVietnamPro(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F9D58),
-                  letterSpacing: 0.8,
-                ),
+            Text(
+              "Xem tất cả",
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF444842),
               ),
             )
           ],
         ),
-        const SizedBox(height: 12),
-        // Tabs
+        const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
           child: Row(
             children: [
-              _buildTabButton(0, "Phòng Khách"),
-              const SizedBox(width: 12),
-              _buildTabButton(1, "Ban Công"),
+              _buildPlantCard(
+                title: "Monstera Deliciosa",
+                subtitle: "Góc phòng khách",
+                status: "Khỏe mạnh",
+                statusIcon: Icons.check_circle_outline,
+                statusColor: const Color(0xFF364534),
+                imageUrl: "https://picsum.photos/seed/plant8/400/400",
+              ),
+              const SizedBox(width: 16),
+              _buildPlantCard(
+                title: "Bàng Singapore",
+                subtitle: "Cạnh cửa sổ",
+                status: "Cần chú ý",
+                statusIcon: Icons.water_drop_outlined,
+                statusColor: const Color(0xFFBA1A1A),
+                imageUrl: "https://picsum.photos/seed/plant9/400/400",
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 18),
-        // List grid cay trong (Responsive dua tren screen width)
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: isTablet ? 4 : 2, // 4 cot cho tablet/web, 2 cot cho dien thoai
-          crossAxisSpacing: 15,
-          mainAxisSpacing: 15,
-          childAspectRatio: 0.72, // Ty le hop ly tranh tran text tren dien thoai
-          children: [
-            // Card 1
-            _buildPlantCard(
-              title: "Cây Trầu Bà",
-              subtitle: "Độ ẩm: 65%",
-              status: "Khỏe mạnh",
-              statusColor: const Color(0xFF0F9D58),
-              imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCLGMdnfgKQ5S7ZECtDqeuf1IhHTvTo1FIYMIwNWeVOwPom0eRMjmGU03CE_GaeP7nXSJ5Lo1j-F451SHDIJP6a0jD_F0MsdBtVTOOLQiSIB2URye-f_HasLaO1kM9fkOcvmrA4MznRm8kpHUJuFA2-oTdAWt6tXEJ55CZPyHB_zsus40DkbtutxRImn5Xa1X2Hahhh67mDNtL3zg2ukZWMcwXrJ1Al7uz9ceWXNCxrXQzULlQJl3mj5KBC-Q6CsYWrpoDC8OH4kaI",
-            ),
-            // Card 2
-            _buildPlantCard(
-              title: "Bàng Singapore",
-              subtitle: "Đất quá khô",
-              status: "Cần chú ý",
-              statusColor: const Color(0xFFBA1A1A),
-              imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBZUCeHemsEgwfzLEodiC6qzr-XC6YUd82qCkFV1ls7RXRfJSOmQtgC6FNhyEIoHsOhkx8PjO9Bg1qidgjgG8NgW7lYkHY56joGIbWFovJxVulUFoWyBDleu59WkHqSlIizXN4w8mSIIIG7WcYzg0CG2iE9pVw7M8Tp7JyNzoQyrRn_UTJNohxluCHoZjeRwDsVtl_VsMph2ft100MFnJA0oM1mdS2mwzI_YTfXeFkU-zkdtuxPKNEXouGJruyU1FxgYSyqKhkTYe4",
-            ),
-          ],
         )
       ],
-    );
-  }
-
-  Widget _buildTabButton(int index, String title) {
-    final bool isActive = _activeTab == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activeTab = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF006D35) : Colors.white.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive ? Colors.transparent : Colors.white.withValues(alpha: 0.5),
-            width: 0.5,
-          ),
-          boxShadow: [
-            if (isActive)
-              BoxShadow(
-                color: const Color(0xFF006D35).withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              )
-          ],
-        ),
-        child: Text(
-          title,
-          style: GoogleFonts.beVietnamPro(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : Colors.black54,
-          ),
-        ),
-      ),
     );
   }
 
@@ -407,97 +306,84 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required String status,
+    required IconData statusIcon,
     required Color statusColor,
     required String imageUrl,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: 200,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: statusColor == const Color(0xFFBA1A1A) 
-              ? const Color(0xFFBA1A1A).withValues(alpha: 0.2) 
-              : Colors.white.withValues(alpha: 0.5),
-          width: statusColor == const Color(0xFFBA1A1A) ? 1.0 : 0.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
+        color: const Color(0xFFFBF9F6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E2DF)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Anh cua cay va tag status
-          Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    image: DecorationImage(
-                      image: NetworkImage(imageUrl),
-                      fit: BoxFit.cover,
+          Container(
+            height: 140,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
+              ),
+              image: DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.cover,
+              ),
+            ),
+            alignment: Alignment.topRight,
+            padding: const EdgeInsets.all(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(statusIcon, size: 12, color: statusColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    status,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
                     ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1B1C1A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF444842),
                   ),
                 ),
-                // Tag trang thai
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: statusColor.withValues(alpha: 0.2),
-                          blurRadius: 4,
-                        )
-                      ],
-                    ),
-                    child: Text(
-                      status,
-                      style: GoogleFonts.beVietnamPro(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                )
               ],
             ),
-          ),
-          const SizedBox(height: 12),
-          // Ten cay
-          Text(
-            title,
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          // Thong so do am / dat kho
-          Text(
-            subtitle,
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: statusColor == const Color(0xFFBA1A1A) ? const Color(0xFFBA1A1A) : Colors.black45,
-            ),
-          ),
+          )
         ],
       ),
     );
@@ -505,80 +391,91 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildAIAssistantSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
+        color: const Color(0xFFD6E8CF), // primary-fixed
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFE8F2E3),
+            Color(0xFFD4E8CE),
+          ],
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.3), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF00E676).withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00E676).withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.smart_toy, color: Color(0xFF006D35), size: 24),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Trợ Lý AI',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF006D35),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Xin chào, tôi là trợ lý chăm sóc cây trồng của bạn, tôi có thể giúp gì cho bạn?',
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 14,
-              color: const Color(0xFF3B4A3D),
-              height: 1.5,
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.auto_awesome,
+              size: 140,
+              color: Colors.white.withOpacity(0.5),
             ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
-                );
-              },
-              icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.white),
-              label: Text(
-                'Trò chuyện mới',
-                style: GoogleFonts.beVietnamPro(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF364534),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Trợ lý AI Floria',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006D35),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 12),
+                Text(
+                  'Chẩn đoán bệnh qua ảnh và nhận\nlời khuyên chăm cây cá nhân hóa.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF444842),
+                    height: 1.4,
+                  ),
                 ),
-                elevation: 4,
-                shadowColor: const Color(0xFF006D35).withValues(alpha: 0.4),
-              ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AiAssistantScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF364534),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Hỏi ngay',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              ],
             ),
           )
         ],
@@ -591,14 +488,23 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Lịch Chăm Sóc Hôm Nay",
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+          "Lịch chăm sóc hôm nay",
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1B1C1A),
           ),
         ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 4),
+        Text(
+          "Ba bước nhỏ, đủ tạo khác biệt",
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF444842),
+          ),
+        ),
+        const SizedBox(height: 16),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -608,120 +514,78 @@ class _HomeScreenState extends State<HomeScreen> {
             final task = _tasks[index];
             final bool isDone = task["isCompleted"];
 
-            return AnimatedOpacity(
-              duration: const Duration(milliseconds: 300),
-              opacity: isDone ? 0.6 : 1.0,
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 0.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.01),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    )
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          // Icon task
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: isDone ? Colors.grey[200] : task["color"].withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              task["icon"],
-                              color: isDone ? Colors.grey[500] : task["color"],
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          // Thong tin task
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  task["title"],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.beVietnamPro(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDone ? Colors.black38 : Colors.black87,
-                                    decoration: isDone ? TextDecoration.lineThrough : null,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                // Thoi gian con lai
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.schedule,
-                                      size: 13,
-                                      color: isDone ? Colors.black26 : const Color(0xFF0F9D58),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        task["subtitle"],
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.beVietnamPro(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDone ? Colors.black26 : const Color(0xFF0F9D58),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDone ? const Color(0xFFEFEEEA) : const Color(0xFFFBF9F6),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE4E2DF)),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        task["isCompleted"] = !task["isCompleted"];
+                      });
+                    },
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: isDone ? const Color(0xFF364534) : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDone ? Colors.transparent : const Color(0xFF747871),
+                          width: 1.5,
+                        ),
                       ),
+                      child: isDone
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          : null,
                     ),
-                    // Checkbox nut tron
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          task["isCompleted"] = !task["isCompleted"];
-                          if (task["isCompleted"]) {
-                            task["subtitle"] = "Hoàn thành lúc 20:00";
-                          } else {
-                            task["subtitle"] = task["id"] == 1 ? "Còn 2 giờ" : "Còn 4 giờ";
-                          }
-                        });
-                      },
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: isDone ? const Color(0xFF0F9D58) : Colors.transparent,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDone ? Colors.transparent : Colors.grey[400]!,
-                            width: 2,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task["title"],
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1B1C1A),
                           ),
                         ),
-                        child: isDone
-                            ? const Icon(Icons.check, size: 16, color: Colors.white)
-                            : null,
-                      ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.schedule, size: 14, color: Color(0xFF444842)),
+                            const SizedBox(width: 4),
+                            Text(
+                              task["time"],
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: const Color(0xFF444842),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  if (task["image"] != null) ...[
+                    const SizedBox(width: 12),
+                    CustomImage(
+                      imageUrl: task["image"],
+                      width: 48,
+                      height: 48,
+                      borderRadius: BorderRadius.circular(8),
+                    )
+                  ]
+                ],
               ),
             );
           },
@@ -730,78 +594,91 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBottomNavBar(BuildContext context) {
-    return Container(
-      height: 72,
-      margin: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 0.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, -2),
-          )
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavButton(Icons.home, "Trang Chủ", true),
-          _buildNavButton(Icons.eco, "Khu Vườn", false),
-          
-          // Nut chup anh noi o giua
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ScanScreen()),
-              );
-            },
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F9D58),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFF0F9D58),
-                    blurRadius: 15,
-                    offset: Offset(0, 5),
-                  )
-                ],
+  Widget _buildCamNangXanhSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Cẩm nang xanh",
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B1C1A),
               ),
-              child: const Icon(Icons.photo_camera, color: Colors.white, size: 26),
             ),
+            Text(
+              "Xem tất cả",
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF444842),
+              ),
+            )
+          ],
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          child: Row(
+            children: [
+              _buildCamNangCard(
+                title: "Bí quyết tưới cây đúng\ncách",
+                imageUrl: "https://picsum.photos/seed/plant10/400/400",
+              ),
+              const SizedBox(width: 16),
+              _buildCamNangCard(
+                title: "Top 5 cây lọc không khí",
+                imageUrl: "https://picsum.photos/seed/plant11/400/400",
+              ),
+            ],
           ),
-          
-          _buildNavButton(Icons.shopping_cart, "Cửa Hàng", false),
-          _buildNavButton(Icons.person, "Cá Nhân", false),
-        ],
-      ),
+        )
+      ],
     );
   }
 
-  Widget _buildNavButton(IconData icon, String label, bool isActive) {
-    return Expanded(
+  Widget _buildCamNangCard({
+    required String title,
+    required String imageUrl,
+  }) {
+    return Container(
+      width: 240,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBF9F6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E2DF)),
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: isActive ? const Color(0xFF0F9D58) : Colors.black38,
-            size: 24,
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
+              ),
+              image: DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: isActive ? const Color(0xFF0F9D58) : Colors.black38,
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B1C1A),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           )
         ],
@@ -809,3 +686,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+

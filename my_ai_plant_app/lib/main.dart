@@ -8,6 +8,8 @@ import 'features/scan/providers/scan_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
+import 'features/splash/screens/splash_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -53,14 +55,7 @@ class MyApp extends StatelessWidget {
           child: child!,
         );
       },
-      home: Consumer<AuthProvider>(
-        builder: (context, auth, child) {
-          if (auth.isLoggedIn) {
-            return const MainNavigationScreen();
-          }
-          return const LoginScreen();
-        },
-      ),
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/widgets/custom_image.dart';
+import 'dart:ui';
 
 class PlantDiaryScreen extends StatelessWidget {
   const PlantDiaryScreen({super.key});
@@ -7,252 +9,292 @@ class PlantDiaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white.withValues(alpha: 0.8),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF006D35)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Nhật Ký Sinh Trưởng',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF006D35),
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF006D35).withValues(alpha: 0.2)),
-                image: const DecorationImage(
-                  image: NetworkImage("https://lh3.googleusercontent.com/aida-public/AB6AXuDemLqKWqMxeR-gRWoWPkZiP48KvPLsSAIX7j7MOsK470A-XlwaX1yuRwY5RvPnhzfD-gTUd89gKAvh0s1p7dCGKhoCmeWAzRsRkjYN6tNKXd3UqVv3-yOyx7BobE8SWhNVhSD-mP5kEblmLc9oSgHLQ95oOkEhMo4OhLWiBI3r5iA-lpC72zxt4m5yFpgaQH9jqOkacjb-D9pIMXJxx4vSK05jBQan1QcqVQdc7ivhLDutoaCGrWIOp39IyW26zyLzUAc9QRa-KHk"),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
+      backgroundColor: const Color(0xFFFBF9F6),
       body: Stack(
         children: [
-          // Vertical Timeline Line
-          Positioned(
-            left: 36,
-            top: 20,
-            bottom: 40,
-            child: Container(
-              width: 4,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(2),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF00E676), Color(0xFF006D35)],
-                ),
-              ),
-            ),
-          ),
+          // Timeline Content
           ListView(
-            padding: const EdgeInsets.only(top: 20, bottom: 100, right: 20),
+            padding: const EdgeInsets.only(top: 110, bottom: 100, left: 24, right: 24),
             children: [
-              _buildTimelineItem(
-                context,
-                date: "15/06/2026",
-                title: "Phát hiện Bệnh Đốm Lá",
-                description: "Đã áp dụng phác đồ trị nấm Bio-Shield định kỳ 2 lần/tuần.",
-                dotColor: Colors.red,
-                tag: "Đã khỏi bệnh",
-                isError: true,
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+              Stack(
+                children: [
+                  // Timeline vertical line
+                  Positioned(
+                    left: 15,
+                    top: 16,
+                    bottom: 32, // Stop slightly before the end
+                    child: Container(
+                      width: 2,
+                      color: const Color(0xFFD6E8CF), // primary-fixed
+                    ),
                   ),
-                  child: Row(
+                  // Timeline items
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.medical_services, color: Colors.red),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Phác đồ điều trị", style: GoogleFonts.beVietnamPro(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold)),
-                          Text("Bio-Shield Nano Silver v2.0", style: GoogleFonts.beVietnamPro(fontSize: 13, color: Colors.black87)),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              _buildTimelineItem(
-                context,
-                date: "01/05/2026",
-                title: "Đổi chậu mới & Thêm đất",
-                description: "Cây phát triển nhanh, rễ bắt đầu bó hẹp nên đã chuyển sang chậu sứ size L (30cm).",
-                dotColor: const Color(0xFF006D35),
-                isError: false,
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    children: [
-                      _buildImageGridItem("https://lh3.googleusercontent.com/aida-public/AB6AXuDGol63XhseWfCmzAWVCJv2QhcPwKcGowE9hKUhybcQsNU8qcyMKSehYSllMebdJuXcyVM9Mt9Q5Zju-Zk3dOtI-f5F5BW2F_O127mVhgefdWpdmfH-3FOxXKB7BpeHrdmqpcrPMzUqNN1KvnTDTD3-VsOUzHmeOmkLl-iDbAfLLYfmmRHoCXRtGyXi5CjqWPZKnR48G0Vocmo4s-Akvre-IdKfygrLvsqRfubG6Xd4D6CQ0drpbLNBfGTW-dftYru1tiFRnuCYSE4"),
-                      _buildImageGridItem("https://lh3.googleusercontent.com/aida-public/AB6AXuCQFXe_5MPdz5Ap0LArVgJvshhu_dlEj3CSVHyyrIQbJgdd_jv2PUKolvYcIOyJSk_Dk3bJxwSvx1M_MsSUEeePGrd2Fnbor37kz7dd4q1xBVf80o6D2P_Ry8GkvhaIHRWkVDGKxn3tpPqMmNMpmkt7m2LgbGDxFbC-HTPLB-QV2xzxRjChJKuegosIEPxpQciYbw5aeayMR-f9dIig2rGKqe9fOtFDfbVUDBBBzMqLg6tiUPEIGcl99GB8x8eRlgD4b3DHdBzkP5E"),
-                      _buildImageGridItem("https://lh3.googleusercontent.com/aida-public/AB6AXuDKOQePztq7UQCF48cIWoWeCmWMMqp5QDUo0AmyfOLtqRw3ky3ARy19Y7sb5GNk38DekNAhaBZrSayqweRYOIr0uyqDZlycWQ1QVFba1EZwMH5ECwzZl1tNpcVmkghfI2Q9ldna3RFQzPwNYsonSiUiNCTJleJ1XrjwPREUL2BcaUJnkjuYmx9a9lW_atsdCWuB7E59xD72JcGFNPHFJt1Nm8LszZtz_ed2CiS1fEN3UYFuWUMM0KkV29tWC7l8O3HRX0OjiZ0ULww"),
-                      Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _buildImageGridItem("https://lh3.googleusercontent.com/aida-public/AB6AXuAKgdjHssSyLgFbRE48NZhKG58kZBgXOltG9Z8O1ebQ-zWXa9PH06H-JhUPHXT6Rl1N1yWuqKZ_mVYIJC-Nr6L2AAaEZUqWtV3HR1NSiJDXrGxP6oK4rMf8r6jq_kLIgjT_suLASRL1EKS37MXgK-5WA54CTAHe1AsT9OFOi6cMQjRvZgMTU8LwY5c-hHTNkagRSXBdiReTb24YDVbxGV8Y2xk3IkxGOBS5X2JwSCLsrVX_EhU3MFZvXq-IFE6JgTN7yeh5aHuk20s"),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.4),
+                      _buildTimelineItem(
+                        icon: Icons.photo_camera,
+                        iconBgColor: const Color(0xFF364534), // primary
+                        iconColor: Colors.white,
+                        date: "29 Tháng 6, 2026",
+                        tag: "Đâm chồi",
+                        tagBgColor: const Color(0xFFD6E8CF),
+                        tagTextColor: const Color(0xFF364534),
+                        content: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CustomImage(
+                              imageUrl: "https://picsum.photos/seed/plant5/400/400",
+                              width: double.infinity,
+                              height: 160,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Center(
-                              child: Text("+12", style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                            const SizedBox(height: 12),
+                            Text(
+                              "Nay để ý thấy em nó nhú thêm 2 lá non. Có vẻ rất thích loại đất mùn mới thay tuần trước.",
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: const Color(0xFF444842),
+                                height: 1.5,
+                              ),
                             ),
-                          )
-                        ],
-                      )
+                          ],
+                        ),
+                      ),
+                      _buildTimelineItem(
+                        icon: Icons.medical_services,
+                        iconBgColor: const Color(0xFFFFF3CD),
+                        iconColor: const Color(0xFF856404),
+                        date: "15 Tháng 5, 2026",
+                        tag: "Sâu bệnh",
+                        tagBgColor: const Color(0xFFFFF3CD),
+                        tagTextColor: const Color(0xFF856404),
+                        content: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF9E6),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFFF3CD)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.warning, color: Color(0xFF856404), size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Phát hiện rệp sáp ở nách lá. Đã dùng cồn lau sạch và cách ly.",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: const Color(0xFF856404),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      _buildTimelineItem(
+                        icon: Icons.eco,
+                        iconBgColor: Colors.white,
+                        iconColor: const Color(0xFF747871), // outline
+                        iconBorderColor: const Color(0xFFC4C8BF), // outline-variant
+                        date: "1 Tháng 1, 2026",
+                        tag: "Ngày đầu tiên",
+                        tagBgColor: const Color(0xFFE4E2DF), // surface-variant
+                        tagTextColor: const Color(0xFF444842), // on-surface-variant
+                        content: Text(
+                          "Chính thức rước em về góc ban công. Hy vọng em sẽ phát triển tốt!",
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: const Color(0xFF444842),
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF00E676),
-        child: const Icon(Icons.add, color: Color(0xFF006D35)),
-      ),
-    );
-  }
-
-  Widget _buildTimelineItem(BuildContext context, {
-    required String date,
-    required String title,
-    required String description,
-    required Color dotColor,
-    String? tag,
-    required bool isError,
-    Widget? child,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 60),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Dot Indicator
-          Positioned(
-            left: -32,
-            top: 2,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: dotColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: dotColor.withValues(alpha: 0.3), width: 4),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 14, color: Color(0xFF3B4A3D)),
-                  const SizedBox(width: 4),
-                  Text(
-                    date,
-                    style: GoogleFonts.beVietnamPro(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF3B4A3D)),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border(left: BorderSide(color: isError ? Colors.red : Colors.transparent, width: 4)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: GoogleFonts.beVietnamPro(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isError ? Colors.red : const Color(0xFF006D35),
-                            ),
-                          ),
-                        ),
-                        if (tag != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF006D35).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              tag.toUpperCase(),
-                              style: GoogleFonts.beVietnamPro(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF006D35)),
-                            ),
-                          )
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: GoogleFonts.beVietnamPro(fontSize: 14, color: const Color(0xFF3B4A3D)),
-                    ),
-                    ?child,
-                  ],
-                ),
-              )
             ],
           ),
+
+          // Sticky Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 16, bottom: 16, left: 24, right: 24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBF9F6).withOpacity(0.8),
+                    border: const Border(bottom: BorderSide(color: Color(0x4DC4C8BF))),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildHeaderButton(Icons.keyboard_arrow_left, () => Navigator.pop(context)),
+                      Column(
+                        children: [
+                          Text(
+                            "Nhật ký phát triển",
+                            style: GoogleFonts.inter(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1B1C1A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      _buildHeaderButton(Icons.filter_list, () {}),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(right: 8, bottom: 8),
+        child: ElevatedButton.icon(
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF364534),
+            foregroundColor: Colors.white,
+            elevation: 8,
+            shadowColor: const Color(0xFF364534).withOpacity(0.4),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          icon: const Icon(Icons.edit_square, size: 20),
+          label: Text(
+            "Viết nhật ký",
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildImageGridItem(String url) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        image: DecorationImage(
-          image: NetworkImage(url),
-          fit: BoxFit.cover,
+  Widget _buildHeaderButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFC4C8BF)),
         ),
+        child: Icon(icon, color: const Color(0xFF1B1C1A), size: 20),
+      ),
+    );
+  }
+
+  Widget _buildTimelineItem({
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    Color? iconBorderColor,
+    required String date,
+    required String tag,
+    required Color tagBgColor,
+    required Color tagTextColor,
+    required Widget content,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Node icon
+          Positioned(
+            left: 0,
+            top: 0,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: iconBorderColor ?? const Color(0xFFFBF9F6),
+                  width: iconBorderColor != null ? 2 : 4,
+                ),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                ],
+              ),
+              child: Icon(icon, color: iconColor, size: 16),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.only(left: 48),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFC4C8BF).withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4D5D4A).withOpacity(0.04),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        date,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1B1C1A),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: tagBgColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          tag,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: tagTextColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  content,
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

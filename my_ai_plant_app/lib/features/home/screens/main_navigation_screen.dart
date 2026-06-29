@@ -22,7 +22,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const HomeScreen(isEmbedded: true), // Bao cho HomeScreen biet no dang duoc nhung
+      const HomeScreen(isEmbedded: true),
       const GardenScreen(),
       const ScanScreen(),
       const ShopScreen(),
@@ -39,120 +39,140 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(
-              color: Colors.black.withValues(alpha: 0.06),
-              width: 1,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
+      backgroundColor: const Color(0xFFFBF9F6), // surface color
+      extendBody: false, // Tắt để không cho nội dung cuộn luồn ra sau thanh Nav Menu
+      body: SizedBox.expand(
+        child: IndexedStack(
+          index: _currentIndex,
+          children: _screens,
         ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 72,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildNavButton(Icons.home_outlined, Icons.home, "Trang Chủ", 0),
-                _buildNavButton(Icons.eco_outlined, Icons.eco, "Khu Vườn", 1),
-                
-                // Nút chụp ảnh nổi ở giữa giống Google Stitch
-                SizedBox(
-                  width: 64,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        top: -24,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ScanScreen()),
-                              );
-                            },
-                            child: Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF006D35),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color(0xFFF5F7FA), // Màu nền Scaffold
-                                  width: 4,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF006D35).withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
-                                  )
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.photo_camera,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          height: 72,
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBF9F6), // Solid color, no glass effect to prevent content bleeding
+            borderRadius: BorderRadius.circular(36), // Bo tron
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF364534).withOpacity(0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: const Color(0xFFE4E2DF),
+                spreadRadius: 1, // Vien mong
+              )
+            ],
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double maxWidth = constraints.maxWidth;
+              
+              // Sử dụng khoảng cách linh hoạt (vd: 3% chiều rộng) để các icon không bị dính vào nhau
+              final double spacing = maxWidth * 0.035; 
+              final double availableWidth = maxWidth - (spacing * 4);
+              
+              // Giảm tỷ lệ active xuống 2.2 để các nút inactive có thêm không gian thở
+              final double inactiveWidth = availableWidth / 6.2;
+              final double activeWidth = inactiveWidth * 2.2;
+
+              double activeLeft = 0;
+              for (int i = 0; i < _currentIndex; i++) {
+                activeLeft += inactiveWidth + spacing;
+              }
+
+              return Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  // Viên thuốc trượt (Sliding Pill)
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutCubic,
+                    left: activeLeft,
+                    width: activeWidth,
+                    height: 48,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFEEEA), // Màu nền khi active
+                        borderRadius: BorderRadius.circular(24),
                       ),
+                    ),
+                  ),
+                  // Các nút bấm nằm đè lên trên
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildNavButton(Icons.home_outlined, Icons.home, "Trang chủ", 0, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.eco_outlined, Icons.eco, "Khu vườn", 1, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.camera_alt_outlined, Icons.camera_alt, "Camera", 2, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.shopping_bag_outlined, Icons.shopping_bag, "Cửa hàng", 3, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.person_outline, Icons.person, "Cá nhân", 4, activeWidth, inactiveWidth),
                     ],
                   ),
-                ),
-                
-                _buildNavButton(Icons.shopping_cart_outlined, Icons.shopping_cart, "Cửa Hàng", 3),
-                _buildNavButton(Icons.person_outline, Icons.person, "Cá Nhân", 4),
-              ],
-            ),
+                ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavButton(IconData normalIcon, IconData activeIcon, String label, int index) {
+  Widget _buildNavButton(IconData normalIcon, IconData activeIcon, String label, int index, double activeWidth, double inactiveWidth) {
     final bool isActive = _currentIndex == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => _onTabTapped(index),
-        behavior: HitTestBehavior.translucent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isActive ? activeIcon : normalIcon,
-              color: isActive ? const Color(0xFF006D35) : Colors.black38,
-              size: 24,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.beVietnamPro(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: isActive ? const Color(0xFF006D35) : Colors.black38,
+    return GestureDetector(
+      onTap: () => _onTabTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        width: isActive ? activeWidth : inactiveWidth,
+        height: 48.0,
+        alignment: Alignment.center,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: Icon(
+                  isActive ? activeIcon : normalIcon,
+                  key: ValueKey<bool>(isActive),
+                  color: isActive ? const Color(0xFF364534) : const Color(0xFF747871),
+                  size: isActive ? 22 : 24,
+                ),
               ),
-            )
-          ],
+              AnimatedSize(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  width: isActive ? null : 0,
+                  child: ClipRect(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: isActive ? 6.0 : 0.0),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.clip,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF364534),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

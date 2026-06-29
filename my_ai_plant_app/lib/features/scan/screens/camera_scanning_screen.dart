@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/scan_provider.dart';
+import 'dart:ui';
 import 'diagnosis_report_screen.dart';
 
 class CameraScanningScreen extends StatefulWidget {
@@ -119,257 +120,169 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
     }
   }
 
+  void _toggleCamera() async {
+    if (_cameras == null || _cameras!.length < 2) return;
+    try {
+      final lensDirection = _controller!.description.lensDirection;
+      CameraDescription newCamera = _cameras!.firstWhere(
+        (camera) => camera.lensDirection != lensDirection,
+        orElse: () => _cameras!.first,
+      );
+      
+      await _controller?.dispose();
+      _controller = CameraController(
+        newCamera,
+        ResolutionPreset.veryHigh,
+        enableAudio: false,
+      );
+      await _controller!.initialize();
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint("Toggle camera error: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scanProvider = Provider.of<ScanProvider>(context);
     final hasImage = scanProvider.selectedImage != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF151E16),
+      backgroundColor: Colors.black,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           // Background / Camera View
-          Positioned.fill(
-            child: hasImage && scanProvider.webImageBytes != null
-                ? Image.memory(
-                    scanProvider.webImageBytes!,
-                    fit: BoxFit.cover,
-                  )
-                : (_isCameraInitialized
-                    ? SizedBox(
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: _controller!.value.previewSize!.height,
-                            height: _controller!.value.previewSize!.width,
-                            child: CameraPreview(_controller!),
-                          ),
-                        ),
-                      )
-                    : const Center(child: CircularProgressIndicator(color: Color(0xFF00E676)))),
-          ),
+          if (hasImage && scanProvider.webImageBytes != null)
+            Image.memory(
+              scanProvider.webImageBytes!,
+              fit: BoxFit.cover,
+            )
+          else if (_isCameraInitialized && _controller != null)
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller!.value.previewSize?.height ?? 1,
+                  height: _controller!.value.previewSize?.width ?? 1,
+                  child: CameraPreview(_controller!),
+                ),
+              ),
+            )
+          else
+            const Center(child: CircularProgressIndicator(color: Color(0xFFD6E8CF))),
 
           // Lớp nền tối mờ khi đã chọn ảnh
           if (hasImage)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.3),
-              ),
-            ),
-          
-          // Header
+            Container(color: Colors.black.withValues(alpha: 0.3)),
+
+          // Top Action Bar
           Positioned(
-            top: 50,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 20,
+            right: 20,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildGlassButton(
+                  icon: Icons.close,
+                  onTap: () {
+                    if (hasImage) {
+                      scanProvider.reset();
+                    } else {
+                      if (Navigator.canPop(context)) Navigator.pop(context);
+                    }
+                  },
+                ),
+                Row(
+                  children: [
+                    _buildGlassButton(
+                      icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                      onTap: _toggleFlash,
                     ),
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                      onPressed: () {
-                        if (hasImage) {
-                          scanProvider.reset();
-                        } else {
-                          if (Navigator.canPop(context)) Navigator.pop(context);
-                        }
+                    const SizedBox(width: 16),
+                    _buildGlassButton(
+                      icon: Icons.help_outline,
+                      onTap: () {
+                        // Show help
                       },
                     ),
-                  ),
-                  Text(
-                    hasImage ? 'Đang phân tích...' : 'Quét Cây Trồng',
-                    style: GoogleFonts.beVietnamPro(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        const Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2))
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 40), // Spacer
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
           
-          // Camera Focus Frame
-          Positioned(
-            top: 120,
-            bottom: hasImage ? 120 : 220,
-            left: 20,
-            right: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: hasImage ? Colors.white.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.4), 
-                  width: hasImage ? 2 : 1
-                ),
-                borderRadius: BorderRadius.circular(32),
-                color: hasImage ? Colors.transparent : null,
-              ),
-              child: Stack(
+          // Viewfinder Reticle
+          if (!hasImage)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Focus Corners
-                  Positioned(top: 20, left: 20, child: _buildFocusCorner(isTop: true, isLeft: true)),
-                  Positioned(top: 20, right: 20, child: _buildFocusCorner(isTop: true, isLeft: false)),
-                  Positioned(bottom: 20, left: 20, child: _buildFocusCorner(isTop: false, isLeft: true)),
-                  Positioned(bottom: 20, right: 20, child: _buildFocusCorner(isTop: false, isLeft: false)),
-                  
-                  // Scanning Line Animation (Neon Effect)
-                  if (hasImage && scanProvider.isLoading)
-                    AnimatedBuilder(
-                      animation: _scanAnimation,
-                      builder: (context, child) {
-                        return Positioned(
-                          top: _scanAnimation.value * (MediaQuery.of(context).size.height - 380),
-                          left: 0,
-                          right: 0,
-                          child: child!,
-                        );
-                      },
+                  SizedBox(
+                    width: 260,
+                    height: 260,
+                    child: Stack(
+                      children: [
+                        Positioned(top: 0, left: 0, child: _buildFocusCorner(isTop: true, isLeft: true)),
+                        Positioned(top: 0, right: 0, child: _buildFocusCorner(isTop: true, isLeft: false)),
+                        Positioned(bottom: 0, left: 0, child: _buildFocusCorner(isTop: false, isLeft: true)),
+                        Positioned(bottom: 0, right: 0, child: _buildFocusCorner(isTop: false, isLeft: false)),
+                        
+                        // Scanning Line Animation
+                        if (scanProvider.isLoading)
+                          AnimatedBuilder(
+                            animation: _scanAnimation,
+                            builder: (context, child) {
+                              return Positioned(
+                                top: _scanAnimation.value * 260,
+                                left: 0,
+                                right: 0,
+                                child: child!,
+                              );
+                            },
+                            child: Container(
+                              height: 2,
+                              width: double.infinity,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFD6E8CF),
+                                boxShadow: [
+                                  BoxShadow(color: Color(0xFFD6E8CF), blurRadius: 8),
+                                ]
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // Instructional Text
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        height: 4,
-                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00E676),
-                          boxShadow: [
-                            BoxShadow(color: const Color(0xFF00E676).withValues(alpha: 0.8), blurRadius: 20, spreadRadius: 5),
-                            BoxShadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 2),
-                          ]
+                          color: Colors.black.withValues(alpha: 0.4),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          scanProvider.isLoading ? 'Đang phân tích...' : 'Đưa lá bệnh vào giữa khung hình',
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white),
                         ),
                       ),
                     ),
-                  
-                  if (!hasImage)
-                    Center(
-                      child: Icon(Icons.center_focus_weak, size: 64, color: Colors.white.withValues(alpha: 0.5)),
-                    )
+                  ),
                 ],
               ),
             ),
-          ),
-          
-          // Bottom Action Sheet
-          if (!hasImage)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.only(top: 32, bottom: 40, left: 20, right: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.95),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-                  boxShadow: [
-                    BoxShadow(color: const Color(0xFF00E676).withValues(alpha: 0.08), blurRadius: 40, offset: const Offset(0, -10))
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Đưa lá cây vào giữa khung hình',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.beVietnamPro(fontSize: 14, color: const Color(0xFF3B4A3D), fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        // Gallery Button
-                        GestureDetector(
-                          onTap: () => _handleGallerySelected(scanProvider),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 56, height: 56,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE6F1E4),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.photo_library, size: 28, color: Color(0xFF3B4A3D)),
-                              ),
-                              const SizedBox(height: 8),
-                              Text('Thư viện', style: GoogleFonts.beVietnamPro(fontSize: 12, color: const Color(0xFF3B4A3D))),
-                            ],
-                          ),
-                        ),
-                        
-                        // Main Capture Button
-                        GestureDetector(
-                          onTap: () => _captureFromCamera(scanProvider),
-                          child: Container(
-                            width: 96, height: 96,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.3), width: 4),
-                            ),
-                            child: Center(
-                              child: Container(
-                                width: 80, height: 80,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF00E676),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: const Color(0xFF00E676).withValues(alpha: 0.4), blurRadius: 20)],
-                                ),
-                                child: Center(
-                                  child: Container(
-                                    width: 64, height: 64,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: const Color(0xFF00612E).withValues(alpha: 0.2), width: 2),
-                                    ),
-                                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        // Flash Button
-                        GestureDetector(
-                          onTap: _toggleFlash,
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 56, height: 56,
-                                decoration: BoxDecoration(
-                                  color: _isFlashOn ? const Color(0xFF00E676) : const Color(0xFFE6F1E4),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _isFlashOn ? Icons.flash_on : Icons.flash_off, 
-                                  size: 28, 
-                                  color: _isFlashOn ? Colors.white : const Color(0xFF3B4A3D)
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text('Đèn Flash', style: GoogleFonts.beVietnamPro(fontSize: 12, color: const Color(0xFF3B4A3D))),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ),
-            
+
+          // Error Message
           if (hasImage && scanProvider.errorMessage != null)
             Positioned(
-              bottom: 40,
+              top: MediaQuery.of(context).size.height / 2 + 150,
               left: 20,
               right: 20,
               child: Container(
@@ -384,28 +297,160 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
                   textAlign: TextAlign.center,
                 ),
               ),
-            )
+            ),
+            
+          // Bottom Controls Area
+          if (!hasImage)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 40,
+              left: 20,
+              right: 20,
+              child: Column(
+                children: [
+                  // Mode Switcher
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Nhận diện cây',
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.7)),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF364534), // primary
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                                ],
+                              ),
+                              child: Text(
+                                'Chẩn đoán bệnh',
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Shutter Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Gallery Button
+                      GestureDetector(
+                        onTap: () => _handleGallerySelected(scanProvider),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                              ),
+                              child: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 24),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Shutter Button
+                      GestureDetector(
+                        onTap: () => _captureFromCamera(scanProvider),
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
+                            ],
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFF364534), width: 2),
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.document_scanner, color: Color(0xFF364534), size: 32),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Flip Camera Button
+                      _buildGlassButton(
+                        icon: Icons.flip_camera_ios,
+                        size: 48,
+                        onTap: _toggleCamera,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGlassButton({required IconData icon, required VoidCallback onTap, double size = 40}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size / 2),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Icon(icon, color: Colors.white, size: size * 0.5),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildFocusCorner({required bool isTop, required bool isLeft}) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         border: Border(
-          top: isTop ? const BorderSide(color: Color(0xFF00E676), width: 3) : BorderSide.none,
-          bottom: !isTop ? const BorderSide(color: Color(0xFF00E676), width: 3) : BorderSide.none,
-          left: isLeft ? const BorderSide(color: Color(0xFF00E676), width: 3) : BorderSide.none,
-          right: !isLeft ? const BorderSide(color: Color(0xFF00E676), width: 3) : BorderSide.none,
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: isTop && isLeft ? const Radius.circular(12) : Radius.zero,
-          topRight: isTop && !isLeft ? const Radius.circular(12) : Radius.zero,
-          bottomLeft: !isTop && isLeft ? const Radius.circular(12) : Radius.zero,
-          bottomRight: !isTop && !isLeft ? const Radius.circular(12) : Radius.zero,
+          top: isTop ? const BorderSide(color: Colors.white, width: 2) : BorderSide.none,
+          bottom: !isTop ? const BorderSide(color: Colors.white, width: 2) : BorderSide.none,
+          left: isLeft ? const BorderSide(color: Colors.white, width: 2) : BorderSide.none,
+          right: !isLeft ? const BorderSide(color: Colors.white, width: 2) : BorderSide.none,
         ),
       ),
     );
