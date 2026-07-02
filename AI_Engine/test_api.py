@@ -8,8 +8,8 @@ img_byte_arr = io.BytesIO()
 img.save(img_byte_arr, format='JPEG')
 img_byte_arr = img_byte_arr.getvalue()
 
-# 2. Gửi request POST test với cả 3 mô hình đang chạy trên API
-models = ["efficientnetb0", "mobilenetv2", "resnet50v2"]
+# 2. Gửi request POST test với mô hình onnx mới
+models = ["mobilenetv3_large_100"]
 
 print("BAT DAU THU NGHIEM API PREDICT:")
 for model in models:

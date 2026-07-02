@@ -98,6 +98,21 @@ Hệ thống được thiết kế theo mô hình Microservices bao gồm 3 ph�
 *   **Kiến trúc CustomImage**: Viết lại hệ thống tải ảnh với thành phần `CustomImage` (wrapper), thay thế hoàn toàn cho `Image.network` mặc định. Hệ thống này tự động hiện Skeleton khi đang tải, và báo biểu tượng lỗi (lá cây) một cách duyên dáng khi mất mạng hay lỗi 404 (cụ thể đã cứu thành công banner trang shop bị lỗi ảnh Unsplash). Đã ứng dụng `CustomImage` rải khắp các màn hình chính như Home, Shop, Garden, Plant Detail, và Plant Diary.
 
 ---
+## 4.7. Các Công Việc Đã Hoàn Thành (Hôm nay - 02/07/2026)
+
+### Tối ưu Giao diện Nhận Diện & Từ Điển Cây (Verdant Care Template)
+*   **Thiết kế lại Báo Cáo Chẩn Đoán (`DiagnosisReportScreen`)**: Tinh chỉnh giao diện bám sát bản thiết kế mẫu với tông màu xanh rêu (`#6d7f69`), xử lý các nhãn (tags) động ("Khớp tốt nhất", "Đang xử lý...", "Cảnh báo bệnh") thay vì gán cứng mã HTML/Text tĩnh.
+*   **Thiết kế lại Từ Điển Cây (`PlantWikiScreen`)**: Nâng cấp hiệu ứng Glassmorphism, thanh cuộn linh hoạt (`SliverAppBar`), chuyển màu nền Navbar tự động theo độ cuộn màn hình. Thêm các lưới đặc tính sinh thái với Icon được tinh chỉnh chi tiết (Mặt trời, Giọt nước, v.v.).
+*   **Hiệu ứng Chuyển Trang & UI/UX**: Chuyển đổi hiệu ứng mở trang sang Native Android Fragment (fade & slide) bằng `MaterialPageRoute`. Xử lý triệt để hiệu ứng "nháy đỏ" khó chịu khi ấn nút Back bằng cách cấu hình delay 400ms chờ animation trượt màn hình kết thúc rồi mới tiến hành `reset()` bộ nhớ Cache hình ảnh.
+*   **Sửa lỗi Reload Data**: Tối ưu hóa hiệu năng bằng cách lưu cache biến `Future` vào trong `State`, dập tắt hoàn toàn tình trạng màn hình bị chớp Loading giật cục mỗi khi thoát từ trang chi tiết (PlantWiki) quay lại màn hình Báo Cáo.
+
+### Quản lý Dữ liệu Backend (Python AI_Engine & Firebase)
+*   **Cập nhật Cơ sở dữ liệu Cây (`plants_data.json`)**: Viết thêm các kịch bản Python (`add_characteristics.py`) tự động tra cứu và bổ sung các trường dữ liệu bị thiếu như đặc điểm nhận dạng (`identification`), loại rễ (`root_type`), độc tính (`toxicity`), và đổi tên biến ánh sáng thành `light`.
+*   **Đồng bộ Firestore**: Thực thi script `upload_to_firebase.py` đẩy toàn bộ metadata của 40 cây chuẩn xác lên bộ sưu tập (Collection) `plants_info` trên Firebase. Đã kết nối thành công UI app hiển thị dữ liệu thật kéo từ Firebase thay vì code cứng.
+*   **Dọn dẹp Source Code Python**: Quét và dọn dẹp các tập tin rác, các scripts di chuyển dữ liệu một lần (one-off scripts).
+*   **Cập nhật Dependencies**: Đồng bộ lại file `requirements.txt` của AI Engine với các thư viện thực tế đang chạy (`torch`, `transformers`, `onnxruntime`, `firebase-admin`), tránh lỗi môi trường khi deploy lên server.
+
+---
 ## 5. Các Task Đang Chạy Nền (Active Tasks)
 *   *Hiện tại tất cả các Background Tasks cho Web và Mobile đã được hoàn thành.*
 
@@ -115,3 +130,48 @@ Hệ thống được thiết kế theo mô hình Microservices bao gồm 3 ph�
 **Bước 3: Hoàn thiện Cửa hàng (Shop & Payment)**
 - Xử lý logic Giỏ hàng.
 - Nối API thanh toán đơn giản cho các màn hình UI đã code.
+
+---
+
+## 7. Cấu Trúc Cơ Sở Dữ Liệu (Firebase Firestore)
+
+Dưới đây là sơ đồ cấu trúc của các bộ sưu tập (Collections) hiện đang được lưu trữ trên hệ thống cơ sở dữ liệu NoSQL Firebase Firestore.
+
+### 7.1. Collection: `plants_info`
+Lưu trữ hồ sơ thực vật, từ điển bách khoa toàn thư cho cây cảnh và cây trồng.
+*   **Document ID**: Tên khoa học hoặc tên tiếng Anh (VD: `Adenium obesum`, `Aloe vera`)
+*   **Fields**:
+    *   `name_vi` (String): Tên tiếng Việt của cây (VD: "Cây hoa sứ")
+    *   `scientific_name` (String): Tên khoa học
+    *   `family` (String): Họ thực vật (VD: "Apocynaceae (Họ Trúc đào)")
+    *   `plant_type` (String): Loại cây (VD: "Cây mọng nước")
+    *   `origin` (String): Nguồn gốc xuất xứ
+    *   `difficulty` (String): Mức độ chăm sóc (Dễ/Trung bình/Khó)
+    *   `light` (String): Nhu cầu ánh sáng (VD: "Nắng trực tiếp")
+    *   `water_frequency` (String): Tần suất tưới nước (VD: "1 lần/tuần")
+    *   `temperature` (String): Nhiệt độ phù hợp (VD: "25-35°C")
+    *   `humidity` (String): Độ ẩm phù hợp
+    *   `short_desc` (String): Mô tả ngắn gọn xuất hiện ở Card
+    *   `wiki_detail` (String): Đoạn giới thiệu chi tiết, bách khoa toàn thư
+    *   `placements` (Array[String]): Gợi ý vị trí đặt (VD: ["Ban công", "Sân thượng"])
+    *   `identification` (String): Đặc điểm nhận dạng hình thái
+    *   `root_type` (String): Loại rễ cây (VD: "Rễ củ phình to")
+    *   `toxicity` (String): Tình trạng độc tính (nếu có)
+
+### 7.2. Collection: `ScanHistory`
+Lưu trữ nhật ký phân tích, quét ảnh chẩn đoán bệnh của người dùng.
+*   **Document ID**: Auto-generated ID do Firebase tạo ngẫu nhiên
+*   **Fields**:
+    *   `userId` (String): Định danh của người dùng (Firebase Auth UID)
+    *   `prediction` (String): Kết quả nhận diện (Tên cây / Tên bệnh)
+    *   `confidence` (Number): Mức độ tin cậy (Tỉ lệ % do AI trả về)
+    *   `modelUsed` (String): Tên AI model đã sử dụng (VD: "efficientnetb0")
+    *   `timestamp` (Timestamp): Thời gian thực hiện quét
+
+### 7.3. Collection: `Users`
+Lưu trữ hồ sơ tài khoản và thông tin người dùng sử dụng ứng dụng.
+*   **Document ID**: User UID (Đồng bộ trực tiếp với Firebase Auth UID)
+*   **Fields**:
+    *   `email` (String): Địa chỉ email đăng ký
+    *   `name` (String): Tên hiển thị (Display Name)
+    *   `lastLogin` (Timestamp): Thời điểm truy cập ứng dụng gần nhất
