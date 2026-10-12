@@ -27,10 +27,20 @@ except Exception as e:
     print(f"Loi khi tai mo hinh: {e}")
 
 print("Dang tai mo hinh kiem duyet CLIP (Gatekeeper)...")
+cached_text_features = None
 try:
     clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-    print("Da tai xong mo hinh CLIP!")
+    clip_model.eval()
+    
+    # Ma hoa san (cache) dac trung van ban 1 lan duy nhat khi khoi dong
+    clip_prompts = ["a photo of a plant, leaf, tree, or flower", "a photo of an animal, human, or random object"]
+    text_inputs = clip_processor(text=clip_prompts, return_tensors="pt", padding=True)
+    with torch.inference_mode():
+        t_out = clip_model.get_text_features(**text_inputs)
+        text_features = t_out.pooler_output if hasattr(t_out, "pooler_output") else t_out
+        cached_text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+    print("Da tai xong mo hinh CLIP va ma hoa san (cache) dac trung van ban!")
 except Exception as e:
     print(f"Loi khi tai CLIP: {e}")
     clip_model = None
@@ -109,17 +119,20 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("mobilene
                 "message": "Ảnh quá tối hoặc thiếu chi tiết. Vui lòng chụp rõ lại cây!"
             }
             
-        # 2. Gatekeeper: CLIP (Chan cho meo, do vat)
-        if clip_model and clip_processor:
-            inputs = clip_processor(
-                text=["a photo of a plant, leaf, tree, or flower", "a photo of an animal, human, or random object"], 
-                images=image_pil, return_tensors="pt", padding=True
-            )
-            outputs = clip_model(**inputs)
-            logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
-            probs = logits_per_image.softmax(dim=1).detach().numpy()[0]
+        # 2. Gatekeeper: CLIP (Chan cho meo, do vat) - Toi uu hoa sieu toc voi cached text features
+        if clip_model and clip_processor and cached_text_features is not None:
+            with torch.inference_mode():
+                image_inputs = clip_processor(images=image_pil, return_tensors="pt")
+                i_out = clip_model.get_image_features(**image_inputs)
+                image_features = i_out.pooler_output if hasattr(i_out, "pooler_output") else i_out
+                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+                
+                # So sanh do tuong dong cosine giua anh va dac trung van ban da cache san
+                logit_scale = clip_model.logit_scale.exp()
+                logits = logit_scale * (image_features @ cached_text_features.T)
+                probs = logits.softmax(dim=-1).cpu().numpy()[0]
             
-            # Neu xac suat cua "animal, human, or random object" lon hon "plant"
+            # Neu xac suat cua "animal, human, or random object" (index 1) lon hon "plant" (index 0)
             if probs[1] > 0.5:
                 return {
                     "model_used": model_name,

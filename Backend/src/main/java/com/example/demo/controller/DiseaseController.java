@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api")
@@ -95,24 +97,81 @@ public class DiseaseController {
                 Map<String, Object> aiResponseBody = aiResponse.getBody();
                 result.putAll(aiResponseBody);
 
-                // 3. Luu lich su vao Firebase Firestore
+                // 3. Tra cuu thong tin chi tiet cua cay tu Firestore collection "plants_info" (Admin SDK)
                 if (firestore != null) {
-                    try {
-                        Map<String, Object> scanRecord = new HashMap<>();
-                        scanRecord.put("userId", userId);
-                        scanRecord.put("prediction", aiResponseBody.get("prediction"));
-                        scanRecord.put("confidence", aiResponseBody.get("confidence"));
-                        scanRecord.put("modelUsed", aiResponseBody.get("model_used"));
-                        scanRecord.put("timestamp", System.currentTimeMillis());
+                    Map<String, Object> plantsMap = new HashMap<>();
 
-                        // Luu vao collection "ScanHistory"
-                        firestore.collection("ScanHistory").add(scanRecord);
-                        result.put("saved_to_firestore", true);
-                    } catch (Exception e) {
-                        System.err.println("Loi khi luu vao Firestore: " + e.getMessage());
-                        result.put("saved_to_firestore", false);
-                        result.put("firestore_error", e.getMessage());
+                    // Tra cuu cho toan bo danh sach top_3 de co san name_vi cho tung vi tri
+                    if (aiResponseBody.get("top_3") instanceof java.util.List) {
+                        java.util.List<Map<String, Object>> top3List = (java.util.List<Map<String, Object>>) aiResponseBody.get("top_3");
+                        for (Map<String, Object> item : top3List) {
+                            if (item.get("class") != null) {
+                                String rawClass = item.get("class").toString();
+                                if (rawClass.contains("___")) {
+                                    rawClass = rawClass.substring(rawClass.lastIndexOf("___") + 3);
+                                }
+                                String cleanCls = rawClass.replaceAll("_", " ").trim();
+                                try {
+                                    DocumentSnapshot doc = firestore.collection("plants_info").document(cleanCls).get().get();
+                                    if (doc.exists()) {
+                                        Map<String, Object> docData = doc.getData();
+                                        item.put("name_vi", docData.get("name_vi"));
+                                        plantsMap.put(cleanCls, docData);
+                                    }
+                                } catch (Exception e) {
+                                    System.err.println("Loi khi tra cuu Firestore cho " + cleanCls + ": " + e.getMessage());
+                                }
+                            }
+                        }
                     }
+
+                    // Dong thoi gan plant_details cho prediction (top 1)
+                    if (aiResponseBody.get("prediction") != null) {
+                        String rawPred = aiResponseBody.get("prediction").toString();
+                        if (rawPred.contains("___")) {
+                            rawPred = rawPred.substring(rawPred.lastIndexOf("___") + 3);
+                        }
+                        String cleanPred = rawPred.replaceAll("_", " ").trim();
+                        if (plantsMap.containsKey(cleanPred)) {
+                            result.put("plant_details", plantsMap.get(cleanPred));
+                        } else {
+                            try {
+                                DocumentSnapshot plantDoc = firestore.collection("plants_info").document(cleanPred).get().get();
+                                if (plantDoc.exists()) {
+                                    Map<String, Object> docData = plantDoc.getData();
+                                    plantsMap.put(cleanPred, docData);
+                                    result.put("plant_details", docData);
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Loi khi tra cuu Firestore plants_info: " + e.getMessage());
+                            }
+                        }
+                    }
+                    result.put("plants_map", plantsMap);
+                }
+
+                // 4. Luu lich su vao Firebase Firestore (Chay ngam / Asynchronous de khong block response)
+                if (firestore != null) {
+                    final String fUserId = userId;
+                    final Object fPrediction = aiResponseBody.get("prediction");
+                    final Object fConfidence = aiResponseBody.get("confidence");
+                    final Object fModelUsed = aiResponseBody.get("model_used");
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            Map<String, Object> scanRecord = new HashMap<>();
+                            scanRecord.put("userId", fUserId);
+                            scanRecord.put("prediction", fPrediction);
+                            scanRecord.put("confidence", fConfidence);
+                            scanRecord.put("modelUsed", fModelUsed);
+                            scanRecord.put("timestamp", System.currentTimeMillis());
+
+                            // Luu vao collection "ScanHistory"
+                            firestore.collection("ScanHistory").add(scanRecord);
+                        } catch (Exception e) {
+                            System.err.println("Loi khi luu ngam vao Firestore: " + e.getMessage());
+                        }
+                    });
+                    result.put("saved_to_firestore", true);
                 }
 
                 return ResponseEntity.ok(result);
@@ -126,4 +185,23 @@ public class DiseaseController {
                     .body("Loi khi giao tiep voi AI Engine: " + e.getMessage());
         }
     }
+
+    @GetMapping("/plants/{id}")
+    public ResponseEntity<?> getPlantInfo(@PathVariable("id") String id) {
+        if (firestore == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Firebase Firestore chua duoc cau hinh.");
+        }
+        try {
+            String cleanId = id.replaceAll("_", " ").trim();
+            DocumentSnapshot doc = firestore.collection("plants_info").document(cleanId).get().get();
+            if (doc.exists()) {
+                return ResponseEntity.ok(doc.getData());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Khong tim thay cay trong Firestore: " + cleanId);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Loi khi doc Firestore: " + e.getMessage());
+        }
+    }
 }
+

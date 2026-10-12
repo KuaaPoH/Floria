@@ -5,8 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/scan_provider.dart';
 import '../../home/screens/main_navigation_screen.dart';
+import 'package:dio/dio.dart';
+import '../../../core/constants/app_constants.dart';
 import 'plant_wiki_screen.dart';
 import 'dart:ui';
+import 'dart:async';
+import '../../garden/providers/garden_provider.dart';
 
 class DiagnosisReportScreen extends StatefulWidget {
   final bool isDiseaseScan;
@@ -20,8 +24,65 @@ class DiagnosisReportScreen extends StatefulWidget {
 class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   int _selectedResultIndex = 0;
   bool _isSwitching = false;
-  Future<DocumentSnapshot?>? _plantDataFuture;
+  Future<Map<String, dynamic>?>? _plantDataFuture;
   String? _currentDocId;
+  OverlayEntry? _topNotificationEntry;
+
+  @override
+  void dispose() {
+    _topNotificationEntry?.remove();
+    _topNotificationEntry = null;
+    super.dispose();
+  }
+
+  // Lấy dữ liệu cây trồng 100% động từ đám mây (Firestore & Spring Boot Backend Gateway)
+  Future<Map<String, dynamic>?> _fetchPlantData(String docId, ScanProvider scanProvider) async {
+    if (docId.isEmpty) return null;
+    String queryId = docId.replaceAll('_', ' ').trim();
+
+    // 1. Kiểm tra trong plants_map đính kèm sẵn từ Backend
+    if (scanProvider.scanResult != null && scanProvider.scanResult!['plants_map'] != null) {
+      final pMap = scanProvider.scanResult!['plants_map'];
+      if (pMap is Map && pMap[queryId] != null) {
+        return Map<String, dynamic>.from(pMap[queryId]);
+      }
+    }
+
+    // 2. Nếu Backend Spring Boot đính kèm plant_details và trùng khớp với queryId đang tìm
+    if (scanProvider.scanResult != null && scanProvider.scanResult!['plant_details'] != null) {
+      final details = scanProvider.scanResult!['plant_details'];
+      if (details is Map) {
+        String? plantSci = details['scientific_name']?.toString().replaceAll('_', ' ').trim().toLowerCase();
+        String? plantPred = scanProvider.scanResult!['prediction']?.toString().replaceAll('_', ' ').trim().toLowerCase();
+        if (queryId.toLowerCase() == plantSci || queryId.toLowerCase() == plantPred) {
+          return Map<String, dynamic>.from(details);
+        }
+      }
+    }
+
+    // 3. Thử truy vấn trực tiếp Firestore client cho đúng cây queryId
+    try {
+      final doc = await FirebaseFirestore.instance.collection('plants_info').doc(queryId).get();
+      if (doc.exists && doc.data() != null) {
+        return doc.data();
+      }
+    } catch (e) {
+      debugPrint("Lỗi đọc Firestore client trực tiếp cho $queryId: $e");
+    }
+
+    // 4. Fallback qua Spring Boot Gateway (Admin SDK đọc Firestore không bị chặn Security Rules)
+    try {
+      final dio = Dio();
+      final res = await dio.get("${AppConstants.baseUrl}/plants/$queryId");
+      if (res.statusCode == 200 && res.data is Map) {
+        return Map<String, dynamic>.from(res.data);
+      }
+    } catch (e) {
+      debugPrint("Lỗi đọc cây qua Backend Gateway: $e");
+    }
+
+    return null;
+  }
 
   // Design Tokens (Verdant Care Template)
   static const Color primary = Color(0xFF6d7f69);
@@ -101,14 +162,62 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(context, confidence),
+                _buildHeader(context, confidence, scanProvider.isLoading),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (!isValidPlant)
+                        if (scanProvider.errorMessage != null)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.cloud_off_rounded, color: Colors.red, size: 24),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        "Lỗi kết nối máy chủ",
+                                        style: GoogleFonts.inter(
+                                          color: Colors.red.shade900,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  scanProvider.errorMessage!,
+                                  style: GoogleFonts.inter(color: Colors.red.shade800, fontSize: 13),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  onPressed: () => Navigator.pop(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF364534),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  ),
+                                  icon: const Icon(Icons.arrow_back, size: 16),
+                                  label: const Text("Quay lại kiểm tra"),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (!isValidPlant && scanProvider.errorMessage == null)
                           Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(16),
@@ -122,7 +231,10 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                 const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(message, style: GoogleFonts.inter(color: Colors.red.shade800, fontWeight: FontWeight.w600, fontSize: 13)),
+                                  child: Text(
+                                    message.isNotEmpty ? message : "Hệ thống phát hiện ảnh không phải thực vật hoặc quá mờ.",
+                                    style: GoogleFonts.inter(color: Colors.red.shade800, fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
                                 ),
                               ],
                             ),
@@ -152,9 +264,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
       if (docId.contains('___')) {
          docId = docId.split('___').last;
       }
+    } else if (scanProvider.scanResult != null && scanProvider.scanResult!['prediction'] != null) {
+      String pred = scanProvider.scanResult!['prediction'].toString();
+      if (pred != "Không hợp lệ" && pred != "Không phải cây") {
+        docId = pred.contains('___') ? pred.split('___').last : pred;
+      }
     }
     
-    if (scanProvider.isLoading || _isSwitching) {
+    if (scanProvider.isLoading) {
       return AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: Column(
@@ -162,7 +279,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           children: [
             _buildHeroCard(scanProvider, mainTitle, null, confidence),
             const SizedBox(height: 16),
-            _buildResultStack(scanProvider),
+            _buildResultStackSkeleton(),
             const SizedBox(height: 16),
             _buildSkeletonCard(),
             const SizedBox(height: 16),
@@ -171,6 +288,78 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             _buildActionPills(context, scanProvider, docId, null),
           ],
         ),
+      );
+    }
+
+    if (scanProvider.errorMessage != null || docId.isEmpty) {
+      return Column(
+        children: [
+          _buildHeroCard(scanProvider, mainTitle, null, confidence),
+          const SizedBox(height: 16),
+          if (top3.isNotEmpty) _buildResultStack(scanProvider),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: primary.withOpacity(0.12)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  scanProvider.errorMessage != null ? Icons.wifi_off_rounded : Icons.spa_outlined,
+                  size: 44,
+                  color: textMuted,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  scanProvider.errorMessage != null
+                      ? "Không thể nhận kết quả từ máy chủ"
+                      : "Không thể nhận diện rõ loại cây này",
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: text,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  scanProvider.errorMessage != null
+                      ? "Vui lòng kiểm tra kết nối tới Backend Spring Boot trên cổng 8080."
+                      : "Hãy chụp ảnh lại gần hơn, đầy đủ ánh sáng và lấy nét trực diện vào lá cây.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: textMuted,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryStrong,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                  label: Text("Chụp lại ảnh khác", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildActionPills(context, scanProvider, docId, null),
+        ],
       );
     }
 
@@ -192,20 +381,22 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
     if (_currentDocId != docId) {
       _currentDocId = docId;
-      _plantDataFuture = docId.isNotEmpty ? FirebaseFirestore.instance.collection('plants_info').doc(docId).get() : Future<DocumentSnapshot?>.value(null);
+      _plantDataFuture = docId.isNotEmpty ? _fetchPlantData(docId, scanProvider) : Future.value(null);
     }
 
-    return FutureBuilder<DocumentSnapshot?>(
+    return FutureBuilder<Map<String, dynamic>?>(
       future: _plantDataFuture,
       builder: (context, snapshot) {
+        Map<String, dynamic>? plantData = snapshot.data;
+
         Widget child;
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && plantData == null) {
            child = Column(
              key: const ValueKey('waiting'),
              children: [
                _buildHeroCard(scanProvider, mainTitle, null, confidence),
                const SizedBox(height: 16),
-               _buildResultStack(scanProvider),
+               _buildResultStack(scanProvider, null),
                const SizedBox(height: 16),
                _buildSkeletonCard(),
                const SizedBox(height: 16),
@@ -218,23 +409,23 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
            child = Column(
              key: ValueKey(docId),
              children: [
-               _buildHeroCard(scanProvider, mainTitle, snapshot.data?.data() as Map<String, dynamic>?, confidence),
+               _buildHeroCard(scanProvider, mainTitle, plantData, confidence),
                const SizedBox(height: 16),
-               _buildResultStack(scanProvider),
+               _buildResultStack(scanProvider, plantData),
                const SizedBox(height: 16),
-               if (snapshot.data?.data() == null) ...[
+               if (plantData == null && docId.isNotEmpty && snapshot.connectionState != ConnectionState.waiting) ...[
                  Center(
                    child: Padding(
                      padding: const EdgeInsets.all(16.0),
-                     child: Text("Không tìm thấy dữ liệu cho: '$docId'", style: const TextStyle(color: Colors.orange)),
+                     child: Text("Chưa có thông tin bách khoa trong cơ sở dữ liệu cho: '$docId'", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
                    ),
                  ),
                ],
-               _buildInfoCard(docId, snapshot.data?.data() as Map<String, dynamic>?),
+               _buildInfoCard(docId, plantData),
                const SizedBox(height: 16),
-               _buildCareCard(snapshot.data?.data() as Map<String, dynamic>?),
+               _buildCareCard(plantData),
                const SizedBox(height: 16),
-               _buildActionPills(context, scanProvider, docId, snapshot.data?.data() as Map<String, dynamic>?),
+               _buildActionPills(context, scanProvider, docId, plantData),
              ],
            );
         }
@@ -247,7 +438,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, double confidence) {
+  Widget _buildHeader(BuildContext context, double confidence, bool isLoading) {
      return Padding(
        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
        child: Row(
@@ -274,7 +465,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                      style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: text, letterSpacing: -0.5),
                    ),
                    Text(
-                     "${confidence.toInt()}%",
+                     isLoading ? "--%" : "${confidence.toInt()}%",
                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: widget.isDiseaseScan ? stateError : primaryStrong),
                    ),
                  ],
@@ -288,10 +479,17 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
   Widget _buildHeroCard(ScanProvider provider, String title, Map<String, dynamic>? data, double confidence) {
     String displayName = title;
-    if (!widget.isDiseaseScan && data == null) {
+    if (data != null && data['name_vi'] != null && data['name_vi'].toString().isNotEmpty) {
+      displayName = data['name_vi'].toString();
+    } else if (provider.scanResult != null && provider.scanResult!['top_3'] != null) {
+      List<dynamic> t3 = provider.scanResult!['top_3'];
+      if (_selectedResultIndex < t3.length && t3[_selectedResultIndex] is Map && t3[_selectedResultIndex]['name_vi'] != null) {
+        displayName = t3[_selectedResultIndex]['name_vi'].toString();
+      } else if (provider.isLoading || data == null) {
+        displayName = "Đang tra cứu...";
+      }
+    } else if (provider.isLoading || data == null) {
       displayName = "Đang tra cứu...";
-    } else if (data != null && data['name_vi'] != null) {
-      displayName = "${data['name_vi']}";
     }
 
     return Container(
@@ -397,7 +595,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     if (!widget.isDiseaseScan && data != null && data['placements'] != null)
                       ...((data['placements'] as List<dynamic>).map((e) => _buildTag(e.toString()))),
                     if (!widget.isDiseaseScan && data == null)
-                      _buildTag("Đang tra cứu..."),
+                      _buildTag(provider.isLoading ? "Đang tra cứu..." : "Cây cảnh"),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -455,20 +653,42 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-  Widget _buildResultStack(ScanProvider scanProvider) {
-    const Map<String, String> plantNameViMap = {
-      "Adenium obesum": "Cây hoa sứ", "Aglaonema commutatum": "Cây ngọc ngân", "Alocasia amazonica": "Môn quan âm", "Alocasia macrorrhizos": "Cây ráy tai voi",
-      "Aloe vera": "Nha đam", "Anthurium andraeanum": "Hồng môn", "Asplenium nidus": "Ráng ổ phụng", "Begonia maculata": "Thu hải đường chấm bi",
-      "Bougainvillea glabra": "Hoa giấy", "Calathea makoyana": "Cây đuôi công", "Calathea orbifolia": "Cây đuôi công lá tròn", "Chlorophytum comosum": "Cỏ lan chi",
-      "Codiaeum variegatum": "Cây cô tòng", "Crassula ovata": "Cây ngọc bích", "Cycas revoluta": "Cây vạn tuế", "Dieffenbachia seguine": "Môn trường sinh đốm",
-      "Dracaena fragrans": "Thiết mộc lan", "Dracaena marginata": "Phất dụ mảnh", "Dracaena reflexa": "Trúc bách hợp", "Epipremnum aureum": "Trầu bà vàng",
-      "Euphorbia milii": "Hoa bát tiên", "Ficus benjamina": "Cây si", "Ficus elastica": "Đa búp đỏ", "Ficus lyrata": "Bàng Singapore",
-      "Hedera helix": "Thường xuân", "Maranta leuconeura": "Cây dạ lam", "Monstera deliciosa": "Trầu bà Nam Mỹ", "Nephrolepis exaltata": "Dương xỉ Boston",
-      "Pachira aquatica": "Cây kim ngân", "Peperomia obtusifolia": "Cây trường sinh", "Philodendron bipinnatifidum": "Trầu bà thanh xuân",
-      "Philodendron hederaceum": "Trầu bà lá tim", "Pilea peperomioides": "Cây cỏ gương", "Sansevieria trifasciata": "Cây lưỡi hổ", "Schefflera arboricola": "Ngũ gia bì",
-      "Schlumbergera truncata": "Lan càng cua", "Spathiphyllum wallisii": "Lan ý", "Syngonium podophyllum": "Tróc bạc", "Tradescantia zebrina": "Thài lài tía", "Zamioculcas zamiifolia": "Kim tiền"
-    };
+  // --- THẺ KHUNG XƯƠNG CHO ĐỘ TƯƠNG ĐỒNG KHI ĐANG QUÉT ---
+  Widget _buildResultStackSkeleton() {
+    return ShimmerLoading(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: Colors.white.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(width: 70, height: 10, decoration: BoxDecoration(color: Colors.black.withOpacity(0.06), borderRadius: BorderRadius.circular(5)), margin: const EdgeInsets.only(bottom: 6)),
+                    Container(width: 130, height: 18, decoration: BoxDecoration(color: Colors.black.withOpacity(0.06), borderRadius: BorderRadius.circular(6))),
+                  ],
+                ),
+                Container(width: 80, height: 24, decoration: BoxDecoration(color: Colors.black.withOpacity(0.06), borderRadius: BorderRadius.circular(12))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(height: 60, decoration: BoxDecoration(color: Colors.black.withOpacity(0.04), borderRadius: BorderRadius.circular(20)), margin: const EdgeInsets.only(bottom: 12)),
+            Container(height: 60, decoration: BoxDecoration(color: Colors.black.withOpacity(0.04), borderRadius: BorderRadius.circular(20))),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildResultStack(ScanProvider scanProvider, [Map<String, dynamic>? currentPlantData]) {
     List<dynamic> top3 = [];
     if (scanProvider.scanResult != null && scanProvider.scanResult!['top_3'] != null) {
       top3 = scanProvider.scanResult!['top_3'];
@@ -476,12 +696,25 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
     String getTitle(int index) {
       if (top3.length > index) {
+        var item = top3[index];
+        if (item is Map && item['name_vi'] != null && item['name_vi'].toString().isNotEmpty) {
+          return item['name_vi'].toString();
+        }
         String title = top3[index]['class'].toString();
         if (title.contains('___')) {
            title = title.split('___').last;
         }
-        title = title.replaceAll('_', ' ');
-        return plantNameViMap[title] ?? title;
+        String cleanTitle = title.replaceAll('_', ' ').trim();
+        if (scanProvider.scanResult != null && scanProvider.scanResult!['plants_map'] != null) {
+          final pMap = scanProvider.scanResult!['plants_map'];
+          if (pMap is Map && pMap[cleanTitle] != null && pMap[cleanTitle]['name_vi'] != null) {
+            return pMap[cleanTitle]['name_vi'].toString();
+          }
+        }
+        if (index == _selectedResultIndex && currentPlantData != null && currentPlantData['name_vi'] != null) {
+          return currentPlantData['name_vi'].toString();
+        }
+        return cleanTitle;
       }
       return index == 1 ? "Gần giống" : "Ít khả năng";
     }
@@ -680,7 +913,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               children: [
                 Expanded(child: _buildInfoCell("Tên tiếng Việt", data?['name_vi'] ?? "Đang cập nhật...")),
                 const SizedBox(width: 12),
-                Expanded(child: _buildInfoCell("Tên quốc tế", mainTitle)),
+                Expanded(child: _buildInfoCell("Tên quốc tế", data?['scientific_name'] ?? mainTitle)),
               ],
             ),
           ),
@@ -898,7 +1131,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _showAddToGardenModal(context, scanProvider, docId, data),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryStrong,
                   foregroundColor: Colors.white,
@@ -981,6 +1214,476 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  void _showAddToGardenModal(
+    BuildContext context,
+    ScanProvider scanProvider,
+    String docId,
+    Map<String, dynamic>? data,
+  ) {
+    final nameVi = data?['name_vi'] ?? docId;
+    final scientificName = data?['scientific_name'] ?? docId;
+    final plantType = data?['plant_type'] ?? 'Cây cảnh';
+    
+    // Parse chu kỳ tưới nước
+    int freqDays = 3;
+    final waterFreqStr = data?['water_frequency']?.toString() ?? '2-3 lần/tuần';
+    if (waterFreqStr.contains('1 lần/tuần')) {
+      freqDays = 7;
+    } else if (waterFreqStr.contains('2-3 lần/tuần') || waterFreqStr.contains('2 lần/tuần')) {
+      freqDays = 3;
+    } else if (waterFreqStr.contains('ngày')) {
+      final match = RegExp(r'(\d+)').firstMatch(waterFreqStr);
+      if (match != null) {
+        freqDays = int.tryParse(match.group(1)!) ?? 3;
+      }
+    }
+
+    final nicknameCtrl = TextEditingController(text: nameVi);
+    String selectedZone = 'Phòng khách';
+    final List<String> zones = ['Phòng khách', 'Ban công', 'Bàn làm việc', 'Sân thượng', 'Phòng ngủ'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFBF9F6),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF364534).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.eco, color: Color(0xFF364534), size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Thêm vào Khu Vườn của bạn",
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1B1C1A),
+                                ),
+                              ),
+                              Text(
+                                nameVi,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFF6A756B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Biệt danh của cây",
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: nicknameCtrl,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                      cursorColor: const Color(0xFF364534),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: "Đặt tên đáng yêu cho cây...",
+                        prefixIcon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF6A756B)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFFE4E2DF)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFFE4E2DF)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFF364534), width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Vị trí đặt cây (Khu vực)",
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: zones.map((z) {
+                        final isSel = selectedZone == z;
+                        return ChoiceChip(
+                          label: Text(z),
+                          selected: isSel,
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedZone = z);
+                          },
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                            color: isSel ? Colors.white : const Color(0xFF444842),
+                          ),
+                          selectedColor: const Color(0xFF364534),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isSel ? Colors.transparent : const Color(0xFFE4E2DF),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF364534).withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.water_drop, color: Color(0xFF364534), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              "Lịch nhắc tưới: Mỗi $freqDays ngày một lần ($waterFreqStr)",
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: const Color(0xFF364534),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
+                          final success = await gardenProvider.addPlant(
+                            nameVi: nameVi,
+                            scientificName: scientificName,
+                            nickname: nicknameCtrl.text.trim().isNotEmpty ? nicknameCtrl.text.trim() : nameVi,
+                            zone: selectedZone,
+                            imageUrl: scanProvider.selectedImage != null
+                                ? scanProvider.selectedImage!.path
+                                : null,
+                            plantType: plantType,
+                            waterFrequencyDays: freqDays,
+                            notes: "Thêm từ lượt quét thông minh Floria AI",
+                            wikiData: data ?? {},
+                          );
+
+                          if (context.mounted) {
+                            if (success) {
+                              _showTopNotification(
+                                context: context,
+                                plantName: nicknameCtrl.text.trim().isNotEmpty ? nicknameCtrl.text.trim() : nameVi,
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(gardenProvider.errorMessage ?? "Có lỗi khi lưu vào vườn"),
+                                  backgroundColor: Colors.red.shade700,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF364534),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          elevation: 4,
+                        ),
+                        child: Text(
+                          "Xác nhận thêm vào vườn",
+                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showTopNotification({
+    required BuildContext context,
+    required String plantName,
+  }) {
+    _topNotificationEntry?.remove();
+    _topNotificationEntry = null;
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (ctx) => _TopNotificationCard(
+        plantName: plantName,
+        onGoToGarden: () {
+          entry.remove();
+          _topNotificationEntry = null;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const MainNavigationScreen(initialIndex: 1),
+            ),
+            (route) => false,
+          );
+        },
+        onDismiss: () {
+          if (_topNotificationEntry == entry) {
+            entry.remove();
+            _topNotificationEntry = null;
+          }
+        },
+      ),
+    );
+
+    _topNotificationEntry = entry;
+    overlay.insert(entry);
+  }
+}
+
+class _TopNotificationCard extends StatefulWidget {
+  final String plantName;
+  final VoidCallback onGoToGarden;
+  final VoidCallback onDismiss;
+
+  const _TopNotificationCard({
+    required this.plantName,
+    required this.onGoToGarden,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_TopNotificationCard> createState() => _TopNotificationCardState();
+}
+
+class _TopNotificationCardState extends State<_TopNotificationCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _fadeAnimation;
+  Timer? _dismissTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0, -0.6),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+
+    // Tự động biến mất sau 3.5 giây để không làm phiền người dùng
+    _dismissTimer = Timer(const Duration(milliseconds: 3500), () {
+      _closeNotification();
+    });
+  }
+
+  void _closeNotification() {
+    if (!mounted) return;
+    _dismissTimer?.cancel();
+    _controller.reverse().then((_) {
+      if (mounted) widget.onDismiss();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dismissTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Positioned(
+      top: topPadding + 16,
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: SlideTransition(
+          position: _offsetAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E3320), // Xanh lá đậm sang trọng
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+                border: Border.all(color: const Color(0xFF38573C), width: 1.2),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4E8CE).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle, color: Color(0xFF8CE095), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Đã lưu vào Khu Vườn! 🌱",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white, // Chữ trắng 100%
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "Cây '${widget.plantName}' đã sẵn sàng theo dõi.",
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.9), // Chữ trắng sáng
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _dismissTimer?.cancel();
+                      widget.onGoToGarden();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1E3320),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 2,
+                    ),
+                    child: Text(
+                      "ĐẾN VƯỜN",
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E3320), // Chữ xanh sẫm trên nền trắng
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: _closeNotification,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

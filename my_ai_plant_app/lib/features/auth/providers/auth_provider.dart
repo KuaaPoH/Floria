@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:dio/dio.dart';
+import '../../../core/constants/app_constants.dart';
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -54,7 +55,7 @@ class AuthProvider extends ChangeNotifier {
 
       final dio = Dio();
       final response = await dio.post(
-        'http://192.168.1.78:8080/api/auth/sync',
+        AppConstants.authSyncUrl,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       print("✅ Đồng bộ Spring Boot: ${response.data}");

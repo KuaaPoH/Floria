@@ -7,20 +7,22 @@ import '../../garden/screens/garden_screen.dart';
 import '../../shop/screens/shop_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final int initialIndex;
+  const MainNavigationScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
     _screens = [
       const HomeScreen(isEmbedded: true),
       const GardenScreen(),
@@ -28,6 +30,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       const ShopScreen(),
       const ProfileScreen(),
     ];
+  }
+
+  @override
+  void didUpdateWidget(covariant MainNavigationScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) {
+      setState(() {
+        _currentIndex = widget.initialIndex;
+      });
+    }
   }
 
   void _onTabTapped(int index) {

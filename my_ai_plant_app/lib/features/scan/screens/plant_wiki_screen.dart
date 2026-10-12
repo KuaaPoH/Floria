@@ -64,10 +64,11 @@ class _PlantWikiScreenState extends State<PlantWikiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String nameVi = widget.data['name_vi'] ?? widget.docId.replaceAll('_', ' ');
-    String scientificName = widget.data['scientific_name'] ?? 'Chưa cập nhật';
-    String family = widget.data['family'] ?? 'Chưa cập nhật';
-    String description = widget.data['wiki_detail'] ?? widget.data['description'] ?? widget.data['wiki_description'] ?? 'Chưa có thông tin bách khoa về loài cây này.';
+    final plantData = widget.data;
+    String nameVi = plantData['name_vi'] ?? widget.docId.replaceAll('_', ' ');
+    String scientificName = plantData['scientific_name'] ?? widget.docId.replaceAll('_', ' ');
+    String family = plantData['family'] ?? 'Chưa cập nhật';
+    String description = plantData['wiki_detail'] ?? plantData['description'] ?? plantData['wiki_description'] ?? 'Chưa có thông tin bách khoa về loài cây này.';
 
     return Scaffold(
       backgroundColor: surface,
@@ -199,21 +200,21 @@ class _PlantWikiScreenState extends State<PlantWikiScreen> {
                       // Grid
                       Row(
                         children: [
-                          Expanded(child: _buildCharacteristicCard(Icons.eco, "Đặc điểm nhận dạng", widget.data['identification'] ?? "Đang cập nhật thông tin")),
+                          Expanded(child: _buildCharacteristicCard(Icons.eco, "Đặc điểm nhận dạng", plantData['identification'] ?? "Đang cập nhật thông tin")),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildCharacteristicCard(Icons.light_mode, "Ánh sáng", widget.data['light'] ?? "Đang cập nhật thông tin")),
+                          Expanded(child: _buildCharacteristicCard(Icons.light_mode, "Ánh sáng", plantData['light'] ?? "Đang cập nhật thông tin")),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(child: _buildCharacteristicCard(Icons.grass, "Loại rễ", widget.data['root_type'] ?? "Đang cập nhật thông tin")),
+                          Expanded(child: _buildCharacteristicCard(Icons.grass, "Loại rễ", plantData['root_type'] ?? "Đang cập nhật thông tin")),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildCharacteristicCard(
                               Icons.warning_amber_rounded, 
                               "Độc tính", 
-                              widget.data['toxicity'] ?? "Chưa xác định", 
+                              plantData['toxicity'] ?? "Chưa xác định", 
                               isAlert: true,
                             ),
                           ),

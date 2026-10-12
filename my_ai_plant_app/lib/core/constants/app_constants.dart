@@ -1,6 +1,16 @@
+import 'package:flutter/foundation.dart';
+
 class AppConstants {
-  // URL cua Spring Boot Backend trung tam
-  static const String baseUrl = 'http://192.168.1.78:8080/api';
-  static const String scanDiseaseUrl = '$baseUrl/scan-disease';
-  static const String pingUrl = '$baseUrl/ping';
+  // URL của Spring Boot Backend trung tâm
+  // Tự động nhận diện nền tảng: Web dùng localhost:8080, thiết bị di động dùng IP mạng LAN
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:8080/api';
+    }
+    return 'http://192.168.1.88:8080/api';
+  }
+
+  static String get scanDiseaseUrl => '$baseUrl/scan-disease';
+  static String get pingUrl => '$baseUrl/ping';
+  static String get authSyncUrl => '$baseUrl/auth/sync';
 }

@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import 'plant_diary_screen.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../scan/screens/scan_screen.dart';
+import '../models/garden_plant.dart';
+import '../providers/garden_provider.dart';
 
 class PlantDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> plant;
+  final Map<String, dynamic>? plant;
+  final GardenPlant? gardenPlant;
 
-  const PlantDetailScreen({super.key, required this.plant});
+  const PlantDetailScreen({
+    super.key,
+    this.plant,
+    this.gardenPlant,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +40,7 @@ class PlantDetailScreen extends StatelessWidget {
                         const SizedBox(height: 24),
                         _buildQuickActions(context),
                         const SizedBox(height: 32),
-                        _buildCareSchedule(),
+                        _buildCareSchedule(context),
                       ],
                     ),
                   ),
@@ -76,10 +84,61 @@ class PlantDetailScreen extends StatelessWidget {
               child: Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), shape: BoxShape.circle),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
+                child: PopupMenuButton<String>(
                   icon: const Icon(Icons.more_horiz, color: Color(0xFF1B1C1A), size: 24),
-                  onPressed: () {},
+                  padding: EdgeInsets.zero,
+                  onSelected: (val) async {
+                    if (val == 'delete' && gardenPlant != null) {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Text("Xóa khỏi vườn?", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                          content: Text("Bạn có chắc muốn xóa cây '${gardenPlant!.nickname}' khỏi khu vườn của mình không?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text("Hủy", style: GoogleFonts.inter(color: Colors.grey.shade700)),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: Text("Xóa", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true && context.mounted) {
+                        await Provider.of<GardenProvider>(context, listen: false).removePlant(gardenPlant!.id);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Đã xóa '${gardenPlant!.nickname}' khỏi khu vườn."),
+                              backgroundColor: const Color(0xFF364534),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    if (gardenPlant != null)
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                            SizedBox(width: 8),
+                            Text("Xóa khỏi vườn", style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -90,6 +149,7 @@ class PlantDetailScreen extends StatelessWidget {
   }
 
   Widget _buildHeroImage(BuildContext context) {
+    final imgUrl = gardenPlant?.imageUrl ?? plant?["imageUrl"] ?? "https://picsum.photos/seed/plant4/400/400";
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
       child: Stack(
@@ -98,7 +158,7 @@ class PlantDetailScreen extends StatelessWidget {
             height: 360,
             width: double.infinity,
             child: CustomImage(
-              imageUrl: plant["imageUrl"] ?? "https://picsum.photos/seed/plant4/400/400",
+              imageUrl: imgUrl,
               width: double.infinity,
               height: 360,
             ),
@@ -121,6 +181,20 @@ class PlantDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMainInfoCard() {
+    final title = gardenPlant?.nickname ?? plant?["title"] ?? "Cây cảnh";
+    final sciName = gardenPlant?.scientificName ?? plant?["scientificName"] ?? "";
+    final location = gardenPlant?.zone ?? plant?["location"] ?? "Phòng khách";
+    final isWaterNeeded = gardenPlant?.isNeedsWater ?? false;
+    final statusText = isWaterNeeded ? "Cần tưới nước" : (gardenPlant?.healthStatus ?? plant?["status"] ?? "Khỏe mạnh");
+    final statusBg = isWaterNeeded ? const Color(0xFFFFF3E0) : const Color(0xFFE8F2E3);
+    final statusFg = isWaterNeeded ? const Color(0xFFE06C00) : const Color(0xFF364534);
+
+    final light = gardenPlant?.wikiData['light'] ?? "Nắng bán phần";
+    final waterFreq = gardenPlant != null
+        ? "Mỗi ${gardenPlant!.waterFrequencyDays} ngày"
+        : (plant?["waterFrequency"] ?? "Tưới 2-3 lần/tuần");
+    final temp = gardenPlant?.wikiData['temperature'] ?? "18-30°C";
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -147,24 +221,36 @@ class PlantDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      plant["title"] ?? "Bàng Singapore",
+                      title,
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1B1C1A),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    if (sciName.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        sciName,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          color: const Color(0xFF6A756B),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         const Icon(Icons.location_on, size: 14, color: Color(0xFF747871)),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            "Nhà của tôi • ${plant["location"] ?? 'Ban công'}",
+                            "Vị trí: $location",
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: const Color(0xFF747871),
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -175,24 +261,28 @@ class PlantDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F2E3), // Light green bg
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle, color: Color(0xFF364534), size: 14),
+                    Icon(
+                      isWaterNeeded ? Icons.water_drop : Icons.check_circle,
+                      color: statusFg,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      plant["status"] ?? "Khỏe mạnh",
+                      statusText,
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF364534),
+                        color: statusFg,
                       ),
                     ),
                   ],
@@ -206,9 +296,9 @@ class PlantDetailScreen extends StatelessWidget {
           ),
           Row(
             children: [
-              _buildMetricItem(Icons.light_mode, "Nắng bán phần"),
-              _buildMetricItem(Icons.water_drop, "Tưới 2 lần/tuần"),
-              _buildMetricItem(Icons.device_thermostat, "18-28°C"),
+              _buildMetricItem(Icons.light_mode, light),
+              _buildMetricItem(Icons.water_drop, waterFreq),
+              _buildMetricItem(Icons.device_thermostat, temp),
             ],
           ),
         ],
@@ -237,6 +327,8 @@ class PlantDetailScreen extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: const Color(0xFF1B1C1A),
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -270,7 +362,14 @@ class PlantDetailScreen extends StatelessWidget {
             label: "Floria AI",
             isPrimary: true,
             iconColor: const Color(0xFFFFD700), // Gold star
-            onTap: () {},
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Trợ lý AI Gemini sắp ra mắt trong bản cập nhật tới! 🤖🌱"),
+                  backgroundColor: Color(0xFF364534),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -328,7 +427,15 @@ class PlantDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCareSchedule() {
+  Widget _buildCareSchedule(BuildContext context) {
+    final isWaterNeeded = gardenPlant?.isNeedsWater ?? false;
+    final waterStatusText = isWaterNeeded
+        ? "Đã đến hạn tưới nước (Bấm để tưới)"
+        : (gardenPlant != null
+            ? "Còn ${gardenPlant!.daysUntilWater} ngày đến lượt tưới"
+            : "Hôm nay");
+    final timeColor = isWaterNeeded ? const Color(0xFFEA580C) : const Color(0xFF364534);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -343,20 +450,6 @@ class PlantDetailScreen extends StatelessWidget {
                 color: const Color(0xFF1B1C1A),
               ),
             ),
-            Row(
-              children: [
-                Text(
-                  "Xem tất cả",
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF364534),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, size: 18, color: Color(0xFF364534)),
-              ],
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -368,51 +461,38 @@ class PlantDetailScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildTaskItem(
-                icon: Icons.water_drop,
-                title: "Tưới nước",
-                time: "16:00 Hôm nay",
-                timeIcon: Icons.schedule,
-                timeColor: const Color(0xFFEA580C), // orange-600
-                isDone: false,
-                isLast: false,
+              GestureDetector(
+                onTap: () async {
+                  if (gardenPlant != null) {
+                    await Provider.of<GardenProvider>(context, listen: false).waterPlant(gardenPlant!.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Đã tưới nước cho '${gardenPlant!.nickname}'! 💧 Lần tưới tiếp theo sau ${gardenPlant!.waterFrequencyDays} ngày."),
+                          backgroundColor: const Color(0xFF364534),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: _buildTaskItem(
+                  icon: Icons.water_drop,
+                  title: "Tưới nước (${gardenPlant?.waterFrequencyDays ?? 3} ngày/lần)",
+                  time: waterStatusText,
+                  timeIcon: isWaterNeeded ? Icons.warning_amber_rounded : Icons.schedule,
+                  timeColor: timeColor,
+                  isDone: !isWaterNeeded,
+                  isLast: false,
+                ),
               ),
               _buildTaskItem(
                 icon: Icons.eco,
-                title: "Bón phân",
-                time: "Đã hoàn thành lúc 08:30",
+                title: "Kiểm tra sâu bệnh",
+                time: "Định kỳ hôm nay",
                 timeIcon: Icons.done,
                 timeColor: const Color(0xFF747871),
                 isDone: true,
                 isLast: true,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: const Color(0xFFC4C8BF),
-              width: 2,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.add, color: Color(0xFF747871), size: 18),
-              const SizedBox(width: 8),
-              Text(
-                "Thiết lập lịch định kỳ",
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF747871),
-                ),
               ),
             ],
           ),
