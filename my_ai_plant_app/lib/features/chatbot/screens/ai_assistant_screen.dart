@@ -1,9 +1,35 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../profile/screens/premium_screen.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../core/services/gemini_service.dart';
+
+class ChatMessageItem {
+  final bool isUser;
+  final String text;
+  final Uint8List? imageBytes;
+  final DateTime timestamp;
+
+  ChatMessageItem({
+    required this.isUser,
+    required this.text,
+    this.imageBytes,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+}
 
 class AiAssistantScreen extends StatefulWidget {
-  const AiAssistantScreen({super.key});
+  final String? plantNameVi;
+  final String? scientificName;
+  final String? diseaseContext;
+
+  const AiAssistantScreen({
+    super.key,
+    this.plantNameVi,
+    this.scientificName,
+    this.diseaseContext,
+  });
 
   @override
   State<AiAssistantScreen> createState() => _AiAssistantScreenState();
@@ -11,19 +37,209 @@ class AiAssistantScreen extends StatefulWidget {
 
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final ImagePicker _picker = ImagePicker();
+
+  final List<ChatMessageItem> _messages = [];
+  final List<Content> _chatHistory = [];
+
+  bool _isLoading = false;
+  bool _hasApiKey = false;
+  String _modelName = GeminiService.defaultModel;
+  Uint8List? _attachedImageBytes;
+
+  final List<String> _quickPrompts = [
+    "Cây bị vàng lá là do đâu?",
+    "Bao lâu nên tưới nước một lần?",
+    "Lá xuất hiện đốm nâu xử lý thế nào?",
+    "Cách bón phân an toàn cho cây trong nhà",
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkApiKey();
+    _setupPlantSpecificPrompts();
+    _initWelcomeMessage();
+  }
+
+  void _setupPlantSpecificPrompts() {
+    if (widget.plantNameVi != null && widget.plantNameVi!.isNotEmpty) {
+      final name = widget.plantNameVi!;
+      _quickPrompts
+        ..clear()
+        ..addAll([
+          "Lịch tưới & lượng nước cho $name?",
+          "Cây $name đặt ở đâu đủ sáng?",
+          "Dấu hiệu cây $name bị úng hoặc thiếu nước?",
+          "Loại phân bón tốt nhất cho $name?",
+          "Các bệnh và sâu hại hay gặp ở $name?",
+        ]);
+    }
+  }
+
+  Future<void> _checkApiKey() async {
+    final hasKey = await GeminiService.hasApiKey();
+    final model = await GeminiService.getModelName();
+    if (mounted) {
+      setState(() {
+        _hasApiKey = hasKey;
+        _modelName = model;
+      });
+    }
+  }
+
+  String _formatModelDisplay(String model) {
+    if (model == 'gemini-3.8-flash') return 'Gemini 3.8 Flash';
+    if (model == 'gemini-flash-lite-latest') return 'Gemini Flash-Lite';
+    if (model == 'gemini-3.5-flash-lite') return 'Gemini 3.5 Flash-Lite';
+    return model;
+  }
+
+  void _initWelcomeMessage() {
+    String welcome = "Xin chào! Tôi là Bác sĩ Cây trồng Floria AI 🌿\n\nTôi có thể giúp bạn chẩn đoán sâu bệnh, tư vấn lịch tưới nước, ánh sáng và phân bón chuẩn khoa học. Bạn có thể hỏi tôi bất kỳ thắc mắc nào hoặc đính kèm ảnh cây để tôi khám trực tiếp nhé!";
+    if (widget.plantNameVi != null && widget.plantNameVi!.isNotEmpty) {
+      final sci = widget.scientificName != null && widget.scientificName!.isNotEmpty ? ' (${widget.scientificName})' : '';
+      welcome = "Chào bạn! Tôi là Bác sĩ Cây trồng Floria AI 🌿\n\nTôi đang theo dõi chuyên sâu cho cây **${widget.plantNameVi}**$sci của bạn.\n${widget.diseaseContext != null ? '📌 *Tình trạng hiện tại: ${widget.diseaseContext}*\n\n' : '\n'}Tôi đã nạp đầy đủ thông tin sinh học của loài cây này. Bạn cần tôi hướng dẫn cách tưới nước, ánh sáng, nhiệt độ hay chẩn đoán triệu chứng bất thường nào trên cây?";
+    }
+    _messages.add(ChatMessageItem(isUser: false, text: welcome));
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _attachedImageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lỗi chọn ảnh: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleSendMessage({String? customText}) async {
+    final text = customText ?? _messageController.text.trim();
+    if (text.isEmpty && _attachedImageBytes == null) return;
+
+    if (!_hasApiKey) {
+      GeminiService.showApiKeyDialog(context, onSaved: () {
+        _checkApiKey();
+        if (text.isNotEmpty || _attachedImageBytes != null) {
+          _handleSendMessage(customText: text);
+        }
+      });
+      return;
+    }
+
+    final userImage = _attachedImageBytes;
+    setState(() {
+      _messages.add(ChatMessageItem(
+        isUser: true,
+        text: text.isEmpty && userImage != null ? "Khám bệnh cho cây qua hình ảnh này giúp tôi" : text,
+        imageBytes: userImage,
+      ));
+      _isLoading = true;
+      _messageController.clear();
+      _attachedImageBytes = null;
+    });
+    _scrollToBottom();
+
+    try {
+      String plantCtx = "";
+      if (widget.plantNameVi != null && widget.plantNameVi!.isNotEmpty) {
+        plantCtx = "Cây ${widget.plantNameVi} (${widget.scientificName ?? ''})";
+        if (widget.diseaseContext != null) {
+          plantCtx += ", tình trạng: ${widget.diseaseContext}";
+        }
+      }
+
+      final aiResponse = await GeminiService.chatWithDoctor(
+        prompt: text.isEmpty ? "Hãy phân tích tình trạng và loài cây trong ảnh này giúp tôi." : text,
+        history: _chatHistory,
+        imageBytes: userImage,
+        currentPlantContext: plantCtx,
+      );
+
+      // Cập nhật lịch sử chat cho Gemini
+      if (userImage != null) {
+        _chatHistory.add(Content.multi([
+          TextPart(text.isEmpty ? "Khám bệnh cho cây qua hình ảnh này giúp tôi" : text),
+          DataPart('image/jpeg', userImage),
+        ]));
+      } else {
+        _chatHistory.add(Content.text(text));
+      }
+      _chatHistory.add(Content.model([TextPart(aiResponse)]));
+
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessageItem(isUser: false, text: aiResponse));
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _messages.add(ChatMessageItem(
+            isUser: false,
+            text: "⚠️ Đã có sự cố khi kết nối với Bác sĩ Cây trồng AI: ${e.toString().replaceAll('Exception: ', '')}.\n\nVui lòng kiểm tra lại Google Gemini API Key hoặc kết nối mạng.",
+          ));
+        });
+        _scrollToBottom();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final String activePlant = widget.plantNameVi ?? "";
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF7F9F6),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(68),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
-            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 30, offset: const Offset(0, 4))
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              )
             ],
           ),
           child: SafeArea(
@@ -32,19 +248,25 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF3B4A3D), size: 20),
+                    icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF151E16), size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
+                      color: const Color(0xFF364534),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-                      image: const DecorationImage(
-                        image: NetworkImage("https://lh3.googleusercontent.com/aida-public/AB6AXuB5zVt1CIeekQEpNepKUd9D2tCaheeYaMLwMR8eDFdG2u_8IVM-klq50UmxW6LoqhseO8M548hIdUovyLTUBUgYHOENz9JfURxXETJ5OXuMDkBGdkjU5sI_dRr2O3ilAP6BegaqUFSShMw5yrozV3PfGjUval__xuFypTxY_tWBNar1CjpLp1pdhUxFsNjRE5tuhlBfOY8GrwxsuXXI2SzsCzh0BsYjNRCs83UsUWO-ht6IShf0bJG1_aJheThzyICMTgkEsha_aks"),
-                        fit: BoxFit.cover,
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF364534).withValues(alpha: 0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.psychology, color: Colors.white, size: 24),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -53,36 +275,49 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          "Bác sĩ Cây trồng AI",
-                          style: GoogleFonts.beVietnamPro(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF151E16)),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                            Text(
+                              "Bác sĩ Cây trồng AI",
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF151E16),
                               ),
-                              child: Row(
-                                children: [
-                                  Text("Floria DeepVision", style: GoogleFonts.beVietnamPro(fontSize: 10, fontWeight: FontWeight.w500, color: const Color(0xFF3B4A3D))),
-                                  const Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFF3B4A3D)),
-                                ],
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF00C853),
+                                shape: BoxShape.circle,
                               ),
                             ),
                           ],
-                        )
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _hasApiKey
+                              ? "Floria ${_formatModelDisplay(_modelName)} • Trực tuyến"
+                              : "Chưa kích hoạt API Key • Bấm để cài đặt",
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: _hasApiKey ? const Color(0xFF364534) : Colors.amber.shade800,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.more_vert, color: Color(0xFF3B4A3D)),
-                    onPressed: () {},
-                  )
+                    icon: Icon(
+                      Icons.settings_suggest_outlined,
+                      color: _hasApiKey ? const Color(0xFF364534) : Colors.amber.shade800,
+                    ),
+                    tooltip: "Cài đặt Gemini API Key",
+                    onPressed: () => GeminiService.showApiKeyDialog(context, onSaved: _checkApiKey),
+                  ),
                 ],
               ),
             ),
@@ -91,248 +326,361 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       ),
       body: Column(
         children: [
+          // Banner thông tin cây đang khám nếu có
+          if (activePlant.isNotEmpty) _buildContextBar(activePlant),
+
+          // Danh sách tin nhắn
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              children: [
-                _buildContextBar(),
-                const SizedBox(height: 24),
-                _buildAIBubble("Chào bạn! Với tình trạng cháy viền ở cây Trầu Bà, bạn có thể mô tả thêm về môi trường sống hiện tại của cây không? Ví dụ như lượng nước tưới, ánh sáng, hoặc có sử dụng phân bón gần đây không?"),
-                const SizedBox(height: 16),
-                _buildUserBubble("Lá cây trầu bà bị cháy viền thì có cần phun thuốc ngay không bợt?"),
-                const SizedBox(height: 16),
-                _buildTypingIndicator(),
-              ],
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              itemCount: _messages.length + (_isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length && _isLoading) {
+                  return _buildTypingIndicator();
+                }
+                final msg = _messages[index];
+                return _buildMessageBubble(msg);
+              },
             ),
           ),
+
+          // Danh sách gợi ý câu hỏi nhanh (Quick Prompts)
+          _buildQuickPromptsBar(),
+
+          // Thanh nhập tin nhắn và đính kèm
           _buildInputDock(),
         ],
       ),
     );
   }
 
-  Widget _buildContextBar() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 2))
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.local_florist, size: 16, color: Color(0xFF006D35)),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                "Đang trò chuyện về: Cây Trầu Bà (Bệnh Đốm Lá)",
-                style: GoogleFonts.beVietnamPro(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF3B4A3D)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+  Widget _buildContextBar(String plantName) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF364534).withValues(alpha: 0.08),
+        border: Border(bottom: BorderSide(color: const Color(0xFF364534).withValues(alpha: 0.1))),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_florist, size: 16, color: Color(0xFF364534)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "Đang trò chuyện về: $plantName ${widget.diseaseContext != null ? '(${widget.diseaseContext})' : ''}",
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF364534),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAIBubble(String message) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          margin: const EdgeInsets.only(bottom: 4, right: 8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: const DecorationImage(
-              image: NetworkImage("https://lh3.googleusercontent.com/aida-public/AB6AXuDqqA6miNtiN2oZhCs2AtAA0U52t1AOkHDZQ9xgRpNWVOTIVjwM3beLe-KIR6RVYyBTyqGszed_tooBzLb1rosZLviy2CihlsWJezqqQwCaODLVlr2SFA6JrFjLjYFyFPkgb3idYbdb1P2xlymHoRq4yxlSmsBs7RO2CNI7sGaomUyKOWhqbWo1B5fYAKqOzD-i_uEtiVzzbf1q0rYqCou7pbwHZtxzcleFpEv2RzlexiPA2u-u0ppoOhwa0q6rK045KnDreND32fM"),
-              fit: BoxFit.cover,
-            ),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-          ),
-        ),
-        Flexible(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.8),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-                bottomLeft: Radius.circular(4),
+  Widget _buildMessageBubble(ChatMessageItem msg) {
+    if (msg.isUser) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            const SizedBox(width: 48),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF364534),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(4),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF364534).withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (msg.imageBytes != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(
+                          msg.imageBytes!,
+                          width: 200,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      if (msg.text.isNotEmpty) const SizedBox(height: 8),
+                    ],
+                    if (msg.text.isNotEmpty)
+                      Text(
+                        msg.text,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          height: 1.45,
+                          color: Colors.white,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))
-              ],
             ),
-            child: Text(
-              message,
-              style: GoogleFonts.beVietnamPro(fontSize: 15, height: 1.5, color: const Color(0xFF151E16)),
-            ),
-          ),
+          ],
         ),
-        const SizedBox(width: 40), // Spacer
-      ],
-    );
-  }
-
-  Widget _buildUserBubble(String message) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        const SizedBox(width: 60), // Spacer
-        Flexible(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00E676),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(4),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              margin: const EdgeInsets.only(right: 10, top: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF364534).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF364534).withValues(alpha: 0.2)),
               ),
-              boxShadow: [
-                BoxShadow(color: const Color(0xFF00E676).withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 4))
-              ],
+              child: const Icon(Icons.eco, color: Color(0xFF364534), size: 18),
             ),
-            child: Text(
-              message,
-              style: GoogleFonts.beVietnamPro(fontSize: 15, height: 1.5, color: const Color(0xFF00612E)),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    topRight: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                  border: Border.all(color: const Color(0xFFE4E2DF)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: SelectableText(
+                  msg.text,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: const Color(0xFF1B1C1A),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 32),
+          ],
         ),
-      ],
-    );
+      );
+    }
   }
 
   Widget _buildTypingIndicator() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          margin: const EdgeInsets.only(bottom: 4, right: 8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: const DecorationImage(
-              image: NetworkImage("https://lh3.googleusercontent.com/aida-public/AB6AXuBkSg_kKM_XG31OnBoP0Efcu_jxYj-orAvD6fLBebvmXZ06TMzJUGOzvZog_9JH06tYHiOPqSkKagMIbd2arkQybKfYZYZSFKA8fk2CtysPEZDLPRFJRmMlDgk-4F52_E3Kb_cPJw35aaWT0R7oG0TUmgnMl3fP7DadHVdlwWgPq9jask1c5ur0k0Lz7QZudZaltt2h2rkUdBP9-blQJzHoL9l9mZ21Y4oc-3OwmFQL5tQChG-A5U0h3CjUtGGJcQ_xURQZ_PIGfyA"),
-              fit: BoxFit.cover,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF364534).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            child: const Icon(Icons.eco, color: Color(0xFF364534), size: 18),
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-              bottomLeft: Radius.circular(4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE4E2DF)),
             ),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF364534),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "Bác sĩ Cây trồng đang suy nghĩ...",
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: const Color(0xFF747871),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDot(0),
-              const SizedBox(width: 4),
-              _buildDot(150),
-              const SizedBox(width: 4),
-              _buildDot(300),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildDot(int delayMs) {
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      builder: (context, double value, child) {
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: Color(0xFF006D35),
-            shape: BoxShape.circle,
-          ),
-        );
-      },
+  Widget _buildQuickPromptsBar() {
+    return Container(
+      height: 42,
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _quickPrompts.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final prompt = _quickPrompts[index];
+          return ActionChip(
+            label: Text(
+              prompt,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF364534),
+              ),
+            ),
+            backgroundColor: Colors.white,
+            side: const BorderSide(color: Color(0xFFD4E8CE)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            onPressed: _isLoading ? null : () => _handleSendMessage(customText: prompt),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildInputDock() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+        color: Colors.white,
+        border: Border(top: BorderSide(color: const Color(0xFFE4E2DF))),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 32, offset: const Offset(0, -8))
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          )
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.attach_file, color: Color(0xFF3B4A3D)),
-              onPressed: () {},
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 120),
+            // Ảnh đính kèm xem trước nếu có
+            if (_attachedImageBytes != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
+                  color: const Color(0xFFF7F9F6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFD4E8CE)),
                 ),
-                child: TextField(
-                  controller: _messageController,
-                  maxLines: null,
-                  style: GoogleFonts.beVietnamPro(fontSize: 15, color: const Color(0xFF151E16)),
-                  decoration: InputDecoration(
-                    hintText: "Hỏi chuyên gia về cách chữa trị...",
-                    hintStyle: GoogleFonts.beVietnamPro(fontSize: 15, color: const Color(0xFF3B4A3D).withValues(alpha: 0.5)),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        _attachedImageBytes!,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Đã đính kèm ảnh cây để AI chẩn đoán",
+                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF364534), fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                      onPressed: () => setState(() => _attachedImageBytes = null),
+                    ),
+                  ],
+                ),
+              ),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF364534)),
+                  tooltip: "Chụp ảnh cây",
+                  onPressed: () => _pickImage(ImageSource.camera),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.photo_outlined, color: Color(0xFF364534)),
+                  tooltip: "Chọn ảnh từ thư viện",
+                  onPressed: () => _pickImage(ImageSource.gallery),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Container(
+                    constraints: const BoxConstraints(maxHeight: 120),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F9F6),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE4E2DF)),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      maxLines: null,
+                      style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1B1C1A)),
+                      decoration: InputDecoration(
+                        hintText: "Hỏi bác sĩ cây trồng về sâu bệnh, tưới nước...",
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF747871)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      onSubmitted: (_) => _handleSendMessage(),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              margin: const EdgeInsets.only(bottom: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00E676),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: const Color(0xFF00E676).withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Color(0xFF00612E)),
-                onPressed: () {},
-              ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF364534),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    onPressed: _isLoading ? null : () => _handleSendMessage(),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

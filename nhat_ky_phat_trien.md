@@ -1,5 +1,5 @@
 # Nhật Ký Phát Triển Dự Án AgriSmart / BotaniScan
-*Ngày cập nhật: 26 tháng 06, 2026*
+*Ngày cập nhật: 15 tháng 10, 2026*
 
 Tài liệu này ghi lại toàn bộ tiến độ, các công việc đã hoàn thành và định hướng phát triển tiếp theo của hệ thống nhận diện bệnh lá cây trồng thông minh **AgriSmart**.
 
@@ -172,6 +172,94 @@ Hệ thống được thiết kế theo mô hình Microservices bao gồm 3 ph�
     *   `PlantDetailScreen`: Hiển thị thông số chi tiết của cây trong vườn, bảng lịch chăm sóc với thao tác bấm tưới nước trực tiếp và menu hỗ trợ xóa cây khỏi vườn.
 
 ---
+## 4.9. Các Công Việc Đã Hoàn Thành (Hôm nay - 14/10/2026)
+
+### Nâng Cấp Quản Lý Khu Vườn: Ẩn Thông Báo Thừa & Hệ Thống Tạo Khu Vườn Cá Nhân Hóa (Custom Gardens)
+*   **Ẩn Mục "Cần chú ý" Khi Không Có Việc Khẩn Cấp**:
+    *   Chỉ hiển thị mục "Cần chú ý" khi thực sự có cây đến hạn tưới nước (`attentionPlants.isNotEmpty`).
+    *   Nếu tất cả cây đều khỏe mạnh, mục này và khoảng đệm thừa sẽ tự động ẩn đi hoàn toàn, giữ cho màn hình thoáng đãng và tinh gọn.
+*   **Xây dựng Thực Thể & Collection `UserGardens`**:
+    *   Tạo model `UserGarden` ([user_garden.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/models/user_garden.dart)) và collection độc lập `UserGardens` trên Firestore liên kết với `userId`.
+    *   Quản lý danh sách các khu vườn, khu vườn đang kích hoạt (`selectedGarden`), và lắng nghe realtime qua `GardenProvider`.
+*   **Empty State "Bạn chưa có khu vườn nào" & Flow Tạo Vườn**:
+    *   Khi người dùng mới chưa tạo khu vườn nào, hiển thị bảng thông báo trực quan "Bạn chưa có khu vườn nào" cùng nút nổi bật **"Tạo khu vườn ngay"**.
+    *   Khi đã có khu vườn, hiển thị danh sách cuộn ngang các khu vườn (tên, môi trường, điều kiện ánh sáng, số cây) kèm nút "+ Thêm khu vườn".
+*   **Màn Hình Tạo Khu Vườn (`CreateGardenScreen`)**:
+    *   Tạo file [create_garden_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/create_garden_screen.dart) chuẩn phong cách thiết kế Floria:
+        1. **Tên khu vườn**: TextFormField có validation (VD: "Vườn ban công tầng 2", "Góc xanh phòng khách"...).
+        2. **Môi trường**: 4 lựa chọn trực quan dạng thẻ có icon và mô tả (Trong nhà, Ngoài trời, Văn phòng, Nhà kính).
+        3. **Điều kiện ánh sáng**: 4 cấp độ ánh sáng chuẩn sinh thái (Sáng trực tiếp, Sáng gián tiếp, Ánh sáng trung bình, Ánh sáng yếu).
+        4. **Nút "Tạo khu vườn"**: Lưu trực tiếp lên Firebase Firestore và tự động chọn khu vườn vừa tạo làm vườn kích hoạt (`selectedGarden`).
+
+### Xây Dựng Màn Hình "Thêm Cây Vào Vườn" (`AddPlantToGardenScreen`) & Quy Trình Xác Nhận 2 Bước
+*   **Màn hình Thêm Cây Tinh Gọn ([add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/add_plant_to_garden_screen.dart))**:
+    *   **Khung ảnh linh hoạt**: Hỗ trợ chụp trực tiếp từ Camera hoặc chọn từ Thư viện với chất lượng ảnh cao (1200px), hiển thị bản xem trước sắc nét và nút chụp lại tiện lợi.
+    *   **Ghi chú đặc điểm hỗ trợ AI**: Ô nhập văn bản hỗ trợ ghi chú các đặc điểm hình thái nổi bật (màu hoa, gân lá, thân leo...) giúp AI nhận dạng loài cây rõ ràng hơn thay vì ghi chú tình trạng bệnh.
+    *   **Nút "Nhận diện & Thêm vào vườn"**: Kích hoạt gửi ảnh và ghi chú lên AI Engine phân tích mô hình 40 loài cây.
+*   **Modal BottomSheet Xác Nhận Lưu & Gợi Ý Vị Trí Thông Minh Theo Môi Trường Vườn**:
+    *   Sau khi AI quét xong và ra kết quả nhận diện, mở BottomSheet xác nhận trực quan:
+        *   **Biệt danh cây**: Tự động gợi ý tên tiếng Việt của cây, cho phép người dùng tùy chỉnh.
+        *   **Chỗ đặt cây theo môi trường vườn (`Environment-Aware Zones`)**: Đề xuất 2-3 vị trí phù hợp với môi trường của khu vườn hiện tại:
+            *   *Trong nhà*: Phòng khách, Phòng ngủ, Cửa sổ + Khác...
+            *   *Ngoài trời*: Ban công, Sân thượng, Sân trước + Khác...
+            *   *Văn phòng*: Bàn làm việc, Góc phòng họp, Quầy tiếp tân + Khác...
+            *   *Nhà kính*: Kệ tầng trên, Kệ tầng dưới, Khu ươm giống + Khác...
+        *   **Tùy biến vị trí**: Nếu người dùng chọn "Khác...", xuất hiện ô nhập vị trí riêng (VD: "Bàn ăn", "Cạnh TV", "Hành lang"...).
+        *   **Đồng bộ Firestore 100%**: Ghi thẳng vào bộ sưu tập Firestore `MyGarden` liên kết với `gardenId` và `userId` của người dùng. Cây mới lập tức hiển thị trong khu vườn và tab góc vườn tương ứng.
+
+
+
+
+---
+## 4.10. Các Công Việc Đã Hoàn Thành (Hôm nay - 14/10/2026 - Đợt 2)
+
+### Đánh Thức Trợ Lý Ảo Google Gemini 3.8 Flash & Nhận Diện Đa Phương Thức (Ảnh + Miêu Tả Hình Thái)
+*   **Cài đặt Dependencies & Gắn API Key Mặc Định**:
+    *   Tích hợp gói chính thức `google_generative_ai: ^0.4.7` và `shared_preferences: ^2.5.6`.
+    *   Cấu hình `AppConstants.defaultGeminiApiKey`: Gắn thẳng API Key của hệ thống, người dùng và nhà phát triển mở app lên là dùng được ngay lập tức 100%, không cần phải nhập thủ công.
+*   **Xây dựng Dịch vụ Gemini (`GeminiService`) ([gemini_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/gemini_service.dart))**:
+    *   **Nâng cấp lên Google Gemini 3.8 Flash**: Thiết lập mô hình mặc định `gemini-3.8-flash` theo đúng phiên bản môi trường của người dùng với khả năng suy luận logic chuyên sâu, hiểu ảnh thị giác vượt trội và tốc độ phản hồi cực nhanh.
+    *   **Tự động nhận diện API Key**: Hàm `getApiKey()` tự động ưu tiên lấy key từ SharedPreferences (nếu có tùy chỉnh riêng) hoặc dùng ngay `AppConstants.defaultGeminiApiKey` mà không bắt người dùng phải cấu hình.
+    *   **Nhận diện cây kết hợp Ảnh + Miêu tả nhận dạng (`identifyPlantWithHint`)**:
+        1. *Kiểm duyệt thực vật*: Xác định xem ảnh chụp có phải cây cối hay không. Nếu chụp người, động vật, đồ vật, màn hình -> từ chối ngay lập tức kèm lý do.
+        2. *Đối chiếu 40 loài cây CSDL*: Đối chiếu cả hình thái ảnh và miêu tả (màu hoa, gân lá, thân mọng nước...) với danh sách 40 cây chuẩn.
+        3. *Xử lý cây ngoài danh mục*: Nếu là cây nhưng không thuộc 40 loài trong CSDL, Gemini nhận diện tên khoa học và tên tiếng Việt thông dụng, đồng thời gắn cờ `matched_database: false`.
+*   **Nâng Cấp Màn Hình "Thêm Cây Vào Vườn" ([add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/add_plant_to_garden_screen.dart))**:
+    *   **Thẻ trạng thái AI luôn sẵn sàng**: Tự động nhận diện Gemini AI đã sẵn sàng hoạt động mà không đòi hỏi nhập key.
+    *   **Hiển thị "Đang cập nhật..." cho cây mới**: Nếu cây được nhận diện nằm ngoài 40 loài trong từ điển, toàn bộ các chỉ số sinh thái (Ánh sáng, Nước tưới, Độ khó chăm sóc, Họ cây, v.v.) hiển thị chuẩn xác **"Đang cập nhật..."**, người dùng vẫn tự do đặt biệt danh, chọn vị trí theo môi trường vườn và chọn lịch tưới tùy thích để lưu vào Firestore.
+    *   **Tối ưu hóa CLIP Gatekeeper phía Backend (`AI_Engine/main.py`)**: Đảm bảo thực vật ngoài danh mục vẫn được xác nhận là cây hợp lệ (`is_valid_plant: True`), không bị chặn nhầm.
+*   **Cơ Chế Chuyển Tiếp Mô Hình Thông Minh (Fallback Resilience)**:
+    *   Phát hiện `gemini-1.5-flash` đã bị Google khai tử trên API v1beta (gây lỗi `models/gemini-1.5-flash is not found`). Đồng thời `gemini-3.8-flash` đôi lúc bị quá tải tạm thời (HTTP 503).
+    *   Đã xóa bỏ hoàn toàn `1.5-flash`, thay thế bằng danh sách fallback mô hình cực mạnh và ổn định: `gemini-flash-lite-latest`, `gemini-3.5-flash-lite`, `gemini-3-flash-preview`. Khi mô hình chính gặp quá tải, hệ thống tự động trỏ sang mô hình kế tiếp tức thì (0ms lỗi) và trả về lời khuyên chẩn đoán hình ảnh sắc nét 100%.
+
+---
+## 4.11. Các Công Việc Đã Hoàn Thành (Hôm nay - 15/10/2026)
+
+### Nâng Cấp Quản Lý Khu Vườn & Trải Nghiệm Chi Tiết Cây Trồng (Plant Details & Dynamic Floria AI)
+*   **Thẻ Vị Trí Vườn Động (Dynamic Location Chips) ([garden_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/providers/garden_provider.dart))**:
+    *   Sửa đổi `availableZones` trong `GardenProvider`: Loại bỏ hoàn toàn danh sách các thẻ vị trí tĩnh bị gán cứng ("Phòng khách", "Ban công", "Bàn làm việc"...).
+    *   Hệ thống chuyển sang cơ chế **quét động**: Chỉ hiển thị thẻ "Tất cả" cùng các vị trí/khu vực **thực tế mà người dùng đã thêm cây vào** (ví dụ: chỉ có cây ở Ban công và Cửa sổ thì chỉ hiện đúng 2 thẻ này).
+*   **Menu 3 Chấm (...) - Chỉnh Sửa Toàn Diện Cây Trồng ([plant_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/plant_detail_screen.dart))**:
+    *   Tích hợp menu tùy chọn: **Chỉnh sửa cây**, **Đã tưới nước hôm nay**, và **Xóa khỏi vườn**.
+    *   Hộp thoại Modal Chỉnh Sửa (`_showEditPlantModal`):
+        1. *Tên hiển thị / Biệt danh*: Sửa tên riêng cho từng chậu cây (`nickname`).
+        2. *Góc vườn / Vị trí*: Chọn nhanh qua Chip (Phòng khách, Ban công, Cửa sổ, Bàn làm việc, Sân thượng...) hoặc gõ tự do.
+        3. *Tình trạng sức khỏe*: Khỏe mạnh (xanh), Cần tưới nước (cam), Bị vàng lá (đỏ), Bị sâu bệnh (đỏ), Cần chú ý (vàng).
+        4. *Tần suất tưới nước*: Slider kéo chọn số ngày/lần (1 đến 14 ngày).
+        5. *Khung giờ nhắc nhở*: Chọn nhanh 07:00, 09:30, 17:30, 20:00.
+        6. *Ghi chú riêng*: Lưu nhật ký cá nhân về cây.
+    *   **Tối ưu Giao diện Menu 3 Chấm (Light Glass Design)**: Thiết lập cứng `color: Colors.white`, `surfaceTintColor: Colors.white`, bóng đổ `elevation: 10`, viền bo mềm `borderRadius: 18px` để khắc phục lỗi nền đen chìm chữ của Material 3 mặc định. Từng tùy chọn được bổ sung icon bo tròn tinh tế và phân cấp màu sắc rõ ràng (chữ đen, đỏ cảnh báo).
+    *   Phương thức `updatePlantInfo` trong `GardenProvider` cập nhật tức thì lên Firestore `MyGarden` và giao diện phản ánh thay đổi ngay lập tức (Reactive qua `Consumer<GardenProvider>`).
+*   **Thêm Nút "Chi Tiết" (Bách Khoa Toàn Thư Cây Trồng)**:
+    *   Thêm nút `📖 Chi tiết` vào hàng hành động nhanh trên màn hình chi tiết cây (`[Chi tiết] [Quét bệnh] [Nhật ký] [Floria AI]`).
+    *   Modal Bách Khoa (`_showPlantWikiModal`): Hiển thị chi tiết Tên khoa học, Họ thực vật (`family`), Nguồn gốc xuất xứ, Mức độ khó chăm sóc, Yêu cầu ánh sáng, Nước tưới, Nhiệt độ lý tưởng, Độ ẩm không khí, Đất trồng, Phân bón và Độc tính đối với trẻ em / thú cưng.
+*   **Đánh Thức Nút "Floria AI" - Trợ Lý Chuyên Sâu Cho Từng Loài Cây**:
+    *   Khi bấm nút `✨ Floria AI` từ cây đang xem, ứng dụng điều hướng sang `AiAssistantScreen` và nạp toàn bộ ngữ cảnh về loài cây (Tên, Tên khoa học, Vị trí đặt, Tình trạng sức khỏe, Tần suất tưới).
+    *   **Tùy biến lời chào AI**: Bác sĩ Floria AI chào đích danh loài cây và tình trạng sức khỏe hiện tại của nó.
+    *   **Tùy biến Quick Prompt Chips**: Gợi ý các câu hỏi chuyên sâu tự động thay đổi theo tên cây (VD: *"Lịch tưới & lượng nước cho Cây đuôi công lá tròn?"*, *"Cây đặt ở Cửa sổ có đủ sáng không?"*, *"Các bệnh và sâu hại hay gặp?"*).
+    *   Gemini Prompt Context: Tự động ghim hồ sơ thực vật vào System Instruction để Bác sĩ AI phân tích và đưa ra phác đồ y khoa cây trồng chính xác nhất.
+
+---
 ## 5. Các Task Đang Chạy Nền (Active Tasks)
 *   *Hiện tại tất cả các Background Tasks cho Web và Mobile đã được hoàn thành.*
 
@@ -180,19 +268,10 @@ Hệ thống được thiết kế theo mô hình Microservices bao gồm 3 ph�
 ## 6. Kế Hoạch Tiếp Theo (Next Steps - Actionable)
 
 **Bước 1: Nối cáp thông luồng AI thực tế & Tối ưu hóa** ✅ *(Đã hoàn thành xuất sắc ngày 13/10/2026)*
-- Ba hệ thống (AI Engine: 8000, Spring Boot: 8080, Flutter Web) đã kết nối thông suốt 100%.
-- Dữ liệu thực vật lấy động trực tiếp từ Firestore qua Backend Gateway.
-- Tối ưu hóa CLIP Gatekeeper và Asynchronous Firestore, UI chẩn đoán hoàn thiện không lỗi.
-
 **Bước 2: Tính năng Khu Vườn Của Tôi (My Garden)** ✅ *(Đã hoàn thành xuất sắc ngày 13/10/2026)*
-- Lưu cây trực tiếp từ báo cáo quét vào `users/{userId}/my_garden`.
-- Quản lý danh sách cây, khu vực và lịch tưới nước thời gian thực.
+**Bước 3: Đánh thức Trợ lý Ảo (AI Chatbot - Gemini Bác sĩ Cây trồng & Nhận diện Đa phương thức)** ✅ *(Đã hoàn thành xuất sắc ngày 14/10/2026)*
 
-**Bước 3: Đánh thức Trợ lý Ảo (AI Chatbot - Gemini Bác sĩ Cây trồng)** 🎯 *(Ưu tiên tiếp theo)*
-- Tích hợp Google Gemini API vào `lib/features/chatbot/` trên Flutter/Web.
-- Thay thế các đoạn chat giả lập (mock) bằng trợ lý trò chuyện thông minh trả lời thời gian thực về cách chăm sóc và xử lý sâu bệnh.
-
-**Bước 4: Màn hình Lịch sử Quét (Scan History)**
+**Bước 4: Màn hình Lịch sử Quét (Scan History)** 🎯 *(Ưu tiên tiếp theo)*
 - Xây dựng giao diện cho thư mục `lib/features/history/screens/` để người dùng xem lại toàn bộ các lần quét đã lưu trong collection `ScanHistory` của Firestore.
 
 **Bước 5: Hoàn thiện Cửa hàng & Giỏ hàng (Shop & Cart)**

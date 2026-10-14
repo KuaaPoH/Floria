@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class GardenPlant {
   final String id;
   final String userId;
+  final String gardenId;
   final String nameVi;
   final String scientificName;
   final String nickname;
@@ -10,6 +11,7 @@ class GardenPlant {
   final String? imageUrl;
   final String plantType;
   final int waterFrequencyDays;
+  final String reminderTime;
   final DateTime lastWatered;
   final DateTime nextWatering;
   final String healthStatus;
@@ -20,6 +22,7 @@ class GardenPlant {
   GardenPlant({
     required this.id,
     this.userId = '',
+    this.gardenId = '',
     required this.nameVi,
     required this.scientificName,
     required this.nickname,
@@ -27,6 +30,7 @@ class GardenPlant {
     this.imageUrl,
     this.plantType = 'Cây cảnh',
     this.waterFrequencyDays = 3,
+    this.reminderTime = '07:00',
     required this.lastWatered,
     required this.nextWatering,
     this.healthStatus = 'Khỏe mạnh',
@@ -52,6 +56,7 @@ class GardenPlant {
   Map<String, dynamic> toFirestore() {
     return {
       'userId': userId,
+      'gardenId': gardenId,
       'nameVi': nameVi,
       'scientificName': scientificName,
       'nickname': nickname,
@@ -59,6 +64,7 @@ class GardenPlant {
       'imageUrl': imageUrl,
       'plantType': plantType,
       'waterFrequencyDays': waterFrequencyDays,
+      'reminderTime': reminderTime,
       'lastWatered': Timestamp.fromDate(lastWatered),
       'nextWatering': Timestamp.fromDate(nextWatering),
       'healthStatus': healthStatus,
@@ -88,6 +94,7 @@ class GardenPlant {
     return GardenPlant(
       id: doc.id,
       userId: data['userId'] ?? '',
+      gardenId: data['gardenId'] ?? '',
       nameVi: data['nameVi'] ?? 'Cây cảnh',
       scientificName: data['scientificName'] ?? '',
       nickname: data['nickname'] ?? (data['nameVi'] ?? 'Cây của tôi'),
@@ -95,6 +102,7 @@ class GardenPlant {
       imageUrl: data['imageUrl'],
       plantType: data['plantType'] ?? 'Cây cảnh',
       waterFrequencyDays: freq,
+      reminderTime: data['reminderTime'] ?? '07:00',
       lastWatered: lastWateredDate,
       nextWatering: nextWateringDate,
       healthStatus: data['healthStatus'] ?? 'Khỏe mạnh',
@@ -106,10 +114,12 @@ class GardenPlant {
 
   // Tạo bản sao với giá trị cập nhật
   GardenPlant copyWith({
+    String? gardenId,
     String? nickname,
     String? zone,
     String? imageUrl,
     int? waterFrequencyDays,
+    String? reminderTime,
     DateTime? lastWatered,
     DateTime? nextWatering,
     String? healthStatus,
@@ -119,6 +129,7 @@ class GardenPlant {
     return GardenPlant(
       id: id,
       userId: userId,
+      gardenId: gardenId ?? this.gardenId,
       nameVi: nameVi,
       scientificName: scientificName,
       nickname: nickname ?? this.nickname,
@@ -126,6 +137,7 @@ class GardenPlant {
       imageUrl: imageUrl ?? this.imageUrl,
       plantType: plantType,
       waterFrequencyDays: waterFrequencyDays ?? this.waterFrequencyDays,
+      reminderTime: reminderTime ?? this.reminderTime,
       lastWatered: lastWatered ?? this.lastWatered,
       nextWatering: nextWatering ?? this.nextWatering,
       healthStatus: healthStatus ?? this.healthStatus,

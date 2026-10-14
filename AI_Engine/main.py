@@ -168,16 +168,19 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("mobilene
         predicted_class = top3_results[0]["class"]
         top_confidence = top3_results[0]["confidence"]
         
-        is_plant = top_confidence >= 50.0
+        # Neu do tin cay >= 50%: thuoc 40 loai trong CSDL
+        # Neu < 50%: CLIP da xac nhan day la cay, nhung loai cay nay nam ngoai 40 loai CSDL
+        is_in_database = top_confidence >= 50.0
         
         return {
             "model_used": model_name,
             "prediction": predicted_class,
             "confidence": top_confidence,
             "top_3": top3_results,
-            "is_valid_plant": is_plant,
+            "is_valid_plant": True,
+            "is_in_database": is_in_database,
             "success": True,
-            "message": "Thành công" if is_plant else "Vui lòng chụp rõ lại ảnh, hệ thống không nhận diện được loài cây này!"
+            "message": "Thành công" if is_in_database else "Phát hiện thực vật nằm ngoài danh mục 40 cây của hệ thống."
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi phân tích ảnh: {str(e)}")
