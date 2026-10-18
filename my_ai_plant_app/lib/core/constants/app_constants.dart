@@ -22,6 +22,7 @@ class AppConstants {
   }
 
   static String get scanDiseaseUrl => '$baseUrl/scan-disease';
+  static String get diagnoseDiseaseUrl => '$baseUrl/diagnose-disease';
   static String get pingUrl => '$baseUrl/ping';
   static String get authSyncUrl => '$baseUrl/auth/sync';
 }

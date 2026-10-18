@@ -11,11 +11,18 @@ import 'plant_wiki_screen.dart';
 import 'dart:ui';
 import 'dart:async';
 import '../../garden/providers/garden_provider.dart';
+import '../../garden/models/garden_plant.dart';
+import '../../chatbot/screens/ai_assistant_screen.dart';
 
 class DiagnosisReportScreen extends StatefulWidget {
   final bool isDiseaseScan;
+  final GardenPlant? currentPlant;
 
-  const DiagnosisReportScreen({super.key, this.isDiseaseScan = false});
+  const DiagnosisReportScreen({
+    super.key,
+    this.isDiseaseScan = false,
+    this.currentPlant,
+  });
 
   @override
   State<DiagnosisReportScreen> createState() => _DiagnosisReportScreenState();
@@ -107,17 +114,34 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     String message = "";
     
     List<dynamic> top3 = [];
-    if (scanProvider.scanResult != null && scanProvider.scanResult!['top_3'] != null) {
-      top3 = scanProvider.scanResult!['top_3'];
+    if (scanProvider.scanResult != null) {
+      if (scanProvider.scanResult!['top_predictions'] != null) {
+        top3 = scanProvider.scanResult!['top_predictions'];
+      } else if (scanProvider.scanResult!['top_3'] != null) {
+        top3 = scanProvider.scanResult!['top_3'];
+      }
     }
 
-    if (top3.isNotEmpty && _selectedResultIndex < top3.length) {
-      var item = top3[_selectedResultIndex];
-      mainTitle = item['class'].toString();
-      if (mainTitle.contains('___')) {
-         mainTitle = mainTitle.split('___').last;
+    if (widget.isDiseaseScan && scanProvider.scanResult != null) {
+      if (scanProvider.scanResult!['prediction_vi'] != null) {
+        mainTitle = scanProvider.scanResult!['prediction_vi'].toString();
+      } else if (scanProvider.scanResult!['prediction'] != null) {
+        mainTitle = scanProvider.scanResult!['prediction'].toString().replaceAll('_', ' ');
       }
-      mainTitle = mainTitle.replaceAll('_', ' ');
+      if (scanProvider.scanResult!['confidence'] != null) {
+        confidence = double.tryParse(scanProvider.scanResult!['confidence'].toString()) ?? 95.0;
+      }
+    } else if (top3.isNotEmpty && _selectedResultIndex < top3.length) {
+      var item = top3[_selectedResultIndex];
+      if (item is Map && item['name_vi'] != null) {
+        mainTitle = item['name_vi'].toString();
+      } else {
+        mainTitle = item['class'].toString();
+        if (mainTitle.contains('___')) {
+           mainTitle = mainTitle.split('___').last;
+        }
+        mainTitle = mainTitle.replaceAll('_', ' ');
+      }
       confidence = double.tryParse(item['confidence'].toString()) ?? 0.0;
     } else if (scanProvider.scanResult != null && scanProvider.scanResult!['prediction'] != null) {
       mainTitle = scanProvider.scanResult!['prediction'].toString();
@@ -255,8 +279,12 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
   Widget _buildContentBlock(ScanProvider scanProvider, String mainTitle, double confidence) {
     List<dynamic> top3 = [];
-    if (scanProvider.scanResult != null && scanProvider.scanResult!['top_3'] != null) {
-      top3 = scanProvider.scanResult!['top_3'];
+    if (scanProvider.scanResult != null) {
+      if (scanProvider.scanResult!['top_predictions'] != null) {
+        top3 = scanProvider.scanResult!['top_predictions'];
+      } else if (scanProvider.scanResult!['top_3'] != null) {
+        top3 = scanProvider.scanResult!['top_3'];
+      }
     }
     String docId = "";
     if (top3.isNotEmpty && _selectedResultIndex < top3.length) {
@@ -288,6 +316,68 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             _buildActionPills(context, scanProvider, docId, null),
           ],
         ),
+      );
+    }
+
+    // Nhánh chuyên trách cho Quét bệnh lá cây (Disease Scan)
+    if (widget.isDiseaseScan) {
+      if (scanProvider.errorMessage != null) {
+        return Column(
+          children: [
+            _buildHeroCard(scanProvider, mainTitle, null, confidence),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.cloud_off_rounded, size: 44, color: Colors.red),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Lỗi phân tích bệnh lá",
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    scanProvider.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(fontSize: 13, color: textMuted),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryStrong,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.arrow_back, size: 18),
+                    label: Text("Quay lại", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
+
+      return Column(
+        children: [
+          _buildHeroCard(scanProvider, mainTitle, null, confidence),
+          const SizedBox(height: 16),
+          if (top3.isNotEmpty) _buildResultStack(scanProvider),
+          const SizedBox(height: 16),
+          _buildCauseCard(scanProvider),
+          const SizedBox(height: 16),
+          _buildTreatmentCard(scanProvider),
+          const SizedBox(height: 16),
+          _buildActionPills(context, scanProvider, docId, null),
+        ],
       );
     }
 
@@ -357,22 +447,6 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _buildActionPills(context, scanProvider, docId, null),
-        ],
-      );
-    }
-
-    if (widget.isDiseaseScan) {
-      return Column(
-        children: [
-          _buildHeroCard(scanProvider, mainTitle, null, confidence),
-          const SizedBox(height: 16),
-          _buildResultStack(scanProvider),
-          const SizedBox(height: 16),
-          _buildCauseCard(),
-          const SizedBox(height: 16),
-          _buildTreatmentCard(),
           const SizedBox(height: 16),
           _buildActionPills(context, scanProvider, docId, null),
         ],
@@ -479,7 +553,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
   Widget _buildHeroCard(ScanProvider provider, String title, Map<String, dynamic>? data, double confidence) {
     String displayName = title;
-    if (data != null && data['name_vi'] != null && data['name_vi'].toString().isNotEmpty) {
+    if (widget.isDiseaseScan && provider.scanResult != null && provider.scanResult!['prediction_vi'] != null) {
+      displayName = provider.scanResult!['prediction_vi'].toString();
+    } else if (data != null && data['name_vi'] != null && data['name_vi'].toString().isNotEmpty) {
       displayName = data['name_vi'].toString();
     } else if (provider.scanResult != null && provider.scanResult!['top_3'] != null) {
       List<dynamic> t3 = provider.scanResult!['top_3'];
@@ -491,6 +567,10 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     } else if (provider.isLoading || data == null) {
       displayName = "Đang tra cứu...";
     }
+
+    final bool isHealthy = widget.isDiseaseScan &&
+        provider.scanResult != null &&
+        provider.scanResult!['prediction']?.toString().toLowerCase() == 'healthy';
 
     return Container(
       decoration: BoxDecoration(
@@ -556,24 +636,40 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: widget.isDiseaseScan ? stateError.withOpacity(0.15) : stateInfo.withOpacity(0.15),
+                    color: widget.isDiseaseScan 
+                        ? (isHealthy ? primaryStrong.withOpacity(0.15) : stateError.withOpacity(0.15))
+                        : stateInfo.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(widget.isDiseaseScan ? Icons.coronavirus : Icons.auto_awesome, color: widget.isDiseaseScan ? stateError : primaryStrong, size: 14),
+                      Icon(
+                        widget.isDiseaseScan
+                            ? (isHealthy ? Icons.verified_rounded : Icons.coronavirus)
+                            : Icons.auto_awesome,
+                        color: widget.isDiseaseScan
+                            ? (isHealthy ? primaryStrong : stateError)
+                            : primaryStrong,
+                        size: 14,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         provider.isLoading 
                           ? "Đang xử lý..." 
                           : widget.isDiseaseScan 
-                            ? "Cảnh báo bệnh" 
+                            ? (provider.scanResult?['severity_vi']?.toString() ?? (isHealthy ? "Khỏe mạnh" : "Cảnh báo bệnh"))
                             : (_selectedResultIndex == 0 ? "Khớp tốt nhất" : (_selectedResultIndex == 1 ? "Gần giống" : "Ít khả năng")),
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: widget.isDiseaseScan ? stateError : primaryStrong),
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDiseaseScan
+                              ? (isHealthy ? primaryStrong : stateError)
+                              : primaryStrong,
+                        ),
                       ),
                     ],
                   ),
@@ -581,7 +677,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 const SizedBox(height: 8),
                 Text(
                   displayName,
-                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: text, height: 1.1, letterSpacing: -0.5),
+                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: text, height: 1.15, letterSpacing: -0.5),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -590,8 +686,15 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    if (widget.isDiseaseScan) 
-                      _buildTag("Cần xử lý", color: stateError.withOpacity(0.2), textColor: stateError),
+                    if (widget.isDiseaseScan) ...[
+                      if (widget.currentPlant != null)
+                        _buildTag(widget.currentPlant!.nameVi, color: primarySoft, textColor: primaryStrong),
+                      _buildTag(
+                        provider.scanResult?['severity_vi']?.toString() ?? (isHealthy ? "An toàn" : "Cần xử lý"),
+                        color: isHealthy ? primarySoft : stateError.withOpacity(0.15),
+                        textColor: isHealthy ? primaryStrong : stateError,
+                      ),
+                    ],
                     if (!widget.isDiseaseScan && data != null && data['placements'] != null)
                       ...((data['placements'] as List<dynamic>).map((e) => _buildTag(e.toString()))),
                     if (!widget.isDiseaseScan && data == null)
@@ -601,7 +704,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 const SizedBox(height: 6),
                 Text(
                   widget.isDiseaseScan 
-                    ? "Cây đang có dấu hiệu nhiễm bệnh. Cần xử lý sớm để tránh lây lan."
+                    ? (provider.scanResult?['cause']?.toString() ?? 
+                       (isHealthy ? "Cây không có dấu hiệu nhiễm bệnh." : "Cây có dấu hiệu nhiễm mầm bệnh. Cần xử lý sớm để tránh lây lan."))
                     : (data != null && data['short_desc'] != null 
                         ? data['short_desc'] 
                         : ""),
@@ -690,8 +794,12 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
   Widget _buildResultStack(ScanProvider scanProvider, [Map<String, dynamic>? currentPlantData]) {
     List<dynamic> top3 = [];
-    if (scanProvider.scanResult != null && scanProvider.scanResult!['top_3'] != null) {
-      top3 = scanProvider.scanResult!['top_3'];
+    if (scanProvider.scanResult != null) {
+      if (scanProvider.scanResult!['top_predictions'] != null) {
+        top3 = scanProvider.scanResult!['top_predictions'];
+      } else if (scanProvider.scanResult!['top_3'] != null) {
+        top3 = scanProvider.scanResult!['top_3'];
+      }
     }
 
     String getTitle(int index) {
@@ -935,16 +1043,27 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-  Widget _buildCauseCard() {
+  Widget _buildCauseCard(ScanProvider scanProvider) {
+    final result = scanProvider.scanResult;
+    final String severityVi = result?['severity_vi']?.toString() ?? "Đang cập nhật";
+    final String cause = result?['cause']?.toString() ?? "Chưa xác định rõ tác nhân gây bệnh.";
+    final String predictionVi = result?['prediction_vi']?.toString() ?? "Phân tích mầm bệnh";
+    final bool isHealthy = result?['prediction']?.toString().toLowerCase() == 'healthy';
+
+    final Color badgeColor = isHealthy ? primaryStrong : stateError;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [stateError.withOpacity(0.12), Colors.white.withOpacity(0.92)],
+          colors: [
+            isHealthy ? primarySoft : stateError.withOpacity(0.12),
+            Colors.white.withOpacity(0.92),
+          ],
         ),
-        border: Border.all(color: stateError.withOpacity(0.16)),
+        border: Border.all(color: badgeColor.withOpacity(0.18)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
       ),
       padding: const EdgeInsets.all(16),
@@ -957,17 +1076,17 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("NGUYÊN NHÂN", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-                  Text("Phân tích mầm bệnh", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
+                  Text("NGUYÊN NHÂN & MẦM BỆNH", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
+                  Text(predictionVi, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: stateError.withOpacity(0.14),
+                  color: badgeColor.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text("Nguy cơ lây", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: stateError)),
+                child: Text(severityVi, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: badgeColor)),
               ),
             ],
           ),
@@ -976,14 +1095,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _buildInfoCell("Tác nhân", "Nấm / Vi khuẩn")),
+                Expanded(child: _buildInfoCell("Tình trạng", isHealthy ? "Lá bình thường" : "Nhiễm bệnh")),
                 const SizedBox(width: 12),
-                Expanded(child: _buildInfoCell("Mức độ", "Trung Bình")),
+                Expanded(child: _buildInfoCell("Mức độ", severityVi)),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          _buildInfoCell("Đặc điểm", "Xuất hiện các đốm nâu hoặc vàng trên bề mặt lá, viền đốm thường có màu sậm. Bệnh lây lan nhanh trong môi trường ẩm ướt."),
+          _buildInfoCell("Tác nhân & Cơ chế", cause),
         ],
       ),
     );
@@ -1039,7 +1158,25 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-  Widget _buildTreatmentCard() {
+  Widget _buildTreatmentCard(ScanProvider scanProvider) {
+    final result = scanProvider.scanResult;
+    final dynamic stepsRaw = result?['treatment_steps'];
+    List<String> steps = [];
+    if (stepsRaw is List) {
+      steps = stepsRaw.map((e) => e.toString()).toList();
+    } else if (stepsRaw is String && stepsRaw.isNotEmpty) {
+      steps = [stepsRaw];
+    }
+    if (steps.isEmpty) {
+      steps = [
+        "Cách ly cây bệnh ra khỏi khu vực các cây khỏe mạnh xung quanh.",
+        "Cắt tỉa các lá bị đốm hoặc cháy nặng bằng kéo đã khử trùng cồn 70 độ.",
+        "Điều chỉnh lượng nước tưới chỉ vào gốc cây, tránh làm ướt sũng bề mặt lá."
+      ];
+    }
+
+    final bool isHealthy = result?['prediction']?.toString().toLowerCase() == 'healthy';
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
@@ -1061,26 +1198,29 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("PHÁC ĐỒ ĐIỀU TRỊ", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-                  Text("Hành động khẩn cấp", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
+                  Text(isHealthy ? "HƯỚNG DẪN DUY TRÌ" : "PHÁC ĐỒ ĐIỀU TRỊ", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
+                  Text(isHealthy ? "Chăm sóc phòng ngừa" : "Hành động khuyến nghị", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: stateWarning.withOpacity(0.18),
+                  color: primaryStrong.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text("Khuyên dùng", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: stateWarning)),
+                child: Text("Khuyên dùng", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: primaryStrong)),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoCell("Bước 1: Cách ly & Cắt tỉa", "Lập tức tách cây bệnh ra khỏi khu vực chung. Dùng kéo sạch cắt bỏ các lá có đốm nâu/vàng."),
-          const SizedBox(height: 12),
-          _buildInfoCell("Bước 2: Xử lý hóa học", "Phun thuốc gốc đồng (Copper Fungicide) hoặc Mancozeb theo liều lượng bao bì."),
-          const SizedBox(height: 12),
-          _buildInfoCell("Bước 3: Chăm sóc", "Ngưng tưới nước lên lá, chỉ tưới gốc. Đặt cây ở nơi thoáng gió nhưng tránh nắng gắt trực tiếp."),
+          ...steps.asMap().entries.map((entry) {
+            int idx = entry.key + 1;
+            String textStep = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildInfoCell("Bước $idx", textStep),
+            );
+          }),
         ],
       ),
     );
@@ -1125,6 +1265,151 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildActionPills(BuildContext context, ScanProvider scanProvider, String docId, Map<String, dynamic>? data) {
+    if (widget.isDiseaseScan) {
+      final result = scanProvider.scanResult;
+      final String predictionVi = result?['prediction_vi']?.toString() ?? "Bệnh lá";
+      final String severityVi = result?['severity_vi']?.toString() ?? "Cần chú ý";
+      final String cause = result?['cause']?.toString() ?? "";
+      final bool isHealthy = result?['prediction']?.toString().toLowerCase() == 'healthy';
+      final double confidence = double.tryParse(result?['confidence']?.toString() ?? '95') ?? 95.0;
+
+      return Column(
+        children: [
+          Row(
+            children: [
+              if (widget.currentPlant != null)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
+                      final String newStatus = isHealthy ? 'Khỏe mạnh' : 'Bị $predictionVi';
+                      final bool success = await gardenProvider.updatePlantInfo(
+                        widget.currentPlant!.id,
+                        nickname: widget.currentPlant!.nickname,
+                        zone: widget.currentPlant!.zone,
+                        waterFrequencyDays: widget.currentPlant!.waterFrequencyDays,
+                        reminderTime: widget.currentPlant!.reminderTime,
+                        healthStatus: newStatus,
+                        notes: 'Chẩn đoán AI ngày ${DateTime.now().day}/${DateTime.now().month}: $predictionVi (Độ tin cậy: ${confidence.toStringAsFixed(1)}%)',
+                      );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(
+                                  success ? Icons.check_circle : Icons.error,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    success
+                                        ? "Đã cập nhật tình trạng [$newStatus] vào ${widget.currentPlant!.nameVi}!"
+                                        : "Chưa thể cập nhật bệnh án vào cây.",
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: success ? primaryStrong : Colors.red.shade700,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isHealthy ? primaryStrong : stateError,
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      shadowColor: (isHealthy ? primaryStrong : stateError).withOpacity(0.4),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    icon: const Icon(Icons.healing, size: 18),
+                    label: Text(
+                      "Cập nhật bệnh án",
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              if (widget.currentPlant != null) const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final plantName = widget.currentPlant?.nameVi ?? "Cây trồng";
+                    final sciName = widget.currentPlant?.scientificName;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AiAssistantScreen(
+                          plantNameVi: plantName,
+                          scientificName: sciName,
+                          diseaseContext: "Cây $plantName đang được chẩn đoán mắc [$predictionVi] (mức độ: $severityVi). Nguyên nhân: $cause. Hãy hướng dẫn tôi cách cứu chữa chi tiết!",
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2C392B),
+                    foregroundColor: const Color(0xFFFFD700),
+                    elevation: 4,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
+                  label: Text(
+                    "Hỏi Bác sĩ AI",
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Provider.of<ScanProvider>(context, listen: false).reset();
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.76),
+                    foregroundColor: text,
+                    side: BorderSide(color: primary.withOpacity(0.12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: Text("Chụp lại lá", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Provider.of<ScanProvider>(context, listen: false).reset();
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.76),
+                    foregroundColor: text,
+                    side: BorderSide(color: primary.withOpacity(0.12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: Text("Quay lại cây", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         Row(

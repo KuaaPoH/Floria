@@ -413,10 +413,11 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: InkWell(
         onTap: onTap ?? () {
-          // Fallback mock nếu không truyền onTap
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Phương thức đăng nhập $label đang được tích hợp'),
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         },
         borderRadius: BorderRadius.circular(16),

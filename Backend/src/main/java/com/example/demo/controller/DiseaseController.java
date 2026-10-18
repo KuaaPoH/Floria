@@ -26,6 +26,9 @@ public class DiseaseController {
     @Value("${ai.engine.url}")
     private String aiEngineUrl;
 
+    @Value("${ai.engine.disease.url:http://localhost:8000/predict-disease}")
+    private String aiEngineDiseaseUrl;
+
     @Autowired(required = false)
     private FirebaseAuth firebaseAuth;
 
@@ -169,6 +172,105 @@ public class DiseaseController {
                             firestore.collection("ScanHistory").add(scanRecord);
                         } catch (Exception e) {
                             System.err.println("Loi khi luu ngam vao Firestore: " + e.getMessage());
+                        }
+                    });
+                    result.put("saved_to_firestore", true);
+                }
+
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("AI Engine tra ve loi hoac khong co phan hoi.");
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Loi khi giao tiep voi AI Engine: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/diagnose-disease")
+    public ResponseEntity<?> diagnoseDisease(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "plant_name", required = false) String plantName,
+            @RequestParam(value = "plant_id", required = false) String plantId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        Map<String, Object> result = new HashMap<>();
+        String userId = "anonymous";
+
+        // 1. Kiem tra Xac thuc Firebase Token
+        if (firebaseAuth != null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            String idToken = authHeader.substring(7);
+            try {
+                FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
+                userId = decodedToken.getUid();
+                result.put("user_id", userId);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Token Firebase khong hop le: " + e.getMessage());
+            }
+        }
+
+        // 2. Chuyen tiep anh sang Python AI Engine tai endpoint /predict-disease
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("File anh khong duoc de trong.");
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return file.getOriginalFilename();
+                }
+            };
+            body.add("file", fileResource);
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> aiResponse = restTemplate.postForEntity(aiEngineDiseaseUrl, requestEntity, Map.class);
+
+            if (aiResponse.getStatusCode() == HttpStatus.OK && aiResponse.getBody() != null) {
+                Map<String, Object> aiResponseBody = aiResponse.getBody();
+                result.putAll(aiResponseBody);
+                if (plantName != null) result.put("scanned_plant_name", plantName);
+                if (plantId != null) result.put("scanned_plant_id", plantId);
+
+                // 3. Luu lich su vao Firebase Firestore (ScanHistory) voi loai disease_diagnosis
+                if (firestore != null) {
+                    final String fUserId = userId;
+                    final Object fPred = aiResponseBody.get("prediction");
+                    final Object fPredVi = aiResponseBody.get("prediction_vi");
+                    final Object fConf = aiResponseBody.get("confidence");
+                    final Object fModel = aiResponseBody.get("model_used");
+                    final Object fSeverity = aiResponseBody.get("severity");
+                    final Object fSeverityVi = aiResponseBody.get("severity_vi");
+                    final Object fCause = aiResponseBody.get("cause");
+                    final Object fTreatment = aiResponseBody.get("treatment_steps");
+                    final String fPlantName = plantName;
+
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            Map<String, Object> scanRecord = new HashMap<>();
+                            scanRecord.put("userId", fUserId);
+                            scanRecord.put("type", "disease_diagnosis");
+                            scanRecord.put("prediction", fPred);
+                            scanRecord.put("predictionVi", fPredVi);
+                            scanRecord.put("confidence", fConf);
+                            scanRecord.put("modelUsed", fModel);
+                            scanRecord.put("severity", fSeverity);
+                            scanRecord.put("severityVi", fSeverityVi);
+                            scanRecord.put("cause", fCause);
+                            scanRecord.put("treatmentSteps", fTreatment);
+                            scanRecord.put("plantName", fPlantName);
+                            scanRecord.put("timestamp", System.currentTimeMillis());
+
+                            firestore.collection("ScanHistory").add(scanRecord);
+                        } catch (Exception e) {
+                            System.err.println("Loi luu lich su benh vao Firestore: " + e.getMessage());
                         }
                     });
                     result.put("saved_to_firestore", true);

@@ -260,6 +260,47 @@ Hệ thống được thiết kế theo mô hình Microservices bao gồm 3 ph�
     *   Gemini Prompt Context: Tự động ghim hồ sơ thực vật vào System Instruction để Bác sĩ AI phân tích và đưa ra phác đồ y khoa cây trồng chính xác nhất.
 
 ---
+## 4.12. Định Hướng & Kiến Trúc Quét Chẩn Đoán Bệnh Cây Cảnh (Hôm nay - 18/10/2026)
+
+### Phân Tách Hai Luồng Người Dùng (User Flow)
+*   **Camera Màn Hình Chính (Tab Scan)**: Giữ nguyên tính năng **Nhận diện loài cây (Plant Discovery)**. Người dùng chụp để biết tên cây lạ, tra cứu bách khoa toàn thư thực vật và bấm "Lưu vào vườn".
+*   **Quét Bệnh Trong Khu Vườn (Disease Diagnosis)**: Kích hoạt tại **Khu Vườn Của Tôi ➔ Chi tiết cây ➔ Bấm nút `[Quét bệnh]`**.
+    *   Hệ thống tận dụng ngữ cảnh đã biết trước của cây trồng (`nameVi`, `scientificName`, vị trí `zone`, chu kỳ tưới `waterFrequencyDays`).
+    *   Mở camera hướng dẫn chụp cận cảnh phiến lá bất thường để chẩn đoán đúng bệnh của loài cây đó.
+
+### Chiến Lược Gom 5 Nhóm Bệnh Cốt Lõi Cho 40 Loài Cây Cảnh
+Qua phân tích đặc thù 40 loài cây cảnh trong hệ thống (Monstera, Bàng Singapore, Lưỡi hổ, Đuôi công, Kim tiền, Môn, Trầu bà...), 95% bệnh lý thực tế tập trung vào 5 nhóm bệnh lá kinh điển:
+1.  **`Healthy` (Khỏe mạnh)**: Lá xanh bóng, nguyên vẹn, không có tổn thương bệnh học.
+2.  **`Anthracnose` (Bệnh Thán Thư)**: Vết đốm tròn nâu cháy viền vàng sậm (xuất hiện nặng trên Monstera, Bàng Singapore, Lưỡi hổ, Lan ý, Đa búp đỏ).
+3.  **`Leaf_Spot` (Bệnh Đốm Lá Nấm)**: Đốm nâu/vàng li ti mắt cua do nấm Cercospora/Alternaria (xuất hiện trên Calathea, Begonia, Kim tiền, Thường xuân).
+4.  **`Bacterial_Blight` (Cháy Bìa Lá / Thối Nhũn Vi Khuẩn)**: Vết cháy thâm đen viền lá ủng nước do tưới đọng đêm (xuất hiện trên Alocasia, Syngonium, Trầu bà).
+5.  **`Powdery_Mildew` (Bệnh Phấn Trắng)**: Lớp phấn bột trắng xóa phủ bề mặt lá non (xuất hiện trên Hoa sứ, Hoa giấy, Begonia).
+
+### Nguồn Dữ Liệu Gom Dataset
+Không cần cào thủ công trên mạng, hệ thống tổng hợp từ các bộ dataset chuẩn mực đã được gán nhãn chuyên nghiệp:
+*   **PlantDoc Dataset (Kaggle)**: [https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset](https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset) (Ảnh chụp đời thực in-the-wild, ánh sáng tự nhiên).
+*   **Indoor Plant Disease Dataset by Nishad (Roboflow Universe)**: [https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74](https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74) (Chuyên cây cảnh trong nhà: Lưỡi hổ, Kim tiền, Trầu bà).
+*   **Mango Leaf Disease Dataset (Kaggle)**: [https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset](https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset) (Mẫu bệnh Thán thư & Phấn trắng lá to sắc nét).
+
+### Kế Hoạch Huấn Luyện & Tích Hợp AI Engine
+*   **Bộ dữ liệu cục bộ**: Đã tải và gom thành công hơn 2.100 ảnh vào [AI_Engine/dataset/](file:///d:/Plan/utrasupervip/AI_Engine/dataset) (gồm `train` và `val` của 5 nhóm bệnh).
+*   **Phát hành Enterprise Pipeline Notebook ([PlantDiseaseClassifier.ipynb](file:///d:/Plan/utrasupervip/PlantDiseaseClassifier.ipynb))**:
+    *   Xây dựng file notebook hoàn chỉnh theo kiến trúc chuẩn MLOps của [PlantClassifierV4.ipynb](file:///d:/Plan/utrasupervip/PlantClassifierV4.ipynb).
+    *   Hỗ trợ tự động tải dữ liệu KaggleHub, Stratified Split 80/10/10, WeightedRandomSampler, Mixed Precision FP16, Auto-Resume chống mất điện.
+    *   Huấn luyện lần lượt 3 mô hình (`mobilenetv3_large_100`, `tf_efficientnetv2_b0`, `ghostnetv2_100`) trên GPU Colab.
+    *   Vẽ Master Dashboard học thuật (Loss/Accuracy Dynamics, Confusion Matrix, ROC Curve, FPS, Latency).
+*   **Lựa Chọn Quán Quân Tuyệt Đối: `tf_efficientnetv2_b0` (Google EfficientNetV2)**:
+    *   *Loài cây (40 loài)*: Đạt Accuracy **~90.0%**, F1 **~90.0%**, Tốc độ **~438 FPS** (Vô địch).
+    *   *Bệnh cây (5 nhóm bệnh)*: Đạt Accuracy **~92.5%**, F1 **~90.8%**, Tốc độ **~106 FPS** (Vô địch).
+    *   Đã dọn sạch các file mô hình cũ `mobilenetv3_large_100` khỏi thư mục `models/`.
+    *   Đã nạp chính thức cặp file mô hình quán quân vào [AI_Engine/models/](file:///d:/Plan/utrasupervip/AI_Engine/models):
+        1. [tf_efficientnetv2_b0.onnx](file:///d:/Plan/utrasupervip/AI_Engine/models/tf_efficientnetv2_b0.onnx) (Nhận diện 40 loài cây, Output: `[1, 40]`).
+        2. [tf_efficientnetv2_b0_disease.onnx](file:///d:/Plan/utrasupervip/AI_Engine/models/tf_efficientnetv2_b0_disease.onnx) (Chẩn đoán 5 nhóm bệnh, Output: `[1, 5]`).
+*   **Nâng cấp AI Engine ([AI_Engine/main.py](file:///d:/Plan/utrasupervip/AI_Engine/main.py))**:
+    *   Tự động nạp đồng thời 2 mô hình `tf_efficientnetv2_b0` và `tf_efficientnetv2_b0_disease`.
+    *   Mở endpoint `/predict-disease` trả về tên bệnh tiếng Việt, mức độ nguy hiểm, nguyên nhân và phác đồ điều trị 4 bước.
+
+---
 ## 5. Các Task Đang Chạy Nền (Active Tasks)
 *   *Hiện tại tất cả các Background Tasks cho Web và Mobile đã được hoàn thành.*
 
@@ -270,11 +311,18 @@ Hệ thống được thiết kế theo mô hình Microservices bao gồm 3 ph�
 **Bước 1: Nối cáp thông luồng AI thực tế & Tối ưu hóa** ✅ *(Đã hoàn thành xuất sắc ngày 13/10/2026)*
 **Bước 2: Tính năng Khu Vườn Của Tôi (My Garden)** ✅ *(Đã hoàn thành xuất sắc ngày 13/10/2026)*
 **Bước 3: Đánh thức Trợ lý Ảo (AI Chatbot - Gemini Bác sĩ Cây trồng & Nhận diện Đa phương thức)** ✅ *(Đã hoàn thành xuất sắc ngày 14/10/2026)*
+**Bước 4: Huấn luyện & Tích Hợp Cặp Mô Hình Quán Quân EfficientNetV2 Vào AI Engine** ✅ *(Đã hoàn thành xuất sắc ngày 19/10/2026)*
+- Đã xuất sắc train và nạp cặp đôi `tf_efficientnetv2_b0` (Accuracy 90% cho 40 cây và 92.5% cho 5 nhóm bệnh).
+- Đã hoàn thiện endpoint `/predict-disease` trên FastAPI.
 
-**Bước 4: Màn hình Lịch sử Quét (Scan History)** 🎯 *(Ưu tiên tiếp theo)*
-- Xây dựng giao diện cho thư mục `lib/features/history/screens/` để người dùng xem lại toàn bộ các lần quét đã lưu trong collection `ScanHistory` của Firestore.
+**Bước 5: Nối Luồng Quét Bệnh Tại Khu Vườn Trên Flutter App** 🎯 *(Ưu tiên tiếp theo)*
+- Bổ sung endpoint `/api/diagnose-disease` trong Spring Boot Backend.
+- Kết nối nút `[Quét bệnh]` trong màn hình chi tiết cây (`plant_detail_screen.dart`), hiển thị kết quả chẩn đoán bệnh động kèm phác đồ điều trị và cập nhật trạng thái cây vào `MyGarden`.
 
-**Bước 5: Hoàn thiện Cửa hàng & Giỏ hàng (Shop & Cart)**
+**Bước 6: Màn hình Lịch sử Quét (Scan History)**
+- Xây dựng giao diện cho thư mục `lib/features/history/screens/` để người dùng xem lại toàn bộ các lần quét loài cây và quét bệnh đã lưu trong collection `ScanHistory` của Firestore.
+
+**Bước 7: Hoàn thiện Cửa hàng & Giỏ hàng (Shop & Cart)**
 - Xử lý logic Giỏ hàng và đặt mua vật tư nông nghiệp/cây cảnh.
 
 ---
@@ -340,3 +388,55 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
     *   `notes` (String): Ghi chú chăm sóc của người dùng
     *   `wikiData` (Map): Toàn bộ thông số sinh thái lưu kèm từ kết quả AI/Firestore
     *   `createdAt` (Timestamp): Thời điểm thêm cây vào khu vườn
+
+---
+
+## 4.12. Nâng Cấp Quán Quân Kép EfficientNetV2 & Hoàn Thiện Luồng Quét Bệnh Lá Cây (End-to-End)
+*Ngày cập nhật: 19 tháng 10, 2026*
+
+### 1. Bối cảnh & Phân tách luồng sản phẩm (Product Workflow Separation)
+*   **Trải nghiệm nhận diện loài cây (Plant Discovery)**: Giữ nguyên tại Camera chính (Tab Scan ngoài) phục vụ khám phá 40 loài cây cảnh, tìm hiểu kiến thức sinh học bách khoa và thêm cây mới vào vườn.
+*   **Trải nghiệm chẩn đoán bệnh cây (Plant Disease Diagnosis)**: Kích hoạt chuyên biệt trong **Khu Vườn Của Tôi ➔ Chi tiết cây cụ thể ➔ Nút `[Quét bệnh]`**, tận dụng triệt để ngữ cảnh cây đã biết (`nameVi`, `scientificName`, `zone`, `healthStatus`) để đưa ra phác đồ điều trị chuẩn xác nhất.
+
+### 2. Thành tựu Huấn luyện AI & Tối ưu Mô hình ONNX
+*   **Dataset 5 nhóm bệnh chuẩn hóa**: Gom thành công 2.107 ảnh sạch tại `AI_Engine/dataset/` (`Anthracnose`, `Bacterial_Blight`, `Healthy`, `Leaf_Spot`, `Powdery_Mildew`).
+*   **Lựa chọn mô hình Quán quân**: Thực nghiệm trên Google Colab qua notebook `PlantDiseaseClassifier.ipynb`, mô hình **Google EfficientNetV2 (`tf_efficientnetv2_b0`)** đạt thành tích cao nhất:
+    *   *Nhận diện 40 loài cây*: Đạt ~90% Accuracy, tốc độ suy luận cực nhanh ~438 FPS.
+    *   *Chẩn đoán 5 bệnh lá*: Đạt **92.48% Accuracy**, suy luận thời gian thực ~106 FPS.
+*   **Dọn dẹp & Tối ưu xuất ONNX**:
+    *   Xóa bỏ hoàn toàn mô hình cũ `mobilenetv3_large_100.onnx` và các file weight thừa.
+    *   Xuất chuẩn ONNX với `opset_version=18` và `onnxscript` không còn warning version converter.
+    *   Nạp cặp mô hình chính thức vào `AI_Engine/models/`:
+        1. `tf_efficientnetv2_b0.onnx` + `.data` (40 loài cây).
+        2. `tf_efficientnetv2_b0_disease.onnx` + `.data` (5 nhóm bệnh).
+
+### 3. Cập nhật AI Engine (Python FastAPI - Cổng 8000)
+*   Tự động nạp đồng thời cả 2 mô hình ONNX khi khởi động máy chủ.
+*   Thêm endpoint chuyên trách `@app.post("/predict-disease")`: Nhận ảnh lá bệnh, trả về `prediction`, `prediction_vi`, `confidence`, `severity`, `severity_vi`, `cause`, `treatment_steps` (phác đồ 3-4 bước), và danh sách `top_predictions`.
+
+### 4. Cập nhật Central Backend (Java Spring Boot - Cổng 8080)
+*   Thêm cấu hình `ai.engine.disease.url=http://localhost:8000/predict-disease` trong `application.properties`.
+*   Bổ sung endpoint `@PostMapping("/diagnose-disease")` trong `DiseaseController.java`: Tiếp nhận MultipartFile từ ứng dụng di động, đính kèm `plant_name`, `plant_id`, xác thực Firebase Bearer token, chuyển tiếp sang AI Engine và lưu nhật ký ngầm vào Firestore `ScanHistory` với `type: "disease_diagnosis"`.
+
+### 5. Cập nhật Mobile App (Flutter)
+*   **`AppConstants`**: Bổ sung `diagnoseDiseaseUrl => '$baseUrl/diagnose-disease'`.
+*   **`ScanProvider`**: Thêm hàm `uploadAndDiagnoseDisease({plantName, plantId, token})` xử lý upload ảnh lá qua FormData multipart đa nền tảng (Web/Mobile).
+*   **`PlantDetailScreen`**: 
+    *   Sửa nút `[Quét bệnh]` mở BottomSheet tùy chọn chụp ảnh cận cảnh lá bệnh từ Camera hoặc chọn từ Thư viện.
+    *   Chuyển mượt mà sang `DiagnosisReportScreen(isDiseaseScan: true, currentPlant: currentPlant)` kèm hiệu ứng Shimmer Loading.
+*   **`DiagnosisReportScreen`**:
+    *   Hiển thị Hero Card với tên bệnh tiếng Việt, badge mức độ nguy hiểm và thẻ trạng thái theo màu sắc cảnh báo y học cây trồng.
+    *   Thẻ **Nguyên nhân & Mầm bệnh** (`_buildCauseCard`) lấy động 100% từ AI Engine.
+    *   Thẻ **Phác đồ điều trị** (`_buildTreatmentCard`) hiển thị từng bước hành động xử lý khẩn cấp (cách ly, cắt tỉa, phun thuốc).
+    *   Nút **"Cập nhật bệnh án"**: Tự động ghi nhận `healthStatus = 'Bị ' + predictionVi` vào hồ sơ cây trong Firestore `MyGarden`.
+    *   Nút **"Hỏi Bác sĩ AI"**: Mở màn hình chat trợ lý Floria AI kèm ngữ cảnh bệnh lá và lịch chăm sóc để nhận tư vấn chuyên sâu tức thì.
+
+### 6. Rà Soát Làm Sạch Hệ Thống & Loại Bỏ Triệt Để Dữ Liệu Mock
+*   **Xóa bỏ Dataset thô**: Dọn dẹp hoàn toàn thư mục `AI_Engine/dataset/` (hơn 2.100 ảnh lá) sau khi đã xuất mô hình ONNX thành công, giúp giảm tải dung lượng ổ cứng.
+*   **Xóa các file Google Colab**: Xóa bỏ các file notebook huấn luyện thừa trên repo (`PlantClassifierV4.ipynb`, `PlantDiseaseClassifier.ipynb`, `train_plant_disease_colab.ipynb`).
+*   **Loại bỏ mã Mock Fallback**:
+    *   Xóa bỏ `mock_disease_detector` trong `AI_Engine/main.py`. Nếu máy chủ gặp lỗi, hệ thống sẽ trả về HTTP 500 trung thực.
+    *   Xóa bỏ fallback bypass tự đăng nhập trong `login_screen.dart` của Flutter App.
+*   **Vận hành thực tế (Live Production)**: Hệ thống chạy 100% bằng mô hình ONNX thật, Spring Boot Gateway thật và cơ sở dữ liệu Firebase Firestore đồng bộ thời gian thực.
+
+

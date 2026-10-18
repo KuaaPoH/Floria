@@ -105,6 +105,71 @@ class ScanProvider extends ChangeNotifier {
     }
   }
 
+  // Gửi ảnh lên Spring Boot API chuyên trách chẩn đoán bệnh lá cây (/api/diagnose-disease)
+  Future<void> uploadAndDiagnoseDisease({
+    String? plantName,
+    String? plantId,
+    String? token,
+  }) async {
+    if (_selectedImage == null || _webImageBytes == null) {
+      _errorMessage = "Vui lòng chọn hoặc chụp ảnh lá cây cần kiểm tra.";
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    _scanResult = null;
+    notifyListeners();
+
+    try {
+      final MultipartFile multipartFile = MultipartFile.fromBytes(
+        _webImageBytes!,
+        filename: _selectedImage!.name,
+      );
+
+      final Map<String, dynamic> formMap = {
+        'file': multipartFile,
+      };
+      if (plantName != null && plantName.isNotEmpty) {
+        formMap['plant_name'] = plantName;
+      }
+      if (plantId != null && plantId.isNotEmpty) {
+        formMap['plant_id'] = plantId;
+      }
+
+      final FormData formData = FormData.fromMap(formMap);
+
+      final Map<String, dynamic> headers = {
+        'Accept': 'application/json',
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await _dio.post(
+        AppConstants.diagnoseDiseaseUrl,
+        data: formData,
+        options: Options(headers: headers),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        _scanResult = Map<String, dynamic>.from(response.data);
+      } else {
+        _errorMessage = "Lỗi phản hồi máy chủ: Mã ${response.statusCode}";
+      }
+    } catch (e) {
+      if (e is DioException) {
+        _errorMessage = "Lỗi kết nối từ App: ${e.message} - Chi tiết: ${e.response?.data}";
+      } else {
+        _errorMessage = "Lỗi chẩn đoán bệnh: $e";
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Reset trang thai
   void reset() {
     _selectedImage = null;

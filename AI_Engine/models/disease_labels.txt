@@ -1,0 +1,5 @@
+Anthracnose
+Bacterial_Blight
+Healthy
+Leaf_Spot
+Powdery_Mildew

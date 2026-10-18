@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'plant_diary_screen.dart';
 import '../../../core/widgets/custom_image.dart';
-import '../../scan/screens/scan_screen.dart';
+import '../../scan/screens/diagnosis_report_screen.dart';
+import '../../scan/providers/scan_provider.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
 import '../models/garden_plant.dart';
 import '../providers/garden_provider.dart';
@@ -495,7 +497,7 @@ class PlantDetailScreen extends StatelessWidget {
             icon: Icons.photo_camera,
             label: "Quét bệnh",
             isPrimary: false,
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen())),
+            onTap: () => _showDiseaseScanModal(context, currentPlant),
           ),
         ),
         const SizedBox(width: 8),
@@ -538,6 +540,165 @@ class PlantDetailScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // Modal chẩn đoán bệnh lá cho cây trong vườn
+  void _showDiseaseScanModal(BuildContext context, GardenPlant? currentPlant) {
+    final plantName = currentPlant?.nameVi ?? plant?["title"] ?? "cây cảnh";
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: const BoxDecoration(
+            color: Color(0xFFFBF9F6),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF364534).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.coronavirus_outlined, color: Color(0xFF364534), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Chẩn đoán bệnh lá: $plantName",
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1B1C1A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          "Chụp cận cảnh chiếc lá nghi ngờ bị mầm bệnh",
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFF74796E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF364534).withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF364534).withOpacity(0.12)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Color(0xFF364534), size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "AI EfficientNetV2 sẽ phân tích các vết đốm, mầm bệnh thán thư, cháy lá vi khuẩn hoặc phấn trắng và đề xuất phác đồ điều trị.",
+                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF364534), height: 1.35),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _handlePickAndDiagnose(context, ctx, ImageSource.camera, currentPlant),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF364534),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      icon: const Icon(Icons.camera_alt, size: 20),
+                      label: Text("Chụp ảnh lá", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _handlePickAndDiagnose(context, ctx, ImageSource.gallery, currentPlant),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF364534),
+                        side: const BorderSide(color: Color(0xFF364534)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      icon: const Icon(Icons.photo_library, size: 20),
+                      label: Text("Chọn từ album", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handlePickAndDiagnose(
+    BuildContext context,
+    BuildContext modalCtx,
+    ImageSource source,
+    GardenPlant? currentPlant,
+  ) async {
+    Navigator.pop(modalCtx);
+    final scanProvider = Provider.of<ScanProvider>(context, listen: false);
+    await scanProvider.pickImage(source);
+    if (scanProvider.selectedImage != null && context.mounted) {
+      final plantName = currentPlant?.nameVi ?? plant?["title"];
+      final plantId = currentPlant?.id;
+
+      // Mở ngay màn hình báo cáo bệnh (màn hình sẽ có shimmer loading khi đang xử lý)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DiagnosisReportScreen(
+            isDiseaseScan: true,
+            currentPlant: currentPlant,
+          ),
+        ),
+      );
+
+      // Gửi request chẩn đoán lên Backend Spring Boot & AI Engine
+      scanProvider.uploadAndDiagnoseDisease(
+        plantName: plantName,
+        plantId: plantId,
+      );
+    }
   }
 
   Widget _buildActionBtn({
