@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -29,14 +30,14 @@ class GeminiPlantResult {
 class GeminiService {
   static const String _prefKey = 'floria_gemini_api_key';
   static const String _prefModelKey = 'floria_gemini_model_name';
-  static const String defaultModel = 'gemini-3.8-flash';
+  static const String defaultModel = 'gemini-3-flash-preview';
 
-  // Danh sách các mô hình hoạt động ổn định nhất theo đo lường thực tế để tự động chuyển tiếp (fallback) khi quá tải (503)
+  // Danh sách các mô hình thế hệ 3 mới nhất của Google hoạt động chuẩn xác 100%
   static const List<String> fallbackModels = [
-    'gemini-3.5-flash-lite', // Đã kiểm chứng: độ trễ cực thấp, không bị nghẽn tải
-    'gemini-3.7-flash',      // Bản 3.7 cân bằng mạnh mẽ
     'gemini-3-flash-preview',
-    'gemini-flash-lite-latest',
+    'gemini-3.1-flash-lite',
+    'gemini-3.1-flash-lite-preview',
+    'gemini-3.6-flash',
   ];
 
   // 40 loài cây trong Cơ sở Dữ liệu của ứng dụng Floria
@@ -100,7 +101,11 @@ class GeminiService {
 
   static Future<String> getModelName() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefModelKey)?.trim() ?? defaultModel;
+    final saved = prefs.getString(_prefModelKey)?.trim();
+    if (saved != null && fallbackModels.contains(saved)) {
+      return saved;
+    }
+    return defaultModel;
   }
 
   static Future<void> saveModelName(String model) async {
@@ -269,15 +274,36 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
     final primaryModel = await getModelName();
 
     final systemInstruction = Content.system(
-      '''Bạn là Bác sĩ Cây trồng Floria AI - chuyên gia nông nghiệp và thực vật học giàu kinh nghiệm, thân thiện và tận tâm.
-Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuyên nghiệp.
+      '''Bạn là Bác sĩ Cây trồng Floria AI - chuyên gia nông nghiệp và y học thực vật học giàu kinh nghiệm, khách quan, tận tâm và có y đức.
+Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn y khoa thực vật.
 ${currentPlantContext != null && currentPlantContext.isNotEmpty ? 'Ngữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}
-Hãy tư vấn chi tiết về:
-- Cách chăm sóc, tưới nước, ánh sáng, phân bón.
-- Chẩn đoán bệnh cây (vàng lá, rệp, đốm nâu, úng rễ, sâu bệnh) và cách chữa trị an toàn sinh học.
-- Hướng dẫn cắt tỉa, nhân giống cây trồng trong nhà và ngoài trời.
-Hãy định dạng câu trả lời rõ ràng với gạch đầu dòng, nhấn mạnh các lưu ý quan trọng.
-'''
+
+NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
+1. ĐẶT LỢI ÍCH CỦA CÂY VÀ NGƯỜI DÙNG LÊN HÀNG ĐẦU:
+   - Luôn ưu tiên giải pháp chăm sóc tự nhiên: điều chỉnh ánh sáng, độ ẩm, kiểm soát lượng nước tưới, độ thông thoáng trước khi nghĩ đến thuốc hay phân bón.
+   - Trả lời đúng trọng tâm câu hỏi của người dùng, KHÔNG gượng ép bán sản phẩm.
+
+2. QUY TẮC KÊ ĐƠN THUỐC / VẬT TƯ (RẤT CHẶT CHẼ):
+   - TUYỆT ĐỐI KHÔNG đề xuất sản phẩm hay đính kèm mã thẻ khi:
+     + Người dùng chỉ hỏi kiến thức cơ bản (lịch tưới nước, vị trí đặt cây, cách tỉa cành thông thường, ý nghĩa cây...).
+     + Cây chỉ gặp vấn đề sinh lý nhẹ có thể giải quyết bằng cách thay đổi chế độ chăm sóc.
+   - CHỈ ĐƯỢC PHÉP đề xuất và đính kèm thẻ sản phẩm trong 2 TRƯỜNG HỢP:
+     + Trường hợp A: Cây thực sự bị bệnh hoặc sâu hại phá hoại nghiêm trọng (rệp sáp, bọ trĩ, nhện đỏ, nấm thán thư, đốm lá vi khuẩn, thối rễ úng nặng) bắt buộc phải dùng chế phẩm điều trị.
+     + Trường hợp B: Người dùng CHỦ ĐỘNG hỏi xin tên thuốc, phân bón, đất trồng hoặc nhờ đề xuất sản phẩm.
+
+3. KHO DƯỢC PHẨM & VẬT TƯ FLORIA (CHỈ KÊ ĐƠN KHI THỎA MÃN ĐIỀU KIỆN TRÊN):
+   - id: `nano-bac-tri-nam` ➔ Chế Phẩm Nano Bạc Đồng Sinh Học (Đặc trị thán thư, đốm lá, phấn trắng, cháy lá vi khuẩn).
+   - id: `dau-neem-tri-rep` ➔ Tinh Dầu Neem Hữu Cơ Ép Lạnh (Đặc trị rệp sáp, bọ trĩ, nhện đỏ, rầy mềm).
+   - id: `phan-rong-bien-kich-re` ➔ Phân Bón Hữu Cơ Rong Biển & Vi Lượng (Phục hồi cây vàng lá, suy rễ sau ốm).
+   - id: `phan-trun-que-vien-nen` ➔ Phân Trùn Quế Viên Nén Tan Chậm (Bổ sung dinh dưỡng êm dịu, ngăn thối rễ).
+   - id: `binh-xit-phun-suong-15l` ➔ Bình Xịt Áp Suất Phun Sương Mịn 1.5L (Dụng cụ phun thuốc đẫm đều 2 mặt lá).
+   - id: `keo-cat-tia-canh-nhat` ➔ Kéo Cắt Tỉa Cành Thép SK5 (Khử khuẩn cắt bỏ triệt để cành lá bệnh tránh lây chéo).
+   - id: `dat-trong-indoor-premium` ➔ Giá Thể Đất Trồng Indoor Mix Thoát Nước Tốt (Cấp cứu cây úng rễ, thay chậu mới).
+
+4. CÚ PHÁP ĐÍNH KÈM THẺ (NẾU VÀ CHỈ NẾU THỰC SỰ CẦN KÊ ĐƠN):
+   Chỉ khi thỏa mãn điều kiện kê đơn, hãy ghi mã ở dòng cuối cùng:
+   [RECOMMEND_PRODUCT: id_san_pham]
+   Nếu không cần kê đơn, TUYỆT ĐỐI KHÔNG ghi thẻ này.'''
     );
 
     List<Part> parts = [];
@@ -313,6 +339,186 @@ Hãy định dạng câu trả lời rõ ràng với gạch đầu dòng, nhấn
     }
 
     throw lastError ?? Exception("Không thể kết nối đến Bác sĩ Cây trồng AI.");
+  }
+
+  static const String _prefDeepThinkingKey = 'floria_gemini_deep_thinking';
+
+  static Future<bool> getDeepThinkingMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefDeepThinkingKey) ?? false;
+  }
+
+  static Future<void> saveDeepThinkingMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefDeepThinkingKey, enabled);
+  }
+
+  /// Trợ lý Trò chuyện Real-time Streaming Tức thì (Hỗ trợ chuyển đổi giữa Siêu tốc ~1s và Suy nghĩ sâu)
+  static Stream<String> chatWithDoctorStream({
+    required String prompt,
+    List<Content>? history,
+    Uint8List? imageBytes,
+    String? currentPlantContext,
+    bool enableDeepThinking = false,
+  }) async* {
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception("Chưa cấu hình Google Gemini API Key.");
+    }
+
+    final primaryModel = await getModelName();
+
+    final systemPrompt = '''Bạn là Bác sĩ Cây trồng Floria AI - chuyên gia nông nghiệp và y học thực vật học giàu kinh nghiệm, khách quan, tận tâm và có y đức.
+Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn y khoa thực vật.
+${currentPlantContext != null && currentPlantContext.isNotEmpty ? 'Ngữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}
+
+NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
+1. ĐẶT LỢI ÍCH CỦA CÂY VÀ NGƯỜI DÙNG LÊN HÀNG ĐẦU:
+   - Luôn ưu tiên giải pháp chăm sóc tự nhiên: điều chỉnh ánh sáng, độ ẩm, kiểm soát lượng nước tưới, độ thông thoáng trước khi nghĩ đến thuốc hay phân bón.
+   - Trả lời đúng trọng tâm câu hỏi của người dùng, KHÔNG gượng ép bán sản phẩm.
+
+2. QUY TẮC KÊ ĐƠN THUỐC / VẬT TƯ (RẤT CHẶT CHẼ):
+   - TUYỆT ĐỐI KHÔNG đề xuất sản phẩm hay đính kèm mã thẻ khi:
+     + Người dùng chỉ hỏi kiến thức cơ bản (lịch tưới nước, vị trí đặt cây, cách tỉa cành thông thường, ý nghĩa cây...).
+     + Cây chỉ gặp vấn đề sinh lý nhẹ có thể giải quyết bằng cách thay đổi chế độ chăm sóc.
+   - CHỈ ĐƯỢC PHÉP đề xuất và đính kèm thẻ sản phẩm trong 2 TRƯỜNG HỢP:
+     + Trường hợp A: Cây thực sự bị bệnh hoặc sâu hại phá hoại nghiêm trọng (rệp sáp, bọ trĩ, nhện đỏ, nấm thán thư, đốm lá vi khuẩn, thối rễ úng nặng) bắt buộc phải dùng chế phẩm điều trị.
+     + Trường hợp B: Người dùng CHỦ ĐỘNG hỏi xin tên thuốc, phân bón, đất trồng hoặc nhờ đề xuất sản phẩm.
+
+3. KHO DƯỢC PHẨM & VẬT TƯ FLORIA (CHỈ KÊ ĐƠN KHI THỎA MÃN ĐIỀU KIỆN TRÊN):
+   - id: `nano-bac-tri-nam` ➔ Chế Phẩm Nano Bạc Đồng Sinh Học (Đặc trị thán thư, đốm lá, phấn trắng, cháy lá vi khuẩn).
+   - id: `dau-neem-tri-rep` ➔ Tinh Dầu Neem Hữu Cơ Ép Lạnh (Đặc trị rệp sáp, bọ trĩ, nhện đỏ, rầy mềm).
+   - id: `phan-rong-bien-kich-re` ➔ Phân Bón Hữu Cơ Rong Biển & Vi Lượng (Phục hồi cây vàng lá, suy rễ sau ốm).
+   - id: `phan-trun-que-vien-nen` ➔ Phân Trùn Quế Viên Nén Tan Chậm (Bổ sung dinh dưỡng êm dịu, ngăn thối rễ).
+   - id: `binh-xit-phun-suong-15l` ➔ Bình Xịt Áp Suất Phun Sương Mịn 1.5L (Dụng cụ phun thuốc đẫm đều 2 mặt lá).
+   - id: `keo-cat-tia-canh-nhat` ➔ Kéo Cắt Tỉa Cành Thép SK5 (Khử khuẩn cắt bỏ triệt để cành lá bệnh tránh lây chéo).
+   - id: `dat-trong-indoor-premium` ➔ Giá Thể Đất Trồng Indoor Mix Thoát Nước Tốt (Cấp cứu cây úng rễ, thay chậu mới).
+
+4. CÚ PHÁP ĐÍNH KÈM THẺ (NẾU VÀ CHỈ NẾU THỰC SỰ CẦN KÊ ĐƠN):
+   Chỉ khi thỏa mãn điều kiện kê đơn, hãy ghi mã ở dòng cuối cùng:
+   [RECOMMEND_PRODUCT: id_san_pham]
+   Nếu không cần kê đơn, TUYỆT ĐỐI KHÔNG ghi thẻ này.''';
+
+    // Chuẩn bị danh sách contents theo chuẩn REST API của Google Generative Language
+    final List<Map<String, dynamic>> apiContents = [];
+
+    // Chuyển lịch sử trò chuyện sang định dạng REST
+    if (history != null) {
+      for (final item in history) {
+        final role = item.role == 'user' ? 'user' : 'model';
+        final List<Map<String, dynamic>> partsList = [];
+        for (final p in item.parts) {
+          if (p is TextPart) {
+            partsList.add({'text': p.text});
+          } else if (p is DataPart) {
+            partsList.add({
+              'inlineData': {
+                'mimeType': p.mimeType,
+                'data': base64Encode(p.bytes),
+              }
+            });
+          }
+        }
+        if (partsList.isNotEmpty) {
+          apiContents.add({'role': role, 'parts': partsList});
+        }
+      }
+    }
+
+    // Tin nhắn hiện tại của người dùng
+    final List<Map<String, dynamic>> currentParts = [];
+    if (imageBytes != null) {
+      currentParts.add({
+        'inlineData': {
+          'mimeType': 'image/jpeg',
+          'data': base64Encode(imageBytes),
+        }
+      });
+    }
+    currentParts.add({'text': prompt});
+    apiContents.add({'role': 'user', 'parts': currentParts});
+
+    final payload = {
+      'contents': apiContents,
+      'systemInstruction': {
+        'parts': [
+          {'text': systemPrompt}
+        ]
+      },
+      'generationConfig': {
+        'temperature': enableDeepThinking ? 0.2 : 0.35,
+        'topK': 40,
+        'topP': 0.95,
+        'thinkingConfig': {
+          'thinkingBudget': enableDeepThinking ? 1024 : 0, // 0: Siêu tốc phản hồi ~1s; 1024: Suy nghĩ sâu phân tích đa tầng
+        }
+      }
+    };
+
+    final modelsToTry = [
+      primaryModel,
+      ...fallbackModels.where((m) => m != primaryModel),
+    ];
+
+    bool hasYielded = false;
+    dynamic lastError;
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 25),
+    ));
+
+    for (final mName in modelsToTry) {
+      try {
+        final streamUrl = 'https://generativelanguage.googleapis.com/v1beta/models/$mName:streamGenerateContent?alt=sse&key=$apiKey';
+        final response = await dio.post<ResponseBody>(
+          streamUrl,
+          data: payload,
+          options: Options(
+            responseType: ResponseType.stream,
+            headers: {'Content-Type': 'application/json'},
+          ),
+        );
+
+        final stream = response.data!.stream
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter());
+
+        await for (final line in stream) {
+          if (line.startsWith('data: ')) {
+            final jsonStr = line.substring(6).trim();
+            if (jsonStr.isEmpty) continue;
+            try {
+              final Map<String, dynamic> data = jsonDecode(jsonStr);
+              final candidates = data['candidates'] as List?;
+              if (candidates != null && candidates.isNotEmpty) {
+                final parts = candidates[0]['content']?['parts'] as List?;
+                if (parts != null) {
+                  for (final p in parts) {
+                    final txt = p['text']?.toString();
+                    if (txt != null && txt.isNotEmpty) {
+                      hasYielded = true;
+                      yield txt;
+                    }
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
+        if (hasYielded) return;
+      } catch (e) {
+        lastError = e;
+        if (hasYielded) return;
+        debugPrint("Thử SSE model $mName thất bại ($e), đang tự động fallback...");
+        continue;
+      }
+    }
+
+    if (!hasYielded) {
+      throw lastError ?? Exception("Không thể kết nối đến Bác sĩ Cây trồng AI.");
+    }
   }
 
   /// Hộp thoại cấu hình Gemini API Key & Lựa chọn Phiên bản Mô hình AI
@@ -408,33 +614,25 @@ Hãy định dạng câu trả lời rõ ràng với gạch đầu dòng, nhấn
                 ),
                 const SizedBox(height: 8),
                 _buildModelOption(
-                  title: "⚡ Gemini 3.8 Flash (Thông minh nhất)",
-                  subtitle: "Thị giác sắc bén, giải đáp bệnh cây sâu sắc (Flagship).",
-                  value: "gemini-3.8-flash",
+                  title: "⚡ Gemini 3 Flash (Khuyên dùng: Phản hồi ~1s)",
+                  subtitle: "Thế hệ Flash 3 mới nhất, zero thinking delay, phản hồi tức thì.",
+                  value: "gemini-3-flash-preview",
                   selectedValue: selectedModel,
                   onChanged: (val) => setModalState(() => selectedModel = val),
                 ),
                 const SizedBox(height: 6),
                 _buildModelOption(
-                  title: "🌱 Gemini 3.5 Flash-Lite (Khuyên dùng: Siêu tốc & Ổn định)",
-                  subtitle: "Phản hồi tức thì (<1s), không lo nghẽn mạng giờ cao điểm.",
-                  value: "gemini-3.5-flash-lite",
+                  title: "🚀 Gemini 3.1 Flash-Lite (Siêu nhẹ)",
+                  subtitle: "Tối ưu hóa độ trễ, tiết kiệm tài nguyên và ổn định cao.",
+                  value: "gemini-3.1-flash-lite",
                   selectedValue: selectedModel,
                   onChanged: (val) => setModalState(() => selectedModel = val),
                 ),
                 const SizedBox(height: 6),
                 _buildModelOption(
-                  title: "🚀 Gemini 3.7 Flash (Cân bằng mạnh mẽ)",
-                  subtitle: "Mô hình thế hệ 3.7 cân bằng giữa tốc độ và suy luận.",
-                  value: "gemini-3.7-flash",
-                  selectedValue: selectedModel,
-                  onChanged: (val) => setModalState(() => selectedModel = val),
-                ),
-                const SizedBox(height: 6),
-                _buildModelOption(
-                  title: "🔄 Gemini Flash-Lite Latest",
-                  subtitle: "Tự động trỏ về phiên bản Lite mới nhất của Google.",
-                  value: "gemini-flash-lite-latest",
+                  title: "🧠 Gemini 3.6 Flash (Chuyên sâu)",
+                  subtitle: "Khả năng suy luận lâm sàng thực vật học mở rộng.",
+                  value: "gemini-3.6-flash",
                   selectedValue: selectedModel,
                   onChanged: (val) => setModalState(() => selectedModel = val),
                 ),

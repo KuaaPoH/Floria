@@ -3,19 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../../core/services/gemini_service.dart';
+import '../../../core/widgets/custom_image.dart';
+import '../../shop/providers/shop_provider.dart';
+import '../../shop/screens/product_detail_screen.dart';
 
 class ChatMessageItem {
   final bool isUser;
-  final String text;
+  String text;
   final Uint8List? imageBytes;
   final DateTime timestamp;
+  List<String> recommendedProductIds;
+  bool isStreaming;
 
   ChatMessageItem({
     required this.isUser,
     required this.text,
     this.imageBytes,
     DateTime? timestamp,
+    this.recommendedProductIds = const [],
+    this.isStreaming = false,
   }) : timestamp = timestamp ?? DateTime.now();
 }
 
@@ -45,6 +53,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
   bool _isLoading = false;
   bool _hasApiKey = false;
+  bool _enableDeepThinking = false;
   String _modelName = GeminiService.defaultModel;
   Uint8List? _attachedImageBytes;
 
@@ -59,8 +68,25 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   void initState() {
     super.initState();
     _checkApiKey();
+    _loadThinkingMode();
     _setupPlantSpecificPrompts();
     _initWelcomeMessage();
+  }
+
+  Future<void> _loadThinkingMode() async {
+    final isDeep = await GeminiService.getDeepThinkingMode();
+    if (mounted) {
+      setState(() {
+        _enableDeepThinking = isDeep;
+      });
+    }
+  }
+
+  void _toggleDeepThinking(bool isDeep) async {
+    setState(() {
+      _enableDeepThinking = isDeep;
+    });
+    await GeminiService.saveDeepThinkingMode(isDeep);
   }
 
   void _setupPlantSpecificPrompts() {
@@ -90,9 +116,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   String _formatModelDisplay(String model) {
-    if (model == 'gemini-3.8-flash') return 'Gemini 3.8 Flash';
-    if (model == 'gemini-flash-lite-latest') return 'Gemini Flash-Lite';
-    if (model == 'gemini-3.5-flash-lite') return 'Gemini 3.5 Flash-Lite';
+    if (model == 'gemini-3-flash-preview') return 'Gemini 3 Flash';
+    if (model == 'gemini-3.1-flash-lite') return 'Gemini 3.1 Flash-Lite';
+    if (model == 'gemini-3.6-flash') return 'Gemini 3.6 Flash';
     return model;
   }
 
@@ -162,13 +188,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     }
 
     final userImage = _attachedImageBytes;
+    final userPrompt = text.isEmpty && userImage != null ? "Khám bệnh cho cây qua hình ảnh này giúp tôi" : text;
+    final aiPlaceholder = ChatMessageItem(
+      isUser: false,
+      text: "",
+      isStreaming: true,
+    );
+
     setState(() {
       _messages.add(ChatMessageItem(
         isUser: true,
-        text: text.isEmpty && userImage != null ? "Khám bệnh cho cây qua hình ảnh này giúp tôi" : text,
+        text: userPrompt,
         imageBytes: userImage,
       ));
-      _isLoading = true;
+      _messages.add(aiPlaceholder);
+      _isLoading = false;
       _messageController.clear();
       _attachedImageBytes = null;
     });
@@ -183,39 +217,62 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         }
       }
 
-      final aiResponse = await GeminiService.chatWithDoctor(
-        prompt: text.isEmpty ? "Hãy phân tích tình trạng và loài cây trong ảnh này giúp tôi." : text,
+      String accumulated = "";
+      final productRegex = RegExp(r'\[RECOMMEND_PRODUCT:\s*([a-zA-Z0-9_\-]+)\]');
+
+      await for (final chunk in GeminiService.chatWithDoctorStream(
+        prompt: userPrompt,
         history: _chatHistory,
         imageBytes: userImage,
         currentPlantContext: plantCtx,
-      );
-
-      // Cập nhật lịch sử chat cho Gemini
-      if (userImage != null) {
-        _chatHistory.add(Content.multi([
-          TextPart(text.isEmpty ? "Khám bệnh cho cây qua hình ảnh này giúp tôi" : text),
-          DataPart('image/jpeg', userImage),
-        ]));
-      } else {
-        _chatHistory.add(Content.text(text));
+        enableDeepThinking: _enableDeepThinking,
+      )) {
+        accumulated += chunk;
+        if (mounted) {
+          setState(() {
+            // Ẩn tạm tag sản phẩm trong lúc stream để giao diện không bị giật
+            aiPlaceholder.text = accumulated.replaceAll(productRegex, '').trimRight();
+          });
+          _scrollToBottom();
+        }
       }
-      _chatHistory.add(Content.model([TextPart(aiResponse)]));
+
+      // Khi stream xong: trích xuất các sản phẩm được kê đơn
+      final matches = productRegex.allMatches(accumulated);
+      final List<String> productIds = [];
+      for (final m in matches) {
+        if (m.group(1) != null) {
+          final pid = m.group(1)!.trim();
+          if (!productIds.contains(pid)) productIds.add(pid);
+        }
+      }
+      final cleanFinal = accumulated.replaceAll(productRegex, '').trim();
 
       if (mounted) {
         setState(() {
-          _messages.add(ChatMessageItem(isUser: false, text: aiResponse));
-          _isLoading = false;
+          aiPlaceholder.text = cleanFinal;
+          aiPlaceholder.recommendedProductIds = productIds;
+          aiPlaceholder.isStreaming = false;
         });
         _scrollToBottom();
       }
+
+      // Cập nhật lịch sử hội thoại cho Gemini
+      if (userImage != null) {
+        _chatHistory.add(Content.multi([
+          TextPart(userPrompt),
+          DataPart('image/jpeg', userImage),
+        ]));
+      } else {
+        _chatHistory.add(Content.text(userPrompt));
+      }
+      _chatHistory.add(Content.model([TextPart(cleanFinal)]));
+
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isLoading = false;
-          _messages.add(ChatMessageItem(
-            isUser: false,
-            text: "⚠️ Đã có sự cố khi kết nối với Bác sĩ Cây trồng AI: ${e.toString().replaceAll('Exception: ', '')}.\n\nVui lòng kiểm tra lại Google Gemini API Key hoặc kết nối mạng.",
-          ));
+          aiPlaceholder.text = "⚠️ Đã có sự cố khi kết nối với Bác sĩ Cây trồng AI: ${e.toString().replaceAll('Exception: ', '')}.\n\nVui lòng kiểm tra lại Google Gemini API Key hoặc kết nối mạng.";
+          aiPlaceholder.isStreaming = false;
         });
         _scrollToBottom();
       }
@@ -299,7 +356,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         const SizedBox(height: 2),
                         Text(
                           _hasApiKey
-                              ? "Floria ${_formatModelDisplay(_modelName)} • Trực tuyến"
+                              ? "Floria ${_formatModelDisplay(_modelName)} • ${_enableDeepThinking ? '🧠 Suy nghĩ sâu' : '⚡ Siêu tốc'}"
                               : "Chưa kích hoạt API Key • Bấm để cài đặt",
                           style: GoogleFonts.inter(
                             fontSize: 11,
@@ -344,6 +401,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               },
             ),
           ),
+
+          // Thanh chuyển đổi chế độ Siêu tốc <-> Suy nghĩ sâu
+          _buildModeSwitcher(),
 
           // Danh sách gợi ý câu hỏi nhanh (Quick Prompts)
           _buildQuickPromptsBar(),
@@ -480,13 +540,73 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     )
                   ],
                 ),
-                child: SelectableText(
-                  msg.text,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: const Color(0xFF1B1C1A),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (msg.isStreaming && msg.text.isEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _enableDeepThinking ? const Color(0xFF673AB7) : const Color(0xFF2E6F40),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            _enableDeepThinking
+                                ? "🧠 Bác sĩ đang suy luận y khoa đa tầng..."
+                                : "⚡ Bác sĩ đang chẩn đoán tức thì...",
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontStyle: FontStyle.italic,
+                              color: _enableDeepThinking ? const Color(0xFF5E35B1) : const Color(0xFF2E6F40),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      SelectableText(
+                        msg.isStreaming ? "${msg.text} ▍" : msg.text,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: const Color(0xFF1B1C1A),
+                        ),
+                      ),
+                    if (msg.recommendedProductIds.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5F4EA),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.medical_services_rounded, color: Color(0xFF2E6F40), size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              "BÁC SĨ AI KÊ ĐƠN VẬT TƯ ĐIỀU TRỊ",
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: const Color(0xFF2E6F40),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ...msg.recommendedProductIds.map((pid) => _buildProductRecommendationCard(pid)),
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -495,6 +615,121 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         ),
       );
     }
+  }
+
+  Widget _buildProductRecommendationCard(String productId) {
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final product = shopProvider.getProductById(productId);
+    if (product == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FBF8),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFC8E6C9)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: CustomImage(
+              imageUrl: product.imageUrl,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF191C19),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  product.formattedPrice,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF2E6F40),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductDetailScreen(product: product),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFB0BEC5)),
+                        ),
+                        child: Text(
+                          "Chi tiết",
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF455A64)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () {
+                        shopProvider.addToCart(product);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Đã thêm '${product.name}' vào giỏ hàng! 🌿"),
+                            backgroundColor: const Color(0xFF2E6F40),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF364534),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add_shopping_cart_rounded, color: Colors.white, size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Mua ngay",
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTypingIndicator() {
@@ -544,6 +779,106 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModeSwitcher() {
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF3EE),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFDDE3DC)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildModeTabItem(
+                  icon: Icons.bolt_rounded,
+                  label: "Siêu tốc (~1s)",
+                  isSelected: !_enableDeepThinking,
+                  activeBgColor: Colors.white,
+                  activeTextColor: const Color(0xFF1B5E20),
+                  onTap: () => _toggleDeepThinking(false),
+                ),
+                const SizedBox(width: 4),
+                _buildModeTabItem(
+                  icon: Icons.psychology_rounded,
+                  label: "Suy nghĩ sâu",
+                  isSelected: _enableDeepThinking,
+                  activeBgColor: const Color(0xFF673AB7),
+                  activeTextColor: Colors.white,
+                  onTap: () => _toggleDeepThinking(true),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Text(
+            _enableDeepThinking ? "Phân tích bệnh học đa tầng" : "Tối ưu phản hồi tức thì",
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              color: _enableDeepThinking ? const Color(0xFF673AB7) : const Color(0xFF5A6657),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeTabItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required Color activeBgColor,
+    required Color activeTextColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? activeBgColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? activeTextColor : const Color(0xFF687466),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? activeTextColor : const Color(0xFF687466),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

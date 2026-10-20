@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'features/home/screens/main_navigation_screen.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'features/auth/screens/login_screen.dart';
 import 'features/scan/providers/scan_provider.dart';
 import 'features/garden/providers/garden_provider.dart';
+import 'features/history/providers/history_provider.dart';
+import 'features/shop/providers/shop_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
 import 'features/splash/screens/splash_screen.dart';
 
 void main() async {
@@ -30,6 +29,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ScanProvider()),
         ChangeNotifierProvider(create: (_) => GardenProvider()),
+        ChangeNotifierProvider(create: (_) => HistoryProvider()),
+        ChangeNotifierProvider(create: (_) => ShopProvider()),
       ],
       child: const MyApp(),
     ),

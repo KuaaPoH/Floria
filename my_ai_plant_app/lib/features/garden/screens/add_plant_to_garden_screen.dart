@@ -23,6 +23,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedImage;
   Uint8List? _imageBytes;
+  String? _uploadedImageUrl;
 
   final TextEditingController _aiHintNotesCtrl = TextEditingController();
 
@@ -65,6 +66,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         setState(() {
           _selectedImage = image;
           _imageBytes = bytes;
+          _uploadedImageUrl = null;
         });
       }
     } catch (e) {
@@ -74,6 +76,37 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         );
       }
     }
+  }
+
+  // Đảm bảo lấy được URL vĩnh viễn lưu trữ trên backend thay vì đường dẫn blob tạm thời của trình duyệt
+  Future<String?> _ensurePermanentImageUrl(Map<String, dynamic> wikiData) async {
+    if (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty) {
+      return _uploadedImageUrl;
+    }
+    if (_imageBytes != null && _selectedImage != null) {
+      try {
+        final dio = Dio();
+        final multipartFile = MultipartFile.fromBytes(
+          _imageBytes!,
+          filename: _selectedImage!.name,
+        );
+        final formData = FormData.fromMap({'file': multipartFile});
+        final res = await dio.post(AppConstants.uploadImageUrl, data: formData);
+        if (res.statusCode == 200 && res.data != null && res.data['image_url'] != null) {
+          _uploadedImageUrl = res.data['image_url'].toString();
+          return _uploadedImageUrl;
+        }
+      } catch (e) {
+        debugPrint("Lỗi upload ảnh lên server: $e");
+      }
+    }
+    if (wikiData['imageUrl'] != null && wikiData['imageUrl'].toString().isNotEmpty) {
+      return wikiData['imageUrl'].toString();
+    }
+    if (wikiData['image_url'] != null && wikiData['image_url'].toString().isNotEmpty) {
+      return wikiData['image_url'].toString();
+    }
+    return _selectedImage?.path;
   }
 
   // Danh sách vị trí gợi ý dựa trên môi trường của khu vườn
@@ -217,6 +250,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         }
 
         final Map<String, dynamic> result = Map<String, dynamic>.from(response.data);
+        if (result['image_url'] != null) {
+          _uploadedImageUrl = result['image_url'].toString();
+        }
 
         // Kiểm tra xem có phải thực vật không (bảo vệ bởi CLIP Gatekeeper)
         final bool isValidPlant = result['is_valid_plant'] == true;
@@ -874,6 +910,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           final finalCalculatedDays = (7 / timesPerWeek).round().clamp(1, 14);
 
                           Navigator.pop(ctx); // Đóng modal
+                          final permanentUrl = await _ensurePermanentImageUrl(wikiData);
 
                           final success = await gardenProvider.addPlant(
                             gardenId: currentGarden?.id,
@@ -881,7 +918,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             scientificName: scientificName,
                             nickname: finalNickname,
                             zone: finalZone,
-                            imageUrl: _selectedImage!.path,
+                            imageUrl: permanentUrl,
                             plantType: plantType,
                             waterFrequencyDays: finalCalculatedDays,
                             reminderTime: reminderTime,

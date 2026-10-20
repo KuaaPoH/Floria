@@ -3,8 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'camera_scanning_screen.dart';
 import '../../profile/screens/premium_screen.dart';
-import 'package:provider/provider.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../../history/screens/history_screen.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -40,6 +39,19 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded, color: Color(0xFF1B1C1A)),
+            tooltip: 'Lịch sử quét',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryScreen()),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 32),

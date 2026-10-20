@@ -13,6 +13,7 @@ import 'dart:async';
 import '../../garden/providers/garden_provider.dart';
 import '../../garden/models/garden_plant.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
+import '../../shop/screens/shop_screen.dart';
 
 class DiagnosisReportScreen extends StatefulWidget {
   final bool isDiseaseScan;
@@ -1221,6 +1222,31 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               child: _buildInfoCell("Bước $idx", textStep),
             );
           }),
+          if (!isHealthy) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ShopScreen()),
+                  );
+                },
+                icon: const Icon(Icons.medical_services_outlined, size: 18, color: Colors.white),
+                label: Text(
+                  "Xem thuốc & vật tư đặc trị tại Cửa hàng",
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E6F40),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1711,9 +1737,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                             scientificName: scientificName,
                             nickname: nicknameCtrl.text.trim().isNotEmpty ? nicknameCtrl.text.trim() : nameVi,
                             zone: selectedZone,
-                            imageUrl: scanProvider.selectedImage != null
-                                ? scanProvider.selectedImage!.path
-                                : null,
+                            imageUrl: (scanProvider.scanResult != null && scanProvider.scanResult!['image_url'] != null)
+                                ? scanProvider.scanResult!['image_url']
+                                : (data != null && (data['imageUrl'] != null || data['image_url'] != null)
+                                    ? (data['imageUrl'] ?? data['image_url'])
+                                    : (scanProvider.selectedImage != null
+                                        ? scanProvider.selectedImage!.path
+                                        : null)),
                             plantType: plantType,
                             waterFrequencyDays: freqDays,
                             notes: "Thêm từ lượt quét thông minh Floria AI",

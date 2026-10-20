@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/app_constants.dart';
 
 class ScanProvider extends ChangeNotifier {
@@ -65,26 +66,46 @@ class ScanProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _errorMessage = "Vui lòng đăng nhập để sử dụng tính năng quét cây!";
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      String? token;
+      try {
+        token = await user.getIdToken();
+      } catch (_) {}
+
       // Chuyen doi anh sang MultipartFile tu mang bytes (hoat dong tren moi nen tang Web/Mobile)
       final MultipartFile multipartFile = MultipartFile.fromBytes(
         _webImageBytes!,
         filename: _selectedImage!.name,
       );
 
-      final FormData formData = FormData.fromMap({
+      final Map<String, dynamic> formMap = {
         'file': multipartFile,
-      });
+        'user_id': user.uid,
+      };
+
+      final FormData formData = FormData.fromMap(formMap);
+
+      final Map<String, dynamic> headers = {
+        'Accept': 'application/json',
+        'X-User-Id': user.uid,
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
 
       // Gui request POST sang Spring Boot (vi du: /api/scan-disease?model=efficientnetb0)
       final String url = "${AppConstants.scanDiseaseUrl}?model=$modelName";
       final response = await _dio.post(
         url,
         data: formData,
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-          },
-        ),
+        options: Options(headers: headers),
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -123,6 +144,21 @@ class ScanProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _errorMessage = "Vui lòng đăng nhập để chẩn đoán bệnh cho cây!";
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      String? authToken = token;
+      if (authToken == null || authToken.isEmpty) {
+        try {
+          authToken = await user.getIdToken();
+        } catch (_) {}
+      }
+
       final MultipartFile multipartFile = MultipartFile.fromBytes(
         _webImageBytes!,
         filename: _selectedImage!.name,
@@ -130,6 +166,7 @@ class ScanProvider extends ChangeNotifier {
 
       final Map<String, dynamic> formMap = {
         'file': multipartFile,
+        'user_id': user.uid,
       };
       if (plantName != null && plantName.isNotEmpty) {
         formMap['plant_name'] = plantName;
@@ -142,9 +179,10 @@ class ScanProvider extends ChangeNotifier {
 
       final Map<String, dynamic> headers = {
         'Accept': 'application/json',
+        'X-User-Id': user.uid,
       };
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+      if (authToken != null && authToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
       }
 
       final response = await _dio.post(

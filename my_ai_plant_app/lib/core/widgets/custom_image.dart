@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_constants.dart';
 import 'shimmer_loading.dart';
 
 class CustomImage extends StatelessWidget {
@@ -21,6 +22,33 @@ class CustomImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formattedUrl = AppConstants.formatImageUrl(imageUrl);
+
+    Widget buildFallback() {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F0),
+          shape: shape,
+        ),
+        child: Center(
+          child: Icon(
+            Icons.eco_rounded,
+            color: const Color(0xFF4B6350).withOpacity(0.5),
+            size: (width != null && width! < 50) ? 18 : 36,
+          ),
+        ),
+      );
+    }
+
+    if (formattedUrl.isEmpty) {
+      return ClipRRect(
+        borderRadius: shape == BoxShape.circle ? BorderRadius.zero : (borderRadius ?? BorderRadius.zero),
+        child: buildFallback(),
+      );
+    }
+
     return ClipRRect(
       borderRadius: shape == BoxShape.circle ? BorderRadius.zero : (borderRadius ?? BorderRadius.zero),
       child: Container(
@@ -29,7 +57,7 @@ class CustomImage extends StatelessWidget {
         decoration: shape == BoxShape.circle ? const BoxDecoration(shape: BoxShape.circle) : null,
         clipBehavior: shape == BoxShape.circle ? Clip.antiAlias : Clip.none,
         child: Image.network(
-          imageUrl,
+          formattedUrl,
           width: width,
           height: height,
           fit: fit,
@@ -43,19 +71,7 @@ class CustomImage extends StatelessWidget {
             );
           },
           errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: width,
-              height: height,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE4E2DF),
-                shape: shape,
-              ),
-              child: Icon(
-                Icons.image_not_supported,
-                color: const Color(0xFF747871),
-                size: (width != null && width! < 40) ? 16 : 24,
-              ),
-            );
+            return buildFallback();
           },
         ),
       ),

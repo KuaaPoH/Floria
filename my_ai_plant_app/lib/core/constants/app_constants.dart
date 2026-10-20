@@ -23,6 +23,21 @@ class AppConstants {
 
   static String get scanDiseaseUrl => '$baseUrl/scan-disease';
   static String get diagnoseDiseaseUrl => '$baseUrl/diagnose-disease';
+  static String get uploadImageUrl => '$baseUrl/upload-image';
   static String get pingUrl => '$baseUrl/ping';
   static String get authSyncUrl => '$baseUrl/auth/sync';
+
+  /// Chuẩn hóa URL ảnh: Tự động chuyển đường dẫn tương đối (/api/images/...) thành URL đầy đủ
+  static String formatImageUrl(String? path) {
+    if (path == null || path.trim().isEmpty) return '';
+    final trimmed = path.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('blob:')) {
+      return trimmed;
+    }
+    final serverRoot = kIsWeb ? 'http://localhost:8080' : 'http://192.168.1.88:8080';
+    if (trimmed.startsWith('/')) {
+      return '$serverRoot$trimmed';
+    }
+    return '$serverRoot/$trimmed';
+  }
 }

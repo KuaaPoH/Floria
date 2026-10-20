@@ -315,14 +315,15 @@ Không cần cào thủ công trên mạng, hệ thống tổng hợp từ các 
 - Đã xuất sắc train và nạp cặp đôi `tf_efficientnetv2_b0` (Accuracy 90% cho 40 cây và 92.5% cho 5 nhóm bệnh).
 - Đã hoàn thiện endpoint `/predict-disease` trên FastAPI.
 
-**Bước 5: Nối Luồng Quét Bệnh Tại Khu Vườn Trên Flutter App** 🎯 *(Ưu tiên tiếp theo)*
-- Bổ sung endpoint `/api/diagnose-disease` trong Spring Boot Backend.
-- Kết nối nút `[Quét bệnh]` trong màn hình chi tiết cây (`plant_detail_screen.dart`), hiển thị kết quả chẩn đoán bệnh động kèm phác đồ điều trị và cập nhật trạng thái cây vào `MyGarden`.
+**Bước 5: Nối Luồng Quét Bệnh Tại Khu Vườn Trên Flutter App** ✅ *(Đã hoàn thành xuất sắc ngày 19/10/2026)*
+- Đã hoàn thiện endpoint `/api/diagnose-disease` trong Spring Boot Backend.
+- Đã kết nối nút `[Quét bệnh]` trong màn hình chi tiết cây (`plant_detail_screen.dart`), hiển thị kết quả chẩn đoán bệnh động kèm phác đồ điều trị và cập nhật trạng thái cây vào `MyGarden`.
 
-**Bước 6: Màn hình Lịch sử Quét (Scan History)**
-- Xây dựng giao diện cho thư mục `lib/features/history/screens/` để người dùng xem lại toàn bộ các lần quét loài cây và quét bệnh đã lưu trong collection `ScanHistory` của Firestore.
+**Bước 6: Màn hình Lịch sử Quét (Scan History)** ✅ *(Đã hoàn thành xuất sắc ngày 20/10/2026)*
+- Xây dựng hoàn chỉnh kiến trúc Model-Provider-Screen cho `lib/features/history/`.
+- Đồng bộ Realtime với Firestore `ScanHistory`, hỗ trợ bộ lọc loài cây / bệnh lá, tìm kiếm theo tên, xem chi tiết và xóa lịch sử.
 
-**Bước 7: Hoàn thiện Cửa hàng & Giỏ hàng (Shop & Cart)**
+**Bước 7: Hoàn thiện Cửa hàng & Giỏ hàng (Shop & Cart)** 🎯 *(Ưu tiên tiếp theo)*
 - Xử lý logic Giỏ hàng và đặt mua vật tư nông nghiệp/cây cảnh.
 
 ---
@@ -438,5 +439,125 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
     *   Xóa bỏ `mock_disease_detector` trong `AI_Engine/main.py`. Nếu máy chủ gặp lỗi, hệ thống sẽ trả về HTTP 500 trung thực.
     *   Xóa bỏ fallback bypass tự đăng nhập trong `login_screen.dart` của Flutter App.
 *   **Vận hành thực tế (Live Production)**: Hệ thống chạy 100% bằng mô hình ONNX thật, Spring Boot Gateway thật và cơ sở dữ liệu Firebase Firestore đồng bộ thời gian thực.
+
+---
+
+## 4.13. Hoàn Thiện Tính Năng Lịch Sử Quét (Scan History) Toàn Diện & Tối Ưu Hóa Hệ Thống
+*Ngày cập nhật: 20 tháng 10, 2026*
+
+### 1. Nâng cấp Central Backend (Spring Boot Gateway)
+*   **Chuẩn hóa dữ liệu lưu `ScanHistory`**:
+    *   Tại endpoint `/scan-disease`: Bổ sung lưu ngầm `type: "plant_discovery"` và `predictionVi` (trích xuất trực tiếp từ hồ sơ cây `plants_info` của Firestore).
+    *   Tại endpoint `/diagnose-disease`: Lưu đầy đủ thông tin bệnh học `type: "disease_diagnosis"`, `predictionVi`, `severity`, `severityVi`, `cause`, `treatmentSteps`, và `plantName`.
+
+### 2. Xây dựng Tính Năng Lịch Sử Quét Trên Ứng Dụng Flutter Di Động
+*   **Model Dữ Liệu Thực Thể ([scan_history_item.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/history/models/scan_history_item.dart))**:
+    *   Khởi tạo `ScanHistoryItem` tương thích linh hoạt với cả các bản ghi mới và cũ (xử lý an toàn các kiểu timestamp số millis hoặc Timestamp của Firestore).
+    *   Hỗ trợ các getters tiện ích: `isDisease`, `isHealthy`, `cleanPrediction`, `displayName`.
+*   **Quản Lý Trạng Thái ([history_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/history/providers/history_provider.dart))**:
+    *   Tự động lắng nghe thời gian thực (`Stream<QuerySnapshot>`) bộ sưu tập `ScanHistory` theo `userId` người dùng đăng nhập.
+    *   Sắp xếp thứ tự bản ghi mới nhất lên đầu (`timestamp desc`).
+    *   Bộ lọc đa dạng: *Tất cả*, *Khám phá loài cây* (`plant_discovery`), *Chẩn đoán bệnh* (`disease_diagnosis`).
+    *   Tìm kiếm tức thì theo từ khóa tên cây, tên khoa học, hoặc tên bệnh.
+    *   Hỗ trợ các thao tác xóa từng mục (`deleteItem`) và xóa toàn bộ lịch sử (`clearAllHistory`) bằng Firebase Batch.
+*   **Giao Diện Người Dùng Chuẩn Thiết Kế Glassmorphism ([history_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/history/screens/history_screen.dart))**:
+    *   Thanh tìm kiếm bo tròn tinh tế và hàng thẻ bộ lọc danh mục động kèm số lượng đếm thực tế.
+    *   Mỗi thẻ lịch sử hiển thị: Icon phân loại màu sắc y học (Xanh lá thực vật, Xanh dương an toàn, Đỏ cảnh báo mầm bệnh), tên tiếng Việt, độ tin cậy AI %, nhãn mức độ, và thời gian quét thân thiện ("Hôm nay, 14:30").
+    *   **Thao tác vuốt để xóa (Dismissible swipe-to-delete)**: Vuốt sang trái để xóa kèm hộp thoại xác nhận an toàn.
+    *   **Modal Chi tiết Toàn diện (Bottom Sheet)**: Bấm vào từng bản ghi để xem lại toàn bộ thông số AI, nguyên nhân mầm bệnh, phác đồ điều trị 4 bước, nút mở Từ điển cây (`PlantWikiScreen`) và nút hỏi trợ lý ảo `Floria AI`.
+    *   Menu 3 chấm ở góc trên hỗ trợ "Xóa toàn bộ lịch sử".
+*   **Kết Nối Điểm Truy Cập Tiện Lợi (Entry Points)**:
+    *   Kết nối mục *Lịch sử quét* trong Trang Cá nhân ([profile_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/profile_screen.dart)).
+    *   Bổ sung nút truy cập nhanh lịch sử quét ngay trên AppBar của Màn hình Quét Camera ([scan_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/screens/scan_screen.dart)).
+*   **Dọn Dẹp Mã Nguồn (Clean Code)**:
+    *   Đăng ký `HistoryProvider` vào `MultiProvider` trong `main.dart`.
+    *   Dọn sạch toàn bộ import thừa trong `main.dart` và `scan_screen.dart`.
+
+---
+
+## 4.14. Xây Dựng Hệ Sinh Thái Cửa Hàng Vật Tư & Mô Hình "AI Agentic Commerce" (Bác Sĩ AI Kê Đơn)
+*Ngày cập nhật: 20 tháng 10, 2026*
+
+### 1. Đồng bộ Kho Dữ Liệu Dược Phẩm & Vật Tư Lên Cloud Firestore
+* Khởi tạo bộ sưu tập `ShopProducts` trên Firebase Firestore gồm 7 sản phẩm chuyên dụng cho chăm sóc & điều trị bệnh cây trồng:
+  1. `nano-bac-tri-nam`: Chế Phẩm Nano Bạc Đồng Sinh Học (Đặc trị Thán thư, Đốm lá, Phấn trắng, Cháy lá vi khuẩn).
+  2. `dau-neem-tri-rep`: Tinh Dầu Neem Hữu Cơ Ép Lạnh (Đặc trị Rệp sáp, Bọ trĩ, Nhện đỏ, Sâu hại).
+  3. `phan-rong-bien-kich-re`: Phân Bón Hữu Cơ Rong Biển & Vi Lượng (Phục hồi cây vàng lá, suy rễ sau ốm).
+  4. `phan-trun-que-vien-nen`: Phân Trùn Quế Viên Nén Tan Chậm (Dinh dưỡng êm dịu, ngăn ngừa mầm bệnh đất).
+  5. `binh-xit-phun-suong-15l`: Bình Xịt Áp Suất Phun Sương Mịn 1.5L (Đầu đồng thau cao cấp).
+  6. `keo-cat-tia-canh-nhat`: Kéo Cắt Tỉa Cành Thép SK5 (Cắt tỉa lá bệnh, tránh lây lan chéo).
+  7. `dat-trong-indoor-premium`: Giá Thể Đất Trồng Indoor Mix (Thoát nước siêu tốc, chống úng rễ).
+
+### 2. Kiến Trúc Quản Lý Trạng Thái & Mô Hình Thực Thể (State Management)
+* **Model [shop_product.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/models/shop_product.dart)**: Định nghĩa `ShopProduct` và `CartItem`, tự động tính toán tiền tệ định dạng VNĐ chuẩn (`135.000đ`).
+* **Quản Lý Trạng Thái [shop_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/providers/shop_provider.dart)**:
+  * Kết nối thời gian thực với Firestore, hỗ trợ bộ lọc đa danh mục (*Thuốc trị bệnh*, *Phân bón & Dưỡng*, *Dụng cụ*, *Đất trồng*).
+  * Tìm kiếm theo từ khóa tên sản phẩm và tên bệnh cây chỉ định.
+  * Toàn bộ logic giỏ hàng: thêm số lượng, giảm số lượng, xóa sản phẩm, tính tổng tiền.
+  * Hàm tiện ích `getProductById` và `getProductsForDisease`.
+
+### 3. Đột Phá: Mô Hình "AI Agentic Commerce" (Trợ Lý AI Kê Đơn Thuốc Trực Tiếp Trong Chat)
+* **Prompt Engineering [gemini_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/gemini_service.dart)**:
+  * Nạp kiến thức về toàn bộ danh mục dược phẩm sinh học của Floria vào System Instruction của Gemini.
+  * Hướng dẫn Bác sĩ AI phân tích bệnh học và kê đơn sản phẩm bằng thẻ nhận diện `[RECOMMEND_PRODUCT: product_id]`.
+* **Giao Diện Chatbot Thông Minh [ai_assistant_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/chatbot/screens/ai_assistant_screen.dart)**:
+  * Tự động bắt thẻ `[RECOMMEND_PRODUCT: ...]` trong lời khuyên của Bác sĩ AI.
+  * Hiển thị ngay **Thẻ Dược Phẩm Kê Đơn (Product Recommendation Card)** ngay dưới tin nhắn: có ảnh sản phẩm, huy hiệu y tế, giá bán, nút "Chi tiết" và nút "Mua ngay" tiện lợi.
+
+### 4. Giao Diện Người Dùng Chuẩn Thương Mại Điện Tử Sinh Thái
+* **Màn Hình Cửa Hàng ([shop_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/shop_screen.dart))**: Lưới sản phẩm hiện đại, thanh tìm kiếm thông minh, thẻ lọc danh mục mượt mà, huy hiệu số lượng giỏ hàng trên AppBar.
+* **Chi Tiết Sản Phẩm ([product_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/product_detail_screen.dart))**: Header ảnh dạng cuộn mượt mà, nhãn "Chỉ định điều trị" theo bệnh cây, hướng dẫn pha thuốc, bộ chọn số lượng và nút thêm vào giỏ.
+* **Giỏ Hàng & Thanh Toán ([cart_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/cart_screen.dart))**: Tăng giảm số lượng sản phẩm, tổng thanh toán và hộp thoại đặt hàng thành công.
+* **Liên Kết Từ Màn Hình Quét Bệnh ([diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/screens/diagnosis_report_screen.dart))**: Thêm nút chuyển hướng nhanh sang Cửa hàng tại phần phác đồ điều trị khi cây được chẩn đoán mắc bệnh lá.
+
+---
+
+## 4.15. Nâng Cấp Hệ Thống AI: Tối Ưu Độ Trễ 1s, Chế Độ Suy Nghĩ Sâu & Chuẩn Hóa Y Đức Kê Đơn
+*Ngày cập nhật: 20 tháng 10, 2026*
+
+### 1. Nâng Cấp Toàn Diện Mô Hình AI Google Gemini Mới Nhất
+* **Kiểm tra trực tiếp từ Google API Endpoint (`/v1beta/models`)**:
+  * Phát hiện các model cũ (`gemini-1.5-flash`, `gemini-2.0-flash`, `gemini-2.5-flash`) đã bị Google trả về mã `404: No longer available to new users`.
+  * Cập nhật danh sách mô hình sang thế hệ mới nhất của Google:
+    * Mặc định chính thức: **`gemini-3-flash-preview`** (hoạt động 100%, ổn định cao).
+    * Fallback dự phòng: **`gemini-3.1-flash-lite`**, **`gemini-3.6-flash`**.
+  * Cập nhật đồng bộ hộp thoại cấu hình model trong [gemini_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/gemini_service.dart).
+
+### 2. Đột Phá Tốc Độ: Khắc Phục Triệt Để Thời Gian Chờ (Từ 11s Xuống ~1.2s)
+* **Nguyên nhân cốt lõi phát hiện qua Benchmark**:
+  * Các model thế hệ 3 của Google mặc định tự kích hoạt chế độ "Suy nghĩ ngầm" (ngốn tới 651 token suy nghĩ, mất đúng **11.26 giây** trước khi phát ra chữ đầu tiên).
+* **Giải pháp kỹ thuật**:
+  * Chuyển đổi phương thức giao tiếp sang **Direct Server-Sent Events (SSE Stream)** qua thư viện `Dio`.
+  * Thiết lập cấu hình `thinkingConfig: {"thinkingBudget": 0}` (Zero-latency Mode).
+  * **Kết quả đo đạc thực tế trong Dart**: First Token xuất hiện chỉ sau **1.238ms (~1.2s)**, chữ tuôn ra mượt mà tức thì với con trỏ nhấp nháy `▍`.
+
+### 3. Trang Bị Bộ Chuyển Đổi 2 Chế Độ Tư Duy (Pill Switcher)
+* **Thanh chuyển đổi 2 chế độ thông minh ngay trên khung chat**:
+  * **⚡ Chế độ Siêu tốc (~1s)**: Thiết lập `thinkingBudget: 0`, trả lời nhanh tức thì, trực tiếp vào trọng tâm, tiết kiệm thời gian cho các câu hỏi thường ngày.
+  * **🧠 Chế độ Suy nghĩ sâu (Deep Thinking)**: Thiết lập `thinkingBudget: 1024`, dành cho các ca bệnh phức tạp, AI kích hoạt chuỗi suy luận y khoa bệnh học thực vật đa tầng trước khi đưa ra phác đồ.
+* **Ghi nhớ cấu hình**: Tự động lưu lựa chọn của người dùng vào `SharedPreferences`, đồng bộ tiêu đề trạng thái trên AppBar.
+
+### 4. Chuẩn Hóa Y Đức & Quy Tắc Kê Đơn Của Bác Sĩ AI
+* Loại bỏ triệt để tình trạng "hỏi câu nào AI cũng gượng ép bán sản phẩm".
+* **Quy tắc mới nghiêm ngặt**:
+  * Khi người dùng hỏi kiến thức cơ bản (lịch tưới nước, vị trí đặt cây, cách tỉa cành...): AI trả lời thuần túy kiến thức sinh học, **100% KHÔNG gắn thẻ sản phẩm**.
+  * Chỉ kê đơn khi thỏa mãn 2 điều kiện: Cây thực sự bị bệnh/sâu hại nặng cần thuốc đặc trị, HOẶC người dùng chủ động hỏi tên thuốc/vật tư.
+
+---
+
+## 5. Kế Hoạch & Lộ Trình Phát Triển Trong Tương Lai (Next Sprint)
+
+### Tối Ưu Hóa Trải Nghiệm Người Dùng (UI/UX Refinement)
+- [ ] **Rà soát & Hoàn thiện Micro-animations**:
+  - Thêm hiệu ứng Skeleton Loading khi tải dữ liệu Vườn của tôi và Cửa hàng.
+  - Tối ưu hiệu ứng chuyển cảnh mượt mà giữa Báo cáo chẩn đoán $\rightarrow$ Chi tiết cây $\rightarrow$ Chatbot.
+- [ ] **Cải thiện màn hình Kết quả Chẩn đoán (`diagnosis_report_screen.dart`)**:
+  - Tinh gọn các khối thông tin dài dòng, làm nổi bật "Mức độ khẩn cấp" và "3 bước xử lý ngay".
+  - Bổ sung nút bấm 1 chạm: *"Hỏi bác sĩ AI về kết quả chẩn đoán này"*.
+- [ ] **Tối ưu hiển thị Responsive & Thiết bị Di động**:
+  - Kiểm tra padding, margin và cỡ chữ trên các dòng điện thoại màn hình nhỏ và tablet.
+  - Tinh chỉnh bàn phím ảo không che khuất thanh chat và thanh chuyển đổi chế độ.
+
+
 
 

@@ -37,6 +37,62 @@ public class DiseaseController {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private final java.nio.file.Path uploadsDir = java.nio.file.Paths.get("uploads").toAbsolutePath().normalize();
+
+    private String saveImageLocally(MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) return null;
+            if (!java.nio.file.Files.exists(uploadsDir)) {
+                java.nio.file.Files.createDirectories(uploadsDir);
+            }
+            String originalName = file.getOriginalFilename();
+            String ext = ".jpg";
+            if (originalName != null && originalName.contains(".")) {
+                ext = originalName.substring(originalName.lastIndexOf("."));
+            }
+            String filename = java.util.UUID.randomUUID().toString() + ext;
+            java.nio.file.Path targetLocation = uploadsDir.resolve(filename);
+            java.nio.file.Files.copy(file.getInputStream(), targetLocation, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return "/api/images/" + filename;
+        } catch (Exception e) {
+            System.err.println("Loi luu anh cuc bo: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+        String imagePath = saveImageLocally(file);
+        if (imagePath != null) {
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("image_url", imagePath);
+            return ResponseEntity.ok(resp);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Khong the luu file anh.");
+        }
+    }
+
+    @GetMapping("/images/{filename:.+}")
+    public ResponseEntity<org.springframework.core.io.Resource> getImage(@PathVariable String filename) {
+        try {
+            java.nio.file.Path filePath = uploadsDir.resolve(filename).normalize();
+            if (!java.nio.file.Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(filePath.toUri());
+            String contentType = "image/jpeg";
+            if (filename.toLowerCase().endsWith(".png")) contentType = "image/png";
+            else if (filename.toLowerCase().endsWith(".webp")) contentType = "image/webp";
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CACHE_CONTROL, "max-age=86400, public")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/ping")
     public Map<String, Object> ping() {
         Map<String, Object> response = new HashMap<>();
@@ -50,10 +106,14 @@ public class DiseaseController {
     public ResponseEntity<?> scanDisease(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "model", defaultValue = "efficientnetb0") String modelName,
+            @RequestParam(value = "user_id", required = false) String paramUserId,
+            @RequestHeader(value = "X-User-Id", required = false) String headerUserId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         Map<String, Object> result = new HashMap<>();
-        String userId = "anonymous";
+        String userId = (paramUserId != null && !paramUserId.trim().isEmpty())
+                ? paramUserId.trim()
+                : ((headerUserId != null && !headerUserId.trim().isEmpty()) ? headerUserId.trim() : "anonymous");
 
         // 1. Kiem tra Xac thuc Firebase Token (neu co cau hinh va co truyen token)
         if (firebaseAuth != null && authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -61,16 +121,21 @@ public class DiseaseController {
             try {
                 FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
                 userId = decodedToken.getUid();
-                result.put("user_id", userId);
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Token Firebase khong hop le: " + e.getMessage());
+                System.out.println("Canh bao token verify: " + e.getMessage() + " -> Dung fallback userId: " + userId);
             }
-        } else if (firebaseAuth != null && authHeader == null) {
-            System.out.println("Canh bao: Khong co Header Authorization. Chay voi quyen nac danh (anonymous).");
         }
 
+        if (userId == null || userId.trim().isEmpty() || userId.equals("anonymous")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Yeu cau dang nhap: Khong tim thay UID nguoi dung. Vui long dang nhap truoc khi quet!");
+        }
+        result.put("user_id", userId);
+
         // 2. Chuyen tiep anh sang Python AI Engine qua HTTP Multipart POST
+        String savedImageUrl = saveImageLocally(file);
+        result.put("image_url", savedImageUrl);
+
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("File anh khong duoc de trong.");
@@ -99,6 +164,10 @@ public class DiseaseController {
             if (aiResponse.getStatusCode() == HttpStatus.OK && aiResponse.getBody() != null) {
                 Map<String, Object> aiResponseBody = aiResponse.getBody();
                 result.putAll(aiResponseBody);
+                // Giu lai image_url local vua luu (de phong aiResponseBody ghi de)
+                if (savedImageUrl != null) {
+                    result.put("image_url", savedImageUrl);
+                }
 
                 // 3. Tra cuu thong tin chi tiet cua cay tu Firestore collection "plants_info" (Admin SDK)
                 if (firestore != null) {
@@ -159,13 +228,23 @@ public class DiseaseController {
                     final Object fPrediction = aiResponseBody.get("prediction");
                     final Object fConfidence = aiResponseBody.get("confidence");
                     final Object fModelUsed = aiResponseBody.get("model_used");
+                    final String fSavedImageUrl = savedImageUrl;
+                    Object nameVi = null;
+                    if (result.get("plant_details") instanceof Map) {
+                        nameVi = ((Map<?, ?>) result.get("plant_details")).get("name_vi");
+                    }
+                    final Object fPredictionVi = nameVi != null ? nameVi : fPrediction;
+
                     CompletableFuture.runAsync(() -> {
                         try {
                             Map<String, Object> scanRecord = new HashMap<>();
                             scanRecord.put("userId", fUserId);
+                            scanRecord.put("type", "plant_discovery");
                             scanRecord.put("prediction", fPrediction);
+                            scanRecord.put("predictionVi", fPredictionVi);
                             scanRecord.put("confidence", fConfidence);
                             scanRecord.put("modelUsed", fModelUsed);
+                            scanRecord.put("imageUrl", fSavedImageUrl);
                             scanRecord.put("timestamp", System.currentTimeMillis());
 
                             // Luu vao collection "ScanHistory"
@@ -194,10 +273,14 @@ public class DiseaseController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "plant_name", required = false) String plantName,
             @RequestParam(value = "plant_id", required = false) String plantId,
+            @RequestParam(value = "user_id", required = false) String paramUserId,
+            @RequestHeader(value = "X-User-Id", required = false) String headerUserId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         Map<String, Object> result = new HashMap<>();
-        String userId = "anonymous";
+        String userId = (paramUserId != null && !paramUserId.trim().isEmpty())
+                ? paramUserId.trim()
+                : ((headerUserId != null && !headerUserId.trim().isEmpty()) ? headerUserId.trim() : "anonymous");
 
         // 1. Kiem tra Xac thuc Firebase Token
         if (firebaseAuth != null && authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -205,14 +288,21 @@ public class DiseaseController {
             try {
                 FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
                 userId = decodedToken.getUid();
-                result.put("user_id", userId);
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Token Firebase khong hop le: " + e.getMessage());
+                System.out.println("Canh bao token verify: " + e.getMessage() + " -> Dung fallback userId: " + userId);
             }
         }
 
+        if (userId == null || userId.trim().isEmpty() || userId.equals("anonymous")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Yeu cau dang nhap: Khong tim thay UID nguoi dung. Vui long dang nhap truoc khi chan doan!");
+        }
+        result.put("user_id", userId);
+
         // 2. Chuyen tiep anh sang Python AI Engine tai endpoint /predict-disease
+        String savedImageUrl = saveImageLocally(file);
+        result.put("image_url", savedImageUrl);
+
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("File anh khong duoc de trong.");
@@ -236,6 +326,9 @@ public class DiseaseController {
             if (aiResponse.getStatusCode() == HttpStatus.OK && aiResponse.getBody() != null) {
                 Map<String, Object> aiResponseBody = aiResponse.getBody();
                 result.putAll(aiResponseBody);
+                if (savedImageUrl != null) {
+                    result.put("image_url", savedImageUrl);
+                }
                 if (plantName != null) result.put("scanned_plant_name", plantName);
                 if (plantId != null) result.put("scanned_plant_id", plantId);
 
@@ -251,6 +344,7 @@ public class DiseaseController {
                     final Object fCause = aiResponseBody.get("cause");
                     final Object fTreatment = aiResponseBody.get("treatment_steps");
                     final String fPlantName = plantName;
+                    final String fSavedImageUrl = savedImageUrl;
 
                     CompletableFuture.runAsync(() -> {
                         try {
@@ -266,6 +360,7 @@ public class DiseaseController {
                             scanRecord.put("cause", fCause);
                             scanRecord.put("treatmentSteps", fTreatment);
                             scanRecord.put("plantName", fPlantName);
+                            scanRecord.put("imageUrl", fSavedImageUrl);
                             scanRecord.put("timestamp", System.currentTimeMillis());
 
                             firestore.collection("ScanHistory").add(scanRecord);

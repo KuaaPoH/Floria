@@ -5,6 +5,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import 'premium_screen.dart';
 import 'settings_screen.dart';
+import '../../history/screens/history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigate; // Callback de chuyen tab tu trang ca nhan
@@ -261,7 +262,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.history,
                     title: 'Lịch sử quét',
                     desc: 'Xem lại các chẩn đoán và giống cây đã nhận diện.',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(

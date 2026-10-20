@@ -29,7 +29,6 @@ class _PlantWikiScreenState extends State<PlantWikiScreen> {
   static const Color surfaceContainerLow = Color(0xFFf5f3f0);
   static const Color surfaceContainerLowest = Color(0xFFffffff);
   static const Color surfaceContainerHighest = Color(0xFFe4e2df);
-  static const Color surfaceContainer = Color(0xFFefeeea);
   static const Color onSurface = Color(0xFF1b1c1a);
   static const Color onSurfaceVariant = Color(0xFF444842);
   static const Color primary = Color(0xFF364534);
@@ -364,19 +363,6 @@ class _PlantWikiScreenState extends State<PlantWikiScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMiniAvatar(IconData icon) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: surfaceContainer,
-        shape: BoxShape.circle,
-        border: Border.all(color: surface, width: 2),
-      ),
-      child: Icon(icon, size: 16, color: primary),
     );
   }
 }
