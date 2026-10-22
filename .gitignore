@@ -17,6 +17,7 @@ my_ai_plant_app/macos/Flutter/ephemeral/
 # Bỏ qua các thư mục build của Java Spring Boot (nếu có)
 Backend/target/
 Backend/.mvn/
+Backend/uploads/
 
 # Bỏ qua các thư mục node_modules của Web
 web_frontend_app/node_modules/

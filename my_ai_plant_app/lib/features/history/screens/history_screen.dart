@@ -729,7 +729,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                           icon: const Icon(Icons.auto_awesome, size: 18),
                           label: Text(
-                            'Hỏi Floria AI',
+                            'Hỏi Trợ lý Floria',
                             style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                           ),
                         ),

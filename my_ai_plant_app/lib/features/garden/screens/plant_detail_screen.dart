@@ -144,9 +144,35 @@ class PlantDetailScreen extends StatelessWidget {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Đã tưới nước cho '${currentPlant.nickname}'! 💧"),
-                            backgroundColor: const Color(0xFF364534),
                             behavior: SnackBarBehavior.floating,
+                            backgroundColor: const Color(0xFF1E3A24),
+                            elevation: 6,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            content: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.water_drop_rounded, color: Color(0xFF38BDF8), size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    "Đã tưới nước cho '${currentPlant.nickname}'! 💧",
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            duration: const Duration(seconds: 3),
                           ),
                         );
                       }
@@ -511,11 +537,11 @@ class PlantDetailScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // 4. Nút Floria AI (Tập trung chuyên sâu cho loài cây này)
+        // 4. Nút Trợ lý Floria (Tập trung chuyên sâu cho loài cây này)
         Expanded(
           child: _buildActionBtn(
             icon: Icons.auto_awesome,
-            label: "Floria AI",
+            label: "Trợ lý Floria",
             isPrimary: true,
             iconColor: const Color(0xFFFFD700), // Gold star
             onTap: () {
@@ -529,6 +555,7 @@ class PlantDetailScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => AiAssistantScreen(
+                    plantId: currentPlant?.id,
                     plantNameVi: plantName,
                     scientificName: sciName,
                     diseaseContext: "Cây '$plantName' ở vị trí $zone, tình trạng: $status. Tần suất tưới: $freq ngày/lần.",
@@ -757,13 +784,24 @@ class PlantDetailScreen extends StatelessWidget {
   }
 
   Widget _buildCareSchedule(BuildContext context, GardenPlant? currentPlant) {
+    final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
+
     final isWaterNeeded = currentPlant?.isNeedsWater ?? false;
-    final waterStatusText = isWaterNeeded
-        ? "Đã đến hạn tưới nước (Bấm để tưới)"
-        : (currentPlant != null
-            ? "Còn ${currentPlant.daysUntilWater} ngày đến lượt tưới"
-            : "Hôm nay");
-    final timeColor = isWaterNeeded ? const Color(0xFFEA580C) : const Color(0xFF364534);
+    final isFertDisabled = (currentPlant?.fertilizeFrequencyDays ?? 20) <= 0;
+    final isFertNeeded = currentPlant?.isNeedsFertilizer ?? false;
+    final isCleanNeeded = currentPlant?.isNeedsClean ?? false;
+
+    final moisture = currentPlant?.estimatedSoilMoisture ?? 0.8;
+    final moistureLabel = currentPlant?.soilMoistureLabel ?? "Độ ẩm tốt (70-80%)";
+
+    Color moistureBarColor = const Color(0xFF2E6F40);
+    if (moisture < 0.3) {
+      moistureBarColor = const Color(0xFFDC2626); // Đỏ cảnh báo khô
+    } else if (moisture < 0.6) {
+      moistureBarColor = const Color(0xFFF59E0B); // Vàng ẩm vừa
+    }
+
+    final hasPendingTasksToday = isWaterNeeded || isFertNeeded || isCleanNeeded;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,30 +809,53 @@ class PlantDetailScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Lịch chăm sóc",
-              style: GoogleFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B1C1A),
-              ),
+            Row(
+              children: [
+                Text(
+                  "Lịch chăm sóc thực tế",
+                  style: GoogleFonts.inter(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1B1C1A),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: hasPendingTasksToday ? const Color(0xFFFEF3C7) : const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: hasPendingTasksToday ? const Color(0xFFFDE68A) : const Color(0xFFBBF7D0),
+                    ),
+                  ),
+                  child: Text(
+                    hasPendingTasksToday ? "Có việc cần làm" : "Đã chu toàn",
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: hasPendingTasksToday ? const Color(0xFFB45309) : const Color(0xFF15803D),
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (currentPlant != null)
               GestureDetector(
                 onTap: () => _showEditPlantModal(context, currentPlant),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF364534).withOpacity(0.08),
+                    color: const Color(0xFF364534).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.edit_calendar_outlined, size: 14, color: Color(0xFF364534)),
+                      const Icon(Icons.tune_rounded, size: 14, color: Color(0xFF364534)),
                       const SizedBox(width: 4),
                       Text(
-                        "Chỉnh sửa",
+                        "Tùy chỉnh",
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -807,7 +868,65 @@ class PlantDetailScreen extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+
+        // 1. THANH ĐO ĐỘ ẨM ĐẤT DỰ BÁO (SOIL MOISTURE GAUGE)
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE4E2DF)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.opacity_rounded, size: 16, color: moistureBarColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Độ ẩm đất dự kiến:",
+                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF4B5563)),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    moistureLabel,
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: moistureBarColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: moisture,
+                  minHeight: 8,
+                  backgroundColor: const Color(0xFFF3F4F6),
+                  valueColor: AlwaysStoppedAnimation<Color>(moistureBarColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // 2. DANH SÁCH 3 TÁC VỤ NÔNG HỌC THỰC TẾ
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -816,44 +935,219 @@ class PlantDetailScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // Tác vụ 1: Tưới nước
               GestureDetector(
                 onTap: () async {
-                  if (currentPlant != null) {
-                    await Provider.of<GardenProvider>(context, listen: false).waterPlant(currentPlant.id);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Đã tưới nước cho '${currentPlant.nickname}'! 💧 Lần tưới tiếp theo sau ${currentPlant.waterFrequencyDays} ngày."),
-                          backgroundColor: const Color(0xFF364534),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
+                  if (currentPlant == null) return;
+                  if (!isWaterNeeded) {
+                    _showActionToast(
+                      context,
+                      title: "Cây '${currentPlant.nickname}' chưa đến hạn tưới! 🌱",
+                      subtitle: "Độ ẩm đất vẫn tốt. Còn ${currentPlant.daysUntilWater} ngày nữa mới cần tưới tiếp.",
+                      icon: Icons.info_outline_rounded,
+                      iconColor: const Color(0xFF38BDF8),
+                    );
+                    return;
+                  }
+                  await gardenProvider.waterPlant(currentPlant.id);
+                  if (context.mounted) {
+                    _showActionToast(
+                      context,
+                      title: "Đã tưới nước cho '${currentPlant.nickname}'! 💧",
+                      subtitle: "Lần tưới tiếp theo: sau ${currentPlant.waterFrequencyDays} ngày.",
+                      icon: Icons.water_drop_rounded,
+                      iconColor: const Color(0xFF38BDF8),
+                    );
                   }
                 },
                 child: _buildTaskItem(
-                  icon: Icons.water_drop,
+                  icon: Icons.water_drop_rounded,
                   title: "Tưới nước (${currentPlant?.waterFrequencyDays ?? 3} ngày/lần • ${currentPlant?.reminderTime ?? '07:00'})",
-                  time: waterStatusText,
-                  timeIcon: isWaterNeeded ? Icons.warning_amber_rounded : Icons.schedule,
-                  timeColor: timeColor,
+                  time: isWaterNeeded ? "Đã đến hạn tưới (Bấm để hoàn thành)" : "Còn ${currentPlant?.daysUntilWater ?? 0} ngày đến lượt",
+                  timeIcon: isWaterNeeded ? Icons.warning_amber_rounded : Icons.schedule_rounded,
+                  timeColor: isWaterNeeded ? const Color(0xFFDC2626) : const Color(0xFF2E6F40),
                   isDone: !isWaterNeeded,
                   isLast: false,
                 ),
               ),
-              _buildTaskItem(
-                icon: Icons.eco,
-                title: "Kiểm tra sâu bệnh",
-                time: "Định kỳ hôm nay",
-                timeIcon: Icons.done,
-                timeColor: const Color(0xFF747871),
-                isDone: true,
-                isLast: true,
+
+              // Tác vụ 2: Bón phân dinh dưỡng (Tự động ẩn hoàn toàn nếu đã tắt trong tùy chỉnh)
+              if (!isFertDisabled)
+                GestureDetector(
+                  onTap: () async {
+                    if (currentPlant == null) return;
+                    if (!isFertNeeded) {
+                      _showActionToast(
+                        context,
+                        title: "Cây đã nạp đủ dưỡng chất! 🧪",
+                        subtitle: "Tránh bón quá liều gây sót rễ. Còn ${currentPlant.daysUntilFertilizer} ngày nữa mới cần bón tiếp.",
+                        icon: Icons.info_outline_rounded,
+                        iconColor: const Color(0xFFF59E0B),
+                      );
+                      return;
+                    }
+                    await gardenProvider.fertilizePlant(currentPlant.id);
+                    if (context.mounted) {
+                      _showActionToast(
+                        context,
+                        title: "Đã bón phân cho '${currentPlant.nickname}'! 🧪",
+                        subtitle: "Cây đã nạp đủ vi lượng. Lần tới: sau ${currentPlant.fertilizeFrequencyDays} ngày.",
+                        icon: Icons.science_rounded,
+                        iconColor: const Color(0xFFF59E0B),
+                      );
+                    }
+                  },
+                  child: _buildTaskItem(
+                    icon: Icons.science_rounded,
+                    title: "Bón phân vi lượng (${currentPlant?.fertilizeFrequencyDays ?? 20} ngày/lần)",
+                    time: isFertNeeded ? "Đã đến hạn bón phân (Bấm để bón)" : "Còn ${currentPlant?.daysUntilFertilizer ?? 0} ngày đến lượt",
+                    timeIcon: isFertNeeded ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
+                    timeColor: isFertNeeded ? const Color(0xFFEA580C) : const Color(0xFF6B7280),
+                    isDone: !isFertNeeded,
+                    isLast: false,
+                  ),
+                ),
+
+              // Tác vụ 3: Kiểm tra sâu bệnh & Lau bụi lá
+              GestureDetector(
+                onTap: () async {
+                  if (currentPlant == null) return;
+                  if (!isCleanNeeded) {
+                    _showActionToast(
+                      context,
+                      title: "Mặt lá vẫn sạch sẽ! 🍃",
+                      subtitle: "Đã kiểm tra gần đây. Còn ${currentPlant.daysUntilCheckPest} ngày nữa đến lượt kiểm tra tiếp theo.",
+                      icon: Icons.info_outline_rounded,
+                      iconColor: const Color(0xFF4ADE80),
+                    );
+                    return;
+                  }
+                  await gardenProvider.cleanPlant(currentPlant.id);
+                  if (context.mounted) {
+                    _showActionToast(
+                      context,
+                      title: "Đã kiểm tra & lau sạch lá cho cây! 🍃",
+                      subtitle: "Bề mặt lá sạch bụi giúp cây quang hợp tối đa.",
+                      icon: Icons.eco_rounded,
+                      iconColor: const Color(0xFF4ADE80),
+                    );
+                  }
+                },
+                child: _buildTaskItem(
+                  icon: Icons.eco_rounded,
+                  title: "Kiểm tra sâu bệnh & Lau lá (${currentPlant?.checkPestFrequencyDays ?? 3} ngày/lần)",
+                  time: isCleanNeeded ? "Đã đến hạn kiểm tra (Bấm để hoàn tất)" : "Còn ${currentPlant?.daysUntilCheckPest ?? 0} ngày đến lượt",
+                  timeIcon: isCleanNeeded ? Icons.warning_amber_rounded : Icons.done_all_rounded,
+                  timeColor: isCleanNeeded ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                  isDone: !isCleanNeeded,
+                  isLast: true,
+                ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 14),
+
+        // 3. NÚT HOÀN TẤT MỌI VIỆC HÔM NAY (QUICK COMPLETE ALL TODAY)
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: hasPendingTasksToday && currentPlant != null
+                ? () async {
+                    await gardenProvider.completeAllToday(currentPlant.id);
+                    if (context.mounted) {
+                      _showActionToast(
+                        context,
+                        title: "Tuyệt vời! Đã chu toàn mọi việc hôm nay! 🌟",
+                        subtitle: "Mọi tác vụ đến hạn của '${currentPlant.nickname}' đã được xử lý xong.",
+                        icon: Icons.task_alt_rounded,
+                        iconColor: const Color(0xFF4ADE80),
+                      );
+                    }
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E6F40),
+              disabledBackgroundColor: const Color(0xFFE5E7EB),
+              foregroundColor: Colors.white,
+              disabledForegroundColor: const Color(0xFF9CA3AF),
+              elevation: hasPendingTasksToday ? 3 : 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: Icon(
+              hasPendingTasksToday ? Icons.done_all_rounded : Icons.check_circle_rounded,
+              size: 20,
+              color: hasPendingTasksToday ? Colors.white : const Color(0xFF9CA3AF),
+            ),
+            label: Text(
+              hasPendingTasksToday ? "Hoàn tất mọi việc hôm nay" : "Đã hoàn thành mọi việc hôm nay",
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: hasPendingTasksToday ? Colors.white : const Color(0xFF9CA3AF),
+              ),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  void _showActionToast(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF1E3A24),
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFFB4F4C2),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 
@@ -866,6 +1160,10 @@ class PlantDetailScreen extends StatelessWidget {
     String selectedZone = plantItem.zone;
     String selectedHealth = plantItem.healthStatus;
     int frequencyDays = plantItem.waterFrequencyDays;
+    int fertilizeDays = plantItem.fertilizeFrequencyDays;
+    bool enableFertilizer = fertilizeDays > 0;
+    if (fertilizeDays <= 0) fertilizeDays = 20;
+    int checkPestDays = plantItem.checkPestFrequencyDays;
     String reminderTime = plantItem.reminderTime;
 
     final List<String> zoneSuggestions = [
@@ -886,10 +1184,10 @@ class PlantDetailScreen extends StatelessWidget {
     ];
 
     final List<Map<String, String>> presetTimes = [
-      {"label": "🌅 07:00", "time": "07:00"},
-      {"label": "🌤️ 09:30", "time": "09:30"},
-      {"label": "🌇 17:30", "time": "17:30"},
-      {"label": "🌙 20:00", "time": "20:00"},
+      {"label": "07:00", "time": "07:00"},
+      {"label": "09:30", "time": "09:30"},
+      {"label": "17:30", "time": "17:30"},
+      {"label": "20:00", "time": "20:00"},
     ];
 
     showModalBottomSheet(
@@ -981,6 +1279,7 @@ class PlantDetailScreen extends StatelessWidget {
                         return ChoiceChip(
                           label: Text(z),
                           selected: isSelected,
+                          checkmarkColor: Colors.white,
                           onSelected: (val) {
                             if (val) setModalState(() => selectedZone = z);
                           },
@@ -1018,6 +1317,7 @@ class PlantDetailScreen extends StatelessWidget {
                         return ChoiceChip(
                           label: Text(h),
                           selected: isSelected,
+                          checkmarkColor: Colors.white,
                           onSelected: (val) {
                             if (val) setModalState(() => selectedHealth = h);
                           },
@@ -1046,34 +1346,273 @@ class PlantDetailScreen extends StatelessWidget {
                           style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF364534).withOpacity(0.1),
+                            color: const Color(0xFFE8F5E9),
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFC8E6C9)),
                           ),
                           child: Text(
                             "Mỗi $frequencyDays ngày / lần",
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF364534)),
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF1B5E20)),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Slider(
-                      value: frequencyDays.toDouble(),
-                      min: 1,
-                      max: 14,
-                      divisions: 13,
-                      activeColor: const Color(0xFF364534),
-                      inactiveColor: const Color(0xFFE4E2DF),
-                      label: "$frequencyDays ngày/lần",
-                      onChanged: (val) {
-                        setModalState(() => frequencyDays = val.round());
-                      },
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: const Color(0xFF2E6F40),
+                        inactiveTrackColor: const Color(0xFFE4E8E2),
+                        thumbColor: const Color(0xFF2E6F40),
+                        overlayColor: const Color(0xFF2E6F40).withValues(alpha: 0.15),
+                        valueIndicatorColor: const Color(0xFF1E3A24),
+                        valueIndicatorTextStyle: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                        showValueIndicator: ShowValueIndicator.onDrag,
+                      ),
+                      child: Slider(
+                        value: frequencyDays.toDouble(),
+                        min: 1,
+                        max: 14,
+                        divisions: 13,
+                        label: "$frequencyDays ngày/lần",
+                        onChanged: (val) {
+                          setModalState(() => frequencyDays = val.round());
+                        },
+                      ),
                     ),
                     const SizedBox(height: 12),
 
-                    // 5. Khung giờ nhắc nhở tưới
+                    // 5. Chu kỳ bón phân dinh dưỡng (Hỗ trợ Radio Button Bật/Tắt cho cây không cần phân)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Yêu cầu bón phân dinh dưỡng:",
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: enableFertilizer ? const Color(0xFFFEF3C7) : const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: enableFertilizer ? const Color(0xFFFDE68A) : const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          child: Text(
+                            enableFertilizer ? "Mỗi $fertilizeDays ngày / lần" : "Không áp dụng",
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: enableFertilizer ? const Color(0xFFB45309) : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Nhóm Radio Button (Bật / Tắt chức năng bón phân)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                enableFertilizer = true;
+                                if (fertilizeDays <= 0) fertilizeDays = 20;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: enableFertilizer ? const Color(0xFFFEF3C7) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: enableFertilizer ? const Color(0xFFF59E0B) : const Color(0xFFE4E2DF),
+                                  width: enableFertilizer ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Radio<bool>(
+                                    value: true,
+                                    groupValue: enableFertilizer,
+                                    activeColor: const Color(0xFFD97706),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                    onChanged: (val) {
+                                      if (val == true) {
+                                        setModalState(() {
+                                          enableFertilizer = true;
+                                          if (fertilizeDays <= 0) fertilizeDays = 20;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      "Cần bón phân",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: enableFertilizer ? const Color(0xFF92400E) : const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                enableFertilizer = false;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: !enableFertilizer ? const Color(0xFFF3F4F6) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: !enableFertilizer ? const Color(0xFF9CA3AF) : const Color(0xFFE4E2DF),
+                                  width: !enableFertilizer ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Radio<bool>(
+                                    value: false,
+                                    groupValue: enableFertilizer,
+                                    activeColor: const Color(0xFF4B5563),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                    onChanged: (val) {
+                                      if (val == false) {
+                                        setModalState(() {
+                                          enableFertilizer = false;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      "Không cần bón",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: !enableFertilizer ? const Color(0xFF1F2937) : const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (enableFertilizer) ...[
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: const Color(0xFFF59E0B),
+                          inactiveTrackColor: const Color(0xFFE4E8E2),
+                          thumbColor: const Color(0xFFF59E0B),
+                          overlayColor: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          valueIndicatorColor: const Color(0xFF78350F),
+                          valueIndicatorTextStyle: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                          showValueIndicator: ShowValueIndicator.onDrag,
+                        ),
+                        child: Slider(
+                          value: fertilizeDays.toDouble().clamp(7, 60),
+                          min: 7,
+                          max: 60,
+                          divisions: 53,
+                          label: "$fertilizeDays ngày/lần",
+                          onChanged: (val) {
+                            setModalState(() => fertilizeDays = val.round());
+                          },
+                        ),
+                      ),
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 8),
+                        child: Text(
+                          "💡 Loài cây này không yêu cầu phân bón (ví dụ: cây không khí, sen đá giai đoạn nghỉ...). Tác vụ bón phân sẽ được tắt khỏi lịch nhắc việc.",
+                          style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF6B7280), fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ],
+                    // 6. Chu kỳ kiểm tra sâu bệnh & lau lá
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Chu kỳ kiểm tra sâu bệnh & lau lá:",
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFBAE6FD)),
+                          ),
+                          child: Text(
+                            "Mỗi $checkPestDays ngày / lần",
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF0369A1)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: const Color(0xFF0284C7),
+                        inactiveTrackColor: const Color(0xFFE4E8E2),
+                        thumbColor: const Color(0xFF0284C7),
+                        overlayColor: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                        valueIndicatorColor: const Color(0xFF0C4A6E),
+                        valueIndicatorTextStyle: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                        showValueIndicator: ShowValueIndicator.onDrag,
+                      ),
+                      child: Slider(
+                        value: checkPestDays.toDouble().clamp(1, 14),
+                        min: 1,
+                        max: 14,
+                        divisions: 13,
+                        label: "$checkPestDays ngày/lần",
+                        onChanged: (val) {
+                          setModalState(() => checkPestDays = val.round());
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 7. Khung giờ nhắc nhở tưới
                     Text(
                       "Khung giờ nhắc nhở:",
                       style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
@@ -1146,6 +1685,8 @@ class PlantDetailScreen extends StatelessWidget {
                             nickname: newName.isNotEmpty ? newName : plantItem.nameVi,
                             zone: selectedZone,
                             waterFrequencyDays: frequencyDays,
+                            fertilizeFrequencyDays: enableFertilizer ? fertilizeDays : 0,
+                            checkPestFrequencyDays: checkPestDays,
                             reminderTime: reminderTime,
                             healthStatus: selectedHealth,
                             notes: newNotes,
@@ -1155,9 +1696,50 @@ class PlantDetailScreen extends StatelessWidget {
                             if (success) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text("Đã cập nhật thông tin cây '${newName.isNotEmpty ? newName : plantItem.nameVi}' thành công! 🌿"),
-                                  backgroundColor: const Color(0xFF364534),
                                   behavior: SnackBarBehavior.floating,
+                                  backgroundColor: const Color(0xFF1E3A24),
+                                  elevation: 6,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  content: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.15),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 20),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Đã cập nhật cây '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
+                                              style: GoogleFonts.inter(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 13.5,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              "Thông tin và lịch chăm sóc mới đã được lưu thành công.",
+                                              style: GoogleFonts.inter(
+                                                color: const Color(0xFFB4F4C2),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  duration: const Duration(seconds: 3),
                                 ),
                               );
                             }
@@ -1409,6 +1991,7 @@ class PlantDetailScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => AiAssistantScreen(
+                            plantId: currentPlant?.id,
                             plantNameVi: title,
                             scientificName: sciName,
                             diseaseContext: "Tôi cần hỏi chuyên sâu về đặc tính bách khoa của loài cây $title ($sciName).",
@@ -1418,7 +2001,7 @@ class PlantDetailScreen extends StatelessWidget {
                     },
                     icon: const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 18),
                     label: Text(
-                      "Hỏi Floria AI sâu hơn về loài cây này",
+                      "Hỏi Trợ lý Floria sâu hơn về loài cây này",
                       style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(

@@ -545,18 +545,161 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 
 ---
 
+## 4.16. Tinh Gọn Giao Diện Trợ Lý AI (Clean Minimalist AI Assistant UI)
+*Ngày cập nhật: 22 tháng 10, 2026*
+
+* **Loại bỏ Nút Chọn Model AI & Cài Đặt**: Ẩn nút bánh răng cấu hình API Key / Model trên AppBar để giao diện sạch sẽ, thân thiện với người dùng cuối; hệ thống dùng API Key mặc định tự động.
+* **Loại bỏ Hiển Thị Tên Kỹ Thuật Model**: Bỏ nhãn "Floria Gemini 3 Flash" ở tiêu đề phụ; chỉ giữ lại biểu tượng trạng thái trực quan tương ứng với chế độ tư duy (`🧠 Suy nghĩ sâu` hoặc `⚡ Siêu tốc`).
+* **Đơn Giản Hóa Tab Chuyển Đổi Chế Độ**:
+  * Đổi tên tab `⚡ Siêu tốc (~1s)` thành `⚡ Siêu tốc` ngắn gọn, súc tích.
+  * Loại bỏ hoàn toàn dòng chữ chú thích dài dòng ở cạnh phải (`Phân tích bệnh học đa tầng` / `Tối ưu phản hồi tức thì`).
+* **Loại bỏ Thanh Viên Thuốc Gợi Ý (Quick Prompts)**: Loại bỏ toàn bộ các thẻ gợi ý câu hỏi nhanh phía trên khung nhập tin nhắn để mở rộng tối đa không gian đọc nội dung trò chuyện.
+* **Dọn Dẹp Mã Nguồn**: Loại bỏ các biến và hàm không còn dùng (`_quickPrompts`, `_setupPlantSpecificPrompts`, `_modelName`, `_formatModelDisplay`), kiểm tra mã nguồn đạt 0 lỗi phân tích tĩnh (`No issues found!`).
+
+---
+
+## 4.17. Trình Diễn Markdown Thẩm Mỹ & Quản Lý Lịch Sử Hội Thoại (ChatGPT-Style Chat Sessions)
+*Ngày cập nhật: 22 tháng 10, 2026*
+
+### 1. Tích Hợp Render Markdown Chuyên Sâu (`flutter_markdown`)
+* **Chấm dứt hiển thị văn bản thô**: Loại bỏ `SelectableText` thô vốn làm lộ các ký tự kỹ thuật `**in đậm**`, `* gạch đầu dòng`, `"""..."""`.
+* **Bộ Custom MarkdownStyleSheet chuẩn thẩm mỹ**:
+  * Chữ in đậm `**...**` hiển thị màu xanh rêu đậm sang trọng (`#1B3B22`).
+  * Danh sách có thứ tự `1. 2.` và danh sách gạch đầu dòng `*` tự động thụt lề chuẩn xác, khoảng cách dòng thoáng đãng (`height: 1.6`).
+  * Khối trích dẫn (Blockquote) có viền trái xanh lá cây và nền mờ nhẹ nhàng (`#F1F7F2`).
+  * Code/tên khoa học dạng monospace với font `robotoMono` và nền bo tròn tinh tế.
+* **Tích Hợp Tiện Ích Dưới Mỗi Tin Nhắn**:
+  * Nút **Sao chép (Copy)** 1 chạm với thông báo nổi `SnackBar` xác nhận.
+  * Hiển thị thời gian gửi tin nhắn nhỏ tinh tế góc dưới (`14:32`).
+
+### 2. Quản Lý Lịch Sử Hội Thoại Kiểu ChatGPT (Cloud Firestore `ChatSessions`)
+* **Kiến trúc Dữ Liệu**:
+  * Tạo model [chat_session.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/chatbot/models/chat_session.dart) và [chat_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/chatbot/providers/chat_provider.dart) kết nối thời gian thực với bộ sưu tập `ChatSessions` của Firestore gắn với `userId`.
+* **Drawer Lịch Sử Trò Chuyện (EndDrawer)**:
+  * Nút **"+ Cuộc trò chuyện mới"** nổi bật trên đầu Drawer và ngay trên AppBar (`Icons.add_comment_outlined`).
+  * Danh sách các phiên trò chuyện sắp xếp theo thời gian cập nhật mới nhất, hiển thị số lượng tin nhắn, tự động highlight phiên đang kích hoạt.
+  * Thao tác chuyển đổi phiên mượt mà: tải lại toàn bộ tin nhắn và nạp lịch sử ngữ cảnh vào Gemini để tiếp tục mạch tư vấn.
+  * **Hỗ trợ Đổi Tên Cuộc Trò Chuyện**: Thêm icon cây bút ✏️ (`Icons.edit_outlined`) tại mỗi thẻ hội thoại và hỗ trợ **bấm trực tiếp vào tiêu đề cuộc trò chuyện trên AppBar** để mở hộp thoại đổi tên tùy biến theo ý thích người dùng.
+  * Hỗ trợ xóa từng cuộc trò chuyện với hộp thoại xác nhận an toàn.
+* **AI Tự Động Đặt Tên Thông Minh (ChatGPT Style Auto-Naming)**:
+  * Tích hợp hàm `generateConversationTitle` trong [gemini_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/gemini_service.dart).
+  * Ngay khi người dùng hoàn thành lượt trò chuyện đầu tiên, một tác vụ nền siêu nhẹ (Zero-latency) sẽ kích hoạt Gemini tự động phân tích câu hỏi và tóm tắt thành một tiêu đề ngắn gọn, tự nhiên từ 3–6 từ (VD: *"Gợi ý cây trồng cho người mới"*, *"Cách chăm sóc Cây Lưỡi Hổ"*, *"Xử lý cây bị vàng lá"*).
+  * Tiêu đề mới được tự động cập nhật ngay lập tức lên Firestore, thanh tiêu đề AppBar và danh sách lịch sử mà người dùng không cần phải gõ tay.
+  * Người dùng vẫn giữ quyền tự do chỉnh sửa lại tên theo ý muốn bất cứ lúc nào qua icon cây bút hoặc bấm vào tiêu đề AppBar.
+* **Tự Động Lưu Phiên (Auto-Save)**:
+  * Sau mỗi lượt hỏi - đáp, hệ thống tự động lưu/cập nhật toàn bộ tin nhắn lên Cloud Firestore.
+  * **Bảo vệ hội thoại khi tạo mới**: Khi bấm "Cuộc trò chuyện mới", nếu phiên hiện tại đã có tin nhắn hỏi-đáp mà chưa được lưu thì hệ thống tự động lưu vào Firestore trước khi tạo phiên mới, đảm bảo hội thoại cũ không bao giờ bị mất.
+  * **Tối ưu hóa Firestore**: Loại bỏ `orderBy` phức hợp để tránh lỗi Composite Index, tự động sắp xếp trên bộ nhớ client và hỗ trợ fallback định danh người dùng an toàn (`effectiveUserId`).
+
+---
+
+## 4.18. Nâng Cấp Toàn Diện Lịch Chăm Sóc Cây Trồng Thực Tế (Actionable Plant Care System)
+*Ngày cập nhật: 22 tháng 10, 2026*
+
+### 1. Nâng Cấp Mô Hình Dữ Liệu Nông Học (`GardenPlant` & `GardenProvider`)
+* **Bổ sung chu kỳ bón phân dinh dưỡng (`fertilizeFrequencyDays`, `lastFertilized`, `nextFertilizing`)**: Hỗ trợ chu kỳ dinh dưỡng vi lượng tách biệt với chu kỳ tưới nước (từ 7 - 60 ngày/lần).
+* **Bổ sung chu kỳ kiểm tra sâu bệnh & vệ sinh lá (`checkPestFrequencyDays`, `lastCleaned`, `nextCheckPest`)**: Hỗ trợ chu kỳ kiểm tra sâu bệnh và lau lá quang hợp tùy chỉnh (từ 1 - 14 ngày/lần).
+* **Thanh ước lượng độ ẩm đất sinh học (`estimatedSoilMoisture`)**: Tự động tính toán mức suy hao độ ẩm đất theo thời gian thực dựa trên số giờ trôi qua kể từ lần tưới gần nhất và chu kỳ tưới của từng loài cây.
+* **Cơ chế chống Reset sớm (Anti-Reset Protection)**: 
+  * Nếu một tác vụ chưa đến hạn (ví dụ còn 2 ngày nữa mới tưới), người dùng bấm vào tác vụ sẽ nhận thông báo thân thiện nhắc nhở số ngày còn lại thay vì tự động reset ngày tưới về 0.
+* **Nút "Hoàn tất mọi việc hôm nay" thông minh**:
+  * Chỉ hoàn thành các tác vụ thực sự đến hạn trong ngày hôm nay (`isNeedsWater`, `isNeedsFertilizer`, `isNeedsClean`).
+  * Khi tất cả các tác vụ hôm nay đã hoàn thành, nút bấm tự động chuyển màu xám nhạt (`#E5E7EB` / `#9CA3AF`) và bị vô hiệu hóa (`disabled`), ngăn chặn việc vô tình ấn nhầm.
+
+### 2. Thiết Kế Lại Giao Diện Lịch Chăm Sóc Thực Tế (`plant_detail_screen.dart`)
+* **Thanh đo độ ẩm đất trực quan (Soil Moisture Gauge)**: Hiển thị thanh tiến trình đổi màu linh hoạt (Xanh lá > Vàng > Đỏ) kèm nhãn trạng thái chính xác (VD: *Đất ẩm lý tưởng 80-100%*, *Đất khô hạn cần tưới ngay*).
+* **Hệ thống 3 Tác vụ Chuẩn Nông Học**:
+  1. 💧 **Tưới nước định kỳ**: Bấm để tưới và reset chu kỳ nước.
+  2. 🧪 **Bón phân vi lượng**: Bấm để bón phân và reset chu kỳ phân.
+  3. 🍃 **Kiểm tra sâu bệnh & Lau bụi lá**: Đánh dấu đã kiểm tra sâu bệnh / vệ sinh lá.
+* **Nút bấm 1 chạm "Hoàn tất mọi việc hôm nay"**: Tự động vô hiệu hóa & xám lại khi không còn việc tồn đọng hôm nay.
+* **Thông báo nổi (Floating Toast Card)**: Hiển thị xác nhận thao tác thành công với icon màu sắc, tiêu đề trắng đậm nét và phụ đề xanh pastel sang trọng (`#1E3A24`).
+* **Modal "Chỉnh sửa cây trồng"**: Tích hợp đầy đủ 3 thanh trượt nông học: Chu kỳ tưới nước (1 - 14 ngày), Chu kỳ bón phân (7 - 60 ngày), Chu kỳ kiểm tra sâu bệnh (1 - 14 ngày), hỗ trợ dấu tick trắng (`Colors.white`) tương phản cao và đã loại bỏ hoàn toàn các emoji gây rối mắt.
+
+---
+
+## 4.19. Trợ Lý AI Hành Động - Đề Xuất & Tự Động Áp Dụng Lịch Chăm Sóc Cây (Actionable AI Care Schedule)
+*Ngày cập nhật: 23 tháng 10, 2026*
+
+* **Chuẩn Hóa Danh Xưng Thân Thiện ("Trợ Lý Floria" Thay Vì "Floria AI")**:
+  * Thay thế toàn bộ các nhãn kỹ thuật, danh xưng cứng nhắc ("Floria AI", "Bác sĩ AI", "AI Assistant") thành **"Trợ lý Floria"** đồng bộ xuyên suốt từ AppBar, màn hình Vườn, màn hình Chẩn đoán đến lời chào khởi động và System Prompt của Gemini.
+  * Hướng dẫn Gemini luôn xưng là *"Trợ lý Floria"* ấm áp, tận tâm, không xưng là AI.
+* **Loại Bỏ Icon Sấm Sét & Tinh Giản Giao Diện Loading**:
+  * Gỡ bỏ thanh chuyển đổi chế độ sấm sét (`⚡ Siêu tốc` / `🧠 Suy nghĩ sâu`) gây rối mắt trên thanh chat; giữ giao diện tinh gọn, phản hồi nhanh mặc định.
+  * Khi đang suy nghĩ (loading), chỉ hiển thị thông báo nhẹ nhàng chuẩn chỉnh: *"Trợ lý Floria đang suy nghĩ..."*.
+* **Tự Động Gọt Bỏ Tiêu Đề Treo Cụt Lủn**:
+  * Gemini không còn tự in các tiêu đề treo như `**Lịch chăm sóc đề xuất...:**` ở cuối văn bản.
+  * Client tự động làm sạch (sanitize) mọi dòng tiêu đề thừa trước khi render bong bóng chat, giúp giao diện hiển thị thẻ lịch trình riêng biệt bên dưới một cách liền mạch, không trùng lặp.
+* **Ràng Buộc Chặt Chẽ Giữa Kê Đơn Vật Tư & Lịch Chăm Sóc**:
+  * Phân định rõ ràng ngữ cảnh: Khi người dùng chỉ hỏi về phân bón ("nên dùng phân gì", "mua loại nào"), Trợ lý Floria chỉ kê đơn vật tư phù hợp (`[RECOMMEND_PRODUCT]`) mà **không đính kèm thẻ lịch chăm sóc**, tránh gây rối thông tin.
+* **Đồng Bộ Hệ Thống Toast Nổi Chuẩn Sang Trọng (`_showAppToast`)**:
+  * Chuyển toàn bộ các thông báo nổi (Sao chép tin nhắn, Thêm vào giỏ hàng, Cập nhật lịch chăm sóc) sang card nổi bo góc 14px, nền xanh rêu đậm sang trọng (`#1E3A24`), icon trạng thái trong huy hiệu tròn trong suốt và phụ đề xanh pastel (`#B4F4C2`), căn lề lơ lửng (`margin: 16px`) không còn tràn viền.
+
+---
+
+## 4.20. Tùy Chọn Radio Button Bật / Tắt Yêu Cầu Bón Phân (Cho Các Loài Cây Không Cần Phân)
+*Ngày cập nhật: 23 tháng 10, 2026*
+
+* **Bổ Sung Radio Button Trong Modal "Chỉnh Sửa Cây Trồng" (`plant_detail_screen.dart`)**:
+  * Thêm nhóm tùy chọn Radio Button trực quan ngay tại mục Bón phân dinh dưỡng:
+    * 🔘 **Cần bón phân**: Kích hoạt thanh trượt chu kỳ từ 7 - 60 ngày/lần.
+    * 🔘 **Không cần bón**: Ẩn thanh trượt, gắn nhãn *"Không áp dụng"*, kèm chú thích hướng dẫn cho các giống cây không cần dinh dưỡng vi lượng (cây không khí, sen đá mùa nghỉ, cây mới thay chậu...).
+* **Cơ Chế Quản Lý Lịch Không Đòi Hỏi Nhiệm Vụ Ảo**:
+  * Khi chọn *"Không cần bón"*, chu kỳ `fertilizeFrequencyDays` được lưu về `0`.
+  * Thuộc tính `isNeedsFertilizer` trong [garden_plant.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/models/garden_plant.dart) tự động trả về `false`, không bao giờ báo quá hạn hay thúc giục người dùng bón phân.
+  * Tác vụ Bón phân được **tự động ẩn hoàn toàn khỏi danh sách lịch chăm sóc** trên màn hình Chi tiết cây, giúp giao diện gọn gàng, đúng với đặc tính của cây và không tạo thêm nhiệm vụ thừa.
+
+---
+
+## 4.21. Tinh Gọn Trạng Thái Chờ AI & Tối Ưu Độ Tương Phản Hộp Thoại Xóa Hội Thoại
+*Ngày cập nhật: 23 tháng 10, 2026*
+
+* **Tinh Gọn Trạng Thái Chờ Đang Trả Lời Của AI (`ai_assistant_screen.dart`)**:
+  * Đơn giản hóa bong bóng chờ phản hồi và thanh trạng thái thành duy nhất dòng chữ nghiêng nhã nhặn: **"Đang suy nghĩ..."** kèm vòng quay tiến trình nhỏ gọn.
+  * Loại bỏ hoàn toàn các biểu tượng rườm rà (⚡, 🧠) và câu chữ dài dòng gây rối mắt trước đây (*"Bác sĩ đang chẩn đoán tức thì..."*, *"Bác sĩ đang suy luận y khoa đa tầng..."*).
+* **Tăng Cường Độ Tương Phản & Khả Năng Đọc Của Hộp Thoại Xóa Cuộc Trò Chuyện**:
+  * Sửa lỗi chữ tiêu đề bị mờ/trắng nhạt do phụ thuộc màu theme mặc định.
+  * Đặt màu sắc tường minh có độ tương phản cao:
+    * Tiêu đề *"Xóa cuộc trò chuyện"*: Màu đen xám đậm sắc nét (`#111827`, font weight 700) kèm icon thùng rác đỏ tươi (`#DC2626`).
+    * Nội dung xác nhận: Màu xám than chuẩn typography (`#374151`), cỡ chữ 14px dễ đọc.
+    * Nút hành động: Nút "Hủy" màu xám trung tính (`#4B5563`) và nút "Xóa" nền đỏ tươi (`#DC2626`), chữ trắng in đậm nổi bật.
+
+---
+
 ## 5. Kế Hoạch & Lộ Trình Phát Triển Trong Tương Lai (Next Sprint)
 
-### Tối Ưu Hóa Trải Nghiệm Người Dùng (UI/UX Refinement)
+### 1. Tối Ưu Hóa Trải Nghiệm Người Dùng (UI/UX Refinement)
 - [ ] **Rà soát & Hoàn thiện Micro-animations**:
   - Thêm hiệu ứng Skeleton Loading khi tải dữ liệu Vườn của tôi và Cửa hàng.
   - Tối ưu hiệu ứng chuyển cảnh mượt mà giữa Báo cáo chẩn đoán $\rightarrow$ Chi tiết cây $\rightarrow$ Chatbot.
 - [ ] **Cải thiện màn hình Kết quả Chẩn đoán (`diagnosis_report_screen.dart`)**:
   - Tinh gọn các khối thông tin dài dòng, làm nổi bật "Mức độ khẩn cấp" và "3 bước xử lý ngay".
-  - Bổ sung nút bấm 1 chạm: *"Hỏi bác sĩ AI về kết quả chẩn đoán này"*.
+  - Bổ sung nút bấm 1 chạm: *"Hỏi trợ lý Floria về kết quả chẩn đoán này"*.
 - [ ] **Tối ưu hiển thị Responsive & Thiết bị Di động**:
   - Kiểm tra padding, margin và cỡ chữ trên các dòng điện thoại màn hình nhỏ và tablet.
   - Tinh chỉnh bàn phím ảo không che khuất thanh chat và thanh chuyển đổi chế độ.
+
+### 2. Mở Rộng Tính Năng Lịch Chăm Sóc & Thông Báo Nhắc Nhở (Smart Scheduling & Push Notifications)
+- [ ] **Thông Báo Đẩy Thông Minh (Local / Push Notifications)**:
+  - Tích hợp thông báo đẩy cục bộ hoặc Firebase Cloud Messaging (FCM) gửi thông báo nhắc nhở tưới cây, bón phân đúng khung giờ hẹn (07:00, 09:30, 17:30, 20:00).
+  - Tự động hoãn thông báo nếu hôm nay trời mưa hoặc người dùng đã bấm đánh dấu hoàn thành sớm.
+- [ ] **Mở Rộng Thêm Các Tác Vụ Chăm Sóc Khác**:
+  - Bổ sung các nhiệm vụ chuyên sâu theo từng loài cây: *Cắt tỉa cành vàng*, *Lau bụi phiến lá*, *Xoay chậu hứng sáng*, *Thay chậu & đất mới định kỳ*.
+  - Cho phép tùy chỉnh thêm/bớt và đổi tên tác vụ tự do theo ý người dùng.
+
+### 3. Nâng Cấp Trợ Lý Floria Đa Phương Thức (Multimodal AI Chatbot)
+- [ ] **Gửi Ảnh Trực Tiếp Trong Khung Chat**:
+  - Cho phép người dùng chụp ảnh hoặc chọn ảnh lá cây đính kèm trực tiếp vào tin nhắn khi trò chuyện với Trợ lý Floria (Gemini 3 Vision stream).
+- [ ] **Gợi Ý Câu Hỏi Thông Minh Tiếp Theo (Dynamic Smart Follow-ups)**:
+  - Sau mỗi câu trả lời của Trợ lý Floria, hiển thị 2-3 chip gợi ý câu hỏi tiếp nối tự nhiên (VD: *"Liều lượng pha thế nào?"*, *"Sau bao lâu thì khỏi bệnh?"*).
+
+### 4. Hoàn Thiện Vận Hành Cửa Hàng & Thanh Toán (E-Commerce & Orders)
+- [ ] **Tích Hợp Cổng Thanh Toán Trực Tuyến**:
+  - Kết nối thanh toán qua VNPay, MoMo, hoặc phương thức Nhận hàng trả tiền (COD).
+- [ ] **Quản Lý Đơn Hàng & Lịch Sử Mua Sắm**:
+  - Màn hình theo dõi trạng thái đơn hàng (Đang xử lý $\rightarrow$ Đang giao $\rightarrow$ Đã giao).
+  - Tự động liên kết sản phẩm đã mua vào hồ sơ cây trong Vườn của tôi để nhắc nhở hạn dùng thuốc/phân.
+
 
 
 

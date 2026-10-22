@@ -274,8 +274,9 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
     final primaryModel = await getModelName();
 
     final systemInstruction = Content.system(
-      '''Bạn là Bác sĩ Cây trồng Floria AI - chuyên gia nông nghiệp và y học thực vật học giàu kinh nghiệm, khách quan, tận tâm và có y đức.
-Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn y khoa thực vật.
+      '''Bạn là Trợ lý Cây trồng Floria (hoặc Trợ lý Floria) - chuyên gia nông nghiệp và thực vật học giàu kinh nghiệm, khách quan, tận tâm và gần gũi.
+Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn khoa học thực vật.
+XƯNG HÔ: Tự xưng là "Trợ lý Floria" (TUYỆT ĐỐI KHÔNG tự xưng là "Floria AI", "Bác sĩ AI" hay dùng từ "AI").
 ${currentPlantContext != null && currentPlantContext.isNotEmpty ? 'Ngữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}
 
 NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
@@ -368,8 +369,9 @@ NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
 
     final primaryModel = await getModelName();
 
-    final systemPrompt = '''Bạn là Bác sĩ Cây trồng Floria AI - chuyên gia nông nghiệp và y học thực vật học giàu kinh nghiệm, khách quan, tận tâm và có y đức.
-Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn y khoa thực vật.
+    final systemPrompt = '''Bạn là Trợ lý Cây trồng Floria (hoặc Trợ lý Floria) - chuyên gia nông nghiệp và thực vật học giàu kinh nghiệm, khách quan, tận tâm và gần gũi.
+Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn khoa học thực vật.
+XƯNG HÔ: Tự xưng là "Trợ lý Floria" (TUYỆT ĐỐI KHÔNG tự xưng là "Floria AI", "Bác sĩ AI" hay dùng từ "AI").
 ${currentPlantContext != null && currentPlantContext.isNotEmpty ? 'Ngữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}
 
 NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
@@ -383,7 +385,7 @@ NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
      + Cây chỉ gặp vấn đề sinh lý nhẹ có thể giải quyết bằng cách thay đổi chế độ chăm sóc.
    - CHỈ ĐƯỢC PHÉP đề xuất và đính kèm thẻ sản phẩm trong 2 TRƯỜNG HỢP:
      + Trường hợp A: Cây thực sự bị bệnh hoặc sâu hại phá hoại nghiêm trọng (rệp sáp, bọ trĩ, nhện đỏ, nấm thán thư, đốm lá vi khuẩn, thối rễ úng nặng) bắt buộc phải dùng chế phẩm điều trị.
-     + Trường hợp B: Người dùng CHỦ ĐỘNG hỏi xin tên thuốc, phân bón, đất trồng hoặc nhờ đề xuất sản phẩm.
+     + Trường hợp B: Người dùng CHỦ ĐỘNG hỏi xin tên thuốc, phân bón, đất trồng hoặc nhờ đề xuất sản phẩm (Ví dụ: "dùng phân gì", "mua thuốc gì").
 
 3. KHO DƯỢC PHẨM & VẬT TƯ FLORIA (CHỈ KÊ ĐƠN KHI THỎA MÃN ĐIỀU KIỆN TRÊN):
    - id: `nano-bac-tri-nam` ➔ Chế Phẩm Nano Bạc Đồng Sinh Học (Đặc trị thán thư, đốm lá, phấn trắng, cháy lá vi khuẩn).
@@ -394,10 +396,22 @@ NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
    - id: `keo-cat-tia-canh-nhat` ➔ Kéo Cắt Tỉa Cành Thép SK5 (Khử khuẩn cắt bỏ triệt để cành lá bệnh tránh lây chéo).
    - id: `dat-trong-indoor-premium` ➔ Giá Thể Đất Trồng Indoor Mix Thoát Nước Tốt (Cấp cứu cây úng rễ, thay chậu mới).
 
-4. CÚ PHÁP ĐÍNH KÈM THẺ (NẾU VÀ CHỈ NẾU THỰC SỰ CẦN KÊ ĐƠN):
+4. CÚ PHÁP ĐÍNH KÈM THẺ KÊ ĐƠN VẬT TƯ (NẾU VÀ CHỈ NẾU THỰC SỰ CẦN KÊ ĐƠN):
    Chỉ khi thỏa mãn điều kiện kê đơn, hãy ghi mã ở dòng cuối cùng:
    [RECOMMEND_PRODUCT: id_san_pham]
-   Nếu không cần kê đơn, TUYỆT ĐỐI KHÔNG ghi thẻ này.''';
+   Nếu không cần kê đơn, TUYỆT ĐỐI KHÔNG ghi thẻ này.
+
+5. CÚ PHÁP ĐỀ XUẤT LỊCH CHĂM SÓC CHUẨN KHOA HỌC:
+   - CHỈ đính kèm thẻ lịch chăm sóc khi người dùng hỏi toàn diện về "cách chăm sóc cây", "lịch chăm sóc", "tổng quan chăm sóc cây như thế nào".
+   - TUYỆT ĐỐI KHÔNG đính kèm thẻ [CARE_SCHEDULE] khi:
+     + Người dùng chỉ hỏi mua phân gì, dùng thuốc gì, chữa bệnh gì.
+     + Câu trả lời đã đính kèm thẻ vật tư [RECOMMEND_PRODUCT] (trừ khi người dùng hỏi cả 2 việc cùng lúc).
+   - TUYỆT ĐỐI KHÔNG viết các dòng tiêu đề cụt lủn ở cuối phản hồi như '**Lịch chăm sóc đề xuất...:**' vì giao diện ứng dụng sẽ tự động sinh thẻ riêng biệt. Hãy kết thúc văn bản tự nhiên rồi đặt thẻ ở dòng cuối cùng.
+   Cú pháp thẻ chuẩn:
+   [CARE_SCHEDULE: water=SO_NGAY_TUOI, fertilize=SO_NGAY_BON_PHAN, clean=SO_NGAY_LAU_LA]
+   Ví dụ:
+   [CARE_SCHEDULE: water=5, fertilize=20, clean=3]
+   Quy ước số ngày: water (1-14), fertilize (7-60), clean (1-14).''';
 
     // Chuẩn bị danh sách contents theo chuẩn REST API của Google Generative Language
     final List<Map<String, dynamic>> apiContents = [];
@@ -752,5 +766,76 @@ NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
         ),
       ),
     );
+  }
+
+  /// Tự động tóm tắt và đặt tiêu đề ngắn gọn (3-6 từ) cho cuộc hội thoại như ChatGPT
+  static Future<String?> generateConversationTitle({
+    required String userPrompt,
+    String? aiResponse,
+  }) async {
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) return null;
+
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 8),
+    ));
+
+    final model = await getModelName();
+    final url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey";
+
+    final promptText = """
+Bạn là trợ lý đặt tiêu đề hội thoại cho ứng dụng chăm sóc cây trồng Floria.
+Dựa trên câu hỏi của người dùng: "$userPrompt"
+${aiResponse != null && aiResponse.isNotEmpty ? 'Và câu trả lời tóm tắt: "${aiResponse.length > 200 ? aiResponse.substring(0, 200) : aiResponse}"' : ''}
+
+Hãy đặt một tiêu đề ngắn gọn, súc tích, tự nhiên bằng tiếng Việt (từ 3 đến 6 từ) để tóm tắt chủ đề cuộc trò chuyện này (phong cách giống ChatGPT).
+Quy tắc:
+- Không dùng dấu ngoặc kép, không dùng dấu chấm cuối câu, không dùng emoji.
+- Chỉ trả về duy nhất chuỗi tiêu đề.
+Ví dụ:
+- Gợi ý cây trồng cho người mới
+- Cách chăm sóc Cây Lưỡi Hổ
+- Xử lý cây bị vàng lá
+- Kỹ thuật bón phân an toàn
+""";
+
+    try {
+      final response = await dio.post(
+        url,
+        data: {
+          "contents": [
+            {
+              "parts": [
+                {"text": promptText}
+              ]
+            }
+          ],
+          "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 30,
+            "thinkingConfig": {"thinkingBudget": 0}
+          }
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final candidates = response.data['candidates'] as List?;
+        if (candidates != null && candidates.isNotEmpty) {
+          final content = candidates[0]['content'];
+          final parts = content['parts'] as List?;
+          if (parts != null && parts.isNotEmpty) {
+            String title = parts[0]['text']?.toString().trim() ?? '';
+            title = title.replaceAll('"', '').replaceAll("'", '').replaceAll('.', '').trim();
+            if (title.isNotEmpty) {
+              return title;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Lỗi tạo tiêu đề hội thoại tự động: $e");
+    }
+    return null;
   }
 }

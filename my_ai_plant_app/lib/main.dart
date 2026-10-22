@@ -6,6 +6,7 @@ import 'features/scan/providers/scan_provider.dart';
 import 'features/garden/providers/garden_provider.dart';
 import 'features/history/providers/history_provider.dart';
 import 'features/shop/providers/shop_provider.dart';
+import 'features/chatbot/providers/chat_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'features/splash/screens/splash_screen.dart';
@@ -31,6 +32,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => GardenProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
         ChangeNotifierProvider(create: (_) => ShopProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const MyApp(),
     ),

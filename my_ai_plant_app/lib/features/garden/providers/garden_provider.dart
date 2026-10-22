@@ -307,6 +307,96 @@ class GardenProvider extends ChangeNotifier {
     }
   }
 
+  // Đánh dấu đã bón phân dinh dưỡng cho cây
+  Future<void> fertilizePlant(String plantId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final plantIndex = _plants.indexWhere((p) => p.id == plantId);
+      if (plantIndex == -1) return;
+
+      final plant = _plants[plantIndex];
+      final now = DateTime.now();
+      final nextDate = now.add(Duration(days: plant.fertilizeFrequencyDays));
+
+      await _firestore
+          .collection(plantsCollection)
+          .doc(plantId)
+          .update({
+        'lastFertilized': Timestamp.fromDate(now),
+        'nextFertilizing': Timestamp.fromDate(nextDate),
+      });
+    } catch (e) {
+      debugPrint("Lỗi cập nhật bón phân: $e");
+    }
+  }
+
+  // Đánh dấu đã lau lá & kiểm tra sâu bệnh
+  Future<void> cleanPlant(String plantId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final plantIndex = _plants.indexWhere((p) => p.id == plantId);
+      if (plantIndex == -1) return;
+
+      final plant = _plants[plantIndex];
+      final now = DateTime.now();
+      final nextCheck = now.add(Duration(days: plant.checkPestFrequencyDays));
+
+      await _firestore
+          .collection(plantsCollection)
+          .doc(plantId)
+          .update({
+        'lastCleaned': Timestamp.fromDate(now),
+        'nextCheckPest': Timestamp.fromDate(nextCheck),
+      });
+    } catch (e) {
+      debugPrint("Lỗi cập nhật lau lá/kiểm tra: $e");
+    }
+  }
+
+  // Hoàn tất mọi việc hôm nay: Chỉ cập nhật các tác vụ THỰC SỰ ĐẾN HẠN hôm nay!
+  Future<void> completeAllToday(String plantId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final plantIndex = _plants.indexWhere((p) => p.id == plantId);
+      if (plantIndex == -1) return;
+
+      final plant = _plants[plantIndex];
+      final now = DateTime.now();
+      final Map<String, dynamic> updateData = {'healthStatus': 'Khỏe mạnh'};
+
+      // Nếu cần tưới nước thì mới cập nhật tưới
+      if (plant.isNeedsWater) {
+        updateData['lastWatered'] = Timestamp.fromDate(now);
+        updateData['nextWatering'] = Timestamp.fromDate(now.add(Duration(days: plant.waterFrequencyDays)));
+      }
+
+      // Nếu cần bón phân thì mới cập nhật bón phân
+      if (plant.isNeedsFertilizer) {
+        updateData['lastFertilized'] = Timestamp.fromDate(now);
+        updateData['nextFertilizing'] = Timestamp.fromDate(now.add(Duration(days: plant.fertilizeFrequencyDays)));
+      }
+
+      // Nếu cần kiểm tra sâu bệnh / lau lá thì mới cập nhật
+      if (plant.isNeedsClean) {
+        updateData['lastCleaned'] = Timestamp.fromDate(now);
+        updateData['nextCheckPest'] = Timestamp.fromDate(now.add(Duration(days: plant.checkPestFrequencyDays)));
+      }
+
+      await _firestore
+          .collection(plantsCollection)
+          .doc(plantId)
+          .update(updateData);
+    } catch (e) {
+      debugPrint("Lỗi hoàn tất mọi việc hôm nay: $e");
+    }
+  }
+
   // Xóa cây khỏi khu vườn
   Future<bool> removePlant(String plantId) async {
     final user = _auth.currentUser;
@@ -324,7 +414,7 @@ class GardenProvider extends ChangeNotifier {
     }
   }
 
-  // Cập nhật thông tin chi tiết của cây: Tên biệt danh, Vị trí, Tần suất tưới, Giờ nhắc, Tình trạng sức khỏe, Ghi chú
+  // Cập nhật thông tin chi tiết của cây: Tên biệt danh, Vị trí, Tần suất tưới, Giờ nhắc, Tình trạng sức khỏe, Ghi chú, Chu kỳ bón phân, Chu kỳ kiểm tra sâu bệnh
   Future<bool> updatePlantInfo(
     String plantId, {
     required String nickname,
@@ -332,6 +422,8 @@ class GardenProvider extends ChangeNotifier {
     required int waterFrequencyDays,
     required String reminderTime,
     required String healthStatus,
+    int? fertilizeFrequencyDays,
+    int? checkPestFrequencyDays,
     String? notes,
   }) async {
     final user = _auth.currentUser;
@@ -352,6 +444,20 @@ class GardenProvider extends ChangeNotifier {
         'healthStatus': healthStatus,
         'nextWatering': Timestamp.fromDate(nextDate),
       };
+
+      if (fertilizeFrequencyDays != null) {
+        updateData['fertilizeFrequencyDays'] = fertilizeFrequencyDays;
+        final nextFert = fertilizeFrequencyDays > 0
+            ? plant.lastFertilized.add(Duration(days: fertilizeFrequencyDays))
+            : plant.lastFertilized.add(const Duration(days: 3650));
+        updateData['nextFertilizing'] = Timestamp.fromDate(nextFert);
+      }
+
+      if (checkPestFrequencyDays != null) {
+        updateData['checkPestFrequencyDays'] = checkPestFrequencyDays;
+        final nextClean = plant.lastCleaned.add(Duration(days: checkPestFrequencyDays));
+        updateData['nextCheckPest'] = Timestamp.fromDate(nextClean);
+      }
 
       if (notes != null) {
         updateData['notes'] = notes.trim();

@@ -1387,7 +1387,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   ),
                   icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
                   label: Text(
-                    "Hỏi Bác sĩ AI",
+                    "Hỏi Trợ lý Floria",
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -1746,7 +1746,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                         : null)),
                             plantType: plantType,
                             waterFrequencyDays: freqDays,
-                            notes: "Thêm từ lượt quét thông minh Floria AI",
+                            notes: "Thêm từ lượt chẩn đoán của Trợ lý Floria",
                             wikiData: data ?? {},
                           );
 

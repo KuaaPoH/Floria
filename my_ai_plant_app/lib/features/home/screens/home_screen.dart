@@ -431,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Trợ lý AI Floria',
+                      'Trợ lý Floria',
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,

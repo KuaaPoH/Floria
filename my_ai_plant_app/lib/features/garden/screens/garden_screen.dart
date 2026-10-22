@@ -695,7 +695,7 @@ class _GardenScreenState extends State<GardenScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Hãy chụp ảnh nhận diện cây cảnh bằng Floria AI và bấm 'Lưu vào vườn' để bắt đầu quản lý lịch tưới nhé!",
+              "Hãy chụp ảnh nhận diện cây cảnh cùng Trợ lý Floria và bấm 'Lưu vào vườn' để bắt đầu quản lý lịch tưới nhé!",
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 13,
