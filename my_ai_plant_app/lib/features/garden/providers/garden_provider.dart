@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/garden_plant.dart';
 import '../models/user_garden.dart';
+import '../models/diary_entry.dart';
 
 class GardenProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -205,6 +206,9 @@ class GardenProvider extends ChangeNotifier {
     String? imageUrl,
     String plantType = 'Cây cảnh',
     int waterFrequencyDays = 3,
+    int fertilizeFrequencyDays = 20,
+    int checkPestFrequencyDays = 3,
+    String healthStatus = 'Khỏe mạnh',
     String reminderTime = '07:00',
     String notes = '',
     Map<String, dynamic> wikiData = const {},
@@ -230,10 +234,16 @@ class GardenProvider extends ChangeNotifier {
         imageUrl: imageUrl,
         plantType: plantType,
         waterFrequencyDays: waterFrequencyDays,
+        fertilizeFrequencyDays: fertilizeFrequencyDays,
+        checkPestFrequencyDays: checkPestFrequencyDays,
+        healthStatus: healthStatus,
         reminderTime: reminderTime,
         lastWatered: now,
         nextWatering: now.add(Duration(days: waterFrequencyDays)),
-        healthStatus: 'Khỏe mạnh',
+        lastFertilized: now,
+        nextFertilizing: now.add(Duration(days: fertilizeFrequencyDays > 0 ? fertilizeFrequencyDays : 30)),
+        lastCleaned: now,
+        nextCheckPest: now.add(Duration(days: checkPestFrequencyDays > 0 ? checkPestFrequencyDays : 3)),
         notes: notes,
         wikiData: wikiData,
         createdAt: now,
@@ -302,6 +312,18 @@ class GardenProvider extends ChangeNotifier {
         'nextWatering': Timestamp.fromDate(nextDate),
         'healthStatus': 'Khỏe mạnh',
       });
+
+      // Tự động ghi nhật ký hoạt động hệ thống
+      unawaited(addDiaryEntry(
+        plantId: plantId,
+        type: 'system',
+        category: 'care',
+        title: 'Tưới nước định kỳ',
+        content: 'Đã cấp ẩm đầy đủ cho ${plant.nickname}. Chu kỳ tiếp theo sau ${plant.waterFrequencyDays} ngày.',
+        tag: '💧 Tưới nước',
+        tagBgColor: 0xFFE0F2FE,
+        tagTextColor: 0xFF0369A1,
+      ));
     } catch (e) {
       debugPrint("Lỗi cập nhật tưới nước: $e");
     }
@@ -327,6 +349,18 @@ class GardenProvider extends ChangeNotifier {
         'lastFertilized': Timestamp.fromDate(now),
         'nextFertilizing': Timestamp.fromDate(nextDate),
       });
+
+      // Tự động ghi nhật ký hoạt động hệ thống
+      unawaited(addDiaryEntry(
+        plantId: plantId,
+        type: 'system',
+        category: 'care',
+        title: 'Bón phân vi lượng',
+        content: 'Đã bổ sung dinh dưỡng định kỳ cho ${plant.nickname}. Chu kỳ bón tiếp theo sau ${plant.fertilizeFrequencyDays} ngày.',
+        tag: '🧪 Bón phân',
+        tagBgColor: 0xFFFEF3C7,
+        tagTextColor: 0xFFB45309,
+      ));
     } catch (e) {
       debugPrint("Lỗi cập nhật bón phân: $e");
     }
@@ -352,6 +386,18 @@ class GardenProvider extends ChangeNotifier {
         'lastCleaned': Timestamp.fromDate(now),
         'nextCheckPest': Timestamp.fromDate(nextCheck),
       });
+
+      // Tự động ghi nhật ký hoạt động hệ thống
+      unawaited(addDiaryEntry(
+        plantId: plantId,
+        type: 'system',
+        category: 'care',
+        title: 'Vệ sinh & kiểm tra sâu bệnh',
+        content: 'Đã lau sạch bụi bẩn trên phiến lá và kiểm tra phòng trừ mầm bệnh.',
+        tag: '🍃 Vệ sinh lá',
+        tagBgColor: 0xFFDCFCE7,
+        tagTextColor: 0xFF15803D,
+      ));
     } catch (e) {
       debugPrint("Lỗi cập nhật lau lá/kiểm tra: $e");
     }
@@ -484,6 +530,85 @@ class GardenProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint("Lỗi cập nhật khu vực: $e");
     }
+  }
+
+  // --- CÁC PHƯƠNG THỨC NHẬT KÝ CÂY TRỒNG (PLANT DIARY) ---
+
+  /// Thêm một mục nhật ký (hệ thống tự động hoặc người dùng viết)
+  Future<bool> addDiaryEntry({
+    required String plantId,
+    required String type, // 'user' hoặc 'system'
+    required String category, // 'care', 'health', 'growth', 'note'
+    required String title,
+    required String content,
+    String? imageUrl,
+    List<String>? imageUrls,
+    required String tag,
+    required int tagBgColor,
+    required int tagTextColor,
+    DateTime? timestamp,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final time = timestamp ?? DateTime.now();
+      final List<String> images = imageUrls ?? (imageUrl != null && imageUrl.isNotEmpty ? [imageUrl] : []);
+      await _firestore
+          .collection(plantsCollection)
+          .doc(plantId)
+          .collection('DiaryNotes')
+          .add({
+        'plantId': plantId,
+        'userId': user.uid,
+        'type': type,
+        'category': category,
+        'title': title,
+        'content': content,
+        'imageUrl': images.isNotEmpty ? images.first : imageUrl,
+        'imageUrls': images,
+        'tag': tag,
+        'tagBgColor': tagBgColor,
+        'tagTextColor': tagTextColor,
+        'timestamp': Timestamp.fromDate(time),
+      });
+      return true;
+    } catch (e) {
+      debugPrint("Lỗi thêm mục nhật ký: $e");
+      return false;
+    }
+  }
+
+  /// Xóa một mục nhật ký do người dùng viết
+  Future<bool> deleteDiaryEntry({
+    required String plantId,
+    required String entryId,
+  }) async {
+    try {
+      await _firestore
+          .collection(plantsCollection)
+          .doc(plantId)
+          .collection('DiaryNotes')
+          .doc(entryId)
+          .delete();
+      return true;
+    } catch (e) {
+      debugPrint("Lỗi xóa mục nhật ký: $e");
+      return false;
+    }
+  }
+
+  /// Lắng nghe luồng nhật ký theo thời gian thực
+  Stream<List<DiaryEntry>> getDiaryStream(String plantId) {
+    return _firestore
+        .collection(plantsCollection)
+        .doc(plantId)
+        .collection('DiaryNotes')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => DiaryEntry.fromFirestore(doc)).toList();
+    });
   }
 
   @override

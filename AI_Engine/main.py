@@ -348,6 +348,7 @@ async def predict_disease(file: UploadFile = File(...)):
             "confidence": pred_conf,
             "top_3": top3_results,
             "severity": meta["severity"],
+            "severity_vi": meta["severity"],
             "cause": meta["cause"],
             "treatment_steps": meta["treatment"],
             "is_valid_plant": True,

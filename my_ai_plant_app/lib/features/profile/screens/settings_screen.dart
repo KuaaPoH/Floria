@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/migration_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,6 +14,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _darkMode = false;
   bool _notificationsEnabled = true;
   bool _saveImages = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationSettings();
+  }
+
+  Future<void> _loadNotificationSettings() async {
+    final enabled = await NotificationService.isEnabled();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = enabled;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,9 +91,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSettingsContainer([
             _buildToggleTile(
               icon: Icons.notifications_none_outlined,
-              title: 'Nhắc nhở tưới cây',
+              title: 'Nhắc nhở tưới cây & chăm sóc',
               value: _notificationsEnabled,
-              onChanged: (val) => setState(() => _notificationsEnabled = val),
+              onChanged: (val) async {
+                setState(() => _notificationsEnabled = val);
+                await NotificationService.setEnabled(val);
+              },
+            ),
+            const Divider(height: 1, thickness: 1, color: Color(0x144F9D69)),
+            _buildArrowTile(
+              icon: Icons.notifications_active_outlined,
+              title: 'Kiểm tra thử thông báo ngay',
+              valueText: 'Thử ngay',
+              onTap: () {
+                NotificationService.showTestNotification(context);
+              },
             ),
             const Divider(height: 1, thickness: 1, color: Color(0x144F9D69)),
             _buildToggleTile(
@@ -84,6 +113,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Lưu ảnh quét vào Thư viện',
               value: _saveImages,
               onChanged: (val) => setState(() => _saveImages = val),
+            ),
+          ]),
+          const SizedBox(height: 24),
+
+          // Group 2.5: DỮ LIỆU & ĐÁM MÂY
+          _buildGroupTitle('DỮ LIỆU & ĐÁM MÂY'),
+          const SizedBox(height: 8),
+          _buildSettingsContainer([
+            _buildArrowTile(
+              icon: Icons.cloud_sync_rounded,
+              title: 'Chuyển ảnh sang ImgBB Cloud',
+              valueText: 'Đồng bộ',
+              onTap: () => _showMigrationDialog(context),
             ),
           ]),
           const SizedBox(height: 24),
@@ -174,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: const Color(0xFF4F9D69),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: Colors.grey[300],
@@ -259,6 +301,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showMigrationDialog(BuildContext context) {
+    String status = "Chuyển toàn bộ ảnh Unsplash và ảnh Base64 sang ImgBB Cloud hoàn toàn miễn phí, lưu trữ vĩnh viễn và tối ưu tốc độ tải.";
+    bool isRunning = false;
+    Map<String, int>? result;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isRunning,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  const Icon(Icons.cloud_sync_rounded, color: Color(0xFF2E6F40)),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Đồng bộ ImgBB Cloud",
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    status,
+                    style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: const Color(0xFF374151)),
+                  ),
+                  if (isRunning) ...[
+                    const SizedBox(height: 16),
+                    const LinearProgressIndicator(color: Color(0xFF2E6F40)),
+                  ],
+                  if (result != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF5EC),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        "Đã chuyển đổi thành công:\n• ${result!['shop']} ảnh cửa hàng\n• ${result!['plants']} ảnh cây\n• ${result!['diaries']} bài nhật ký",
+                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF1E3A24)),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                if (!isRunning && result == null)
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx),
+                    child: Text("Hủy", style: GoogleFonts.inter(color: Colors.grey)),
+                  ),
+                ElevatedButton(
+                  onPressed: isRunning
+                      ? null
+                      : () async {
+                          if (result != null) {
+                            Navigator.pop(dialogCtx);
+                            return;
+                          }
+                          setDialogState(() {
+                            isRunning = true;
+                            status = "Đang kết nối ImgBB Cloud và tải ảnh...";
+                          });
+
+                          final res = await MigrationService.runFullMigration(
+                            onProgress: (msg) {
+                              setDialogState(() {
+                                status = msg;
+                              });
+                            },
+                          );
+
+                          setDialogState(() {
+                            isRunning = false;
+                            result = res;
+                            status = "Quá trình đồng bộ hoàn tất!";
+                          });
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E6F40),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text(
+                    result != null ? "Đóng" : (isRunning ? "Đang xử lý..." : "Bắt đầu chuyển đổi"),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

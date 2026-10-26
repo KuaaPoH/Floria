@@ -5,10 +5,12 @@ import 'plant_detail_screen.dart';
 import 'create_garden_screen.dart';
 import 'add_plant_to_garden_screen.dart';
 import '../../../core/widgets/custom_image.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import '../providers/garden_provider.dart';
 import '../models/garden_plant.dart';
 import '../models/user_garden.dart';
 import '../../scan/screens/scan_screen.dart';
+import '../../../core/services/notification_service.dart';
 
 class GardenScreen extends StatefulWidget {
   const GardenScreen({super.key});
@@ -54,9 +56,7 @@ class _GardenScreenState extends State<GardenScreen> {
           backgroundColor: const Color(0xFFFBF9F6), // surface
           body: SafeArea(
             child: gardenProvider.isLoading && allPlants.isEmpty && !gardenProvider.hasGarden
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF364534)),
-                  )
+                ? _buildGardenSkeleton()
                 : SingleChildScrollView(
                     padding: const EdgeInsets.only(top: 16, bottom: 24, left: 20, right: 20),
                     child: Column(
@@ -288,12 +288,55 @@ class _GardenScreenState extends State<GardenScreen> {
                         tooltip: "Đã tưới nước",
                         onPressed: () async {
                           await gardenProvider.waterPlant(plant.id);
+                          NotificationService.silenceForToday(plant.id, 'water');
                           if (context.mounted) {
+                            ScaffoldMessenger.of(context).clearSnackBars();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Đã tưới nước cho '${plant.nickname}'! 💧"),
-                                backgroundColor: const Color(0xFF364534),
-                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: const Color(0xFF1E3A24),
+                                elevation: 8,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                content: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.water_drop_rounded, color: Color(0xFF38BDF8), size: 20),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Đã tưới nước cho '${plant.nickname}'! 💧",
+                                            style: GoogleFonts.inter(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            "Lần tưới tiếp theo: sau ${plant.waterFrequencyDays} ngày.",
+                                            style: GoogleFonts.inter(
+                                              color: const Color(0xFFB4F4C2),
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                duration: const Duration(seconds: 3),
                               ),
                             );
                           }
@@ -916,6 +959,124 @@ class _GardenScreenState extends State<GardenScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGardenSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: 16, bottom: 24, left: 20, right: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ShimmerLoading(width: 140, height: 12),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              ShimmerLoading(width: 180, height: 28),
+              ShimmerLoading(
+                width: 60,
+                height: 24,
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Thẻ vườn mẫu skeleton
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE0E5DD)),
+            ),
+            child: Row(
+              children: [
+                const ShimmerLoading(width: 50, height: 50, shape: BoxShape.circle),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      ShimmerLoading(width: 120, height: 16),
+                      SizedBox(height: 8),
+                      ShimmerLoading(width: 80, height: 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Chips skeleton
+          Row(
+            children: const [
+              ShimmerLoading(
+                width: 70,
+                height: 32,
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+              SizedBox(width: 8),
+              ShimmerLoading(
+                width: 90,
+                height: 32,
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+              SizedBox(width: 8),
+              ShimmerLoading(
+                width: 80,
+                height: 32,
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Grid plant cards skeleton
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.72,
+            ),
+            itemCount: 4,
+            itemBuilder: (context, index) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE0E5DD)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Expanded(
+                      child: ShimmerLoading(
+                        width: double.infinity,
+                        height: double.infinity,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          ShimmerLoading(width: 90, height: 14),
+                          SizedBox(height: 6),
+                          ShimmerLoading(width: 60, height: 11),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

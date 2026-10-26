@@ -666,23 +666,197 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 
 ---
 
+## 4.22. Hoàn Thiện Tối Ưu UI/UX (Skeleton Loading & Kết Nối Trợ Lý 1 Chạm) & Động Cơ Thông Báo Nhắc Lịch Chăm Sóc Thông Minh
+*Ngày cập nhật: 26 tháng 10, 2026*
+
+### 1. Tối Ưu UI/UX & Kết Nối Chẩn Đoán Sang Chatbot (Nhóm 2)
+* **Nút bấm 1 chạm "Hỏi Trợ lý Floria về cây này" (`diagnosis_report_screen.dart`)**:
+  * Tích hợp nút hành động nổi bật với icon `Icons.auto_awesome` lấp lánh và sắc vàng kim hoàng gia ngay dưới hàng nút "Lưu vào vườn / Chi tiết" trên màn hình kết quả nhận diện cây.
+  * Tự động chuyển thẳng sang màn hình trò chuyện `AiAssistantScreen`, nạp sẵn toàn bộ ngữ cảnh về tên tiếng Việt, tên khoa học và câu hỏi hướng dẫn chăm sóc chuyên sâu.
+* **Hệ thống Skeleton Loading Cho Vườn Của Tôi (`garden_screen.dart`)**:
+  * Thay thế toàn bộ vòng xoay `CircularProgressIndicator` cũ kỹ bằng layout **`_buildGardenSkeleton()`** chuẩn thiết kế gợn sóng lấp lánh (`ShimmerLoading`).
+  * Tái hiện đầy đủ khung xương của tiêu đề, thẻ vườn, các chip khu vực bo tròn và lưới 2 cột thẻ cây cảnh.
+* **Hệ thống Skeleton Loading Cho Cửa Hàng Vật Tư (`shop_screen.dart`)**:
+  * Triển khai hàm **`_buildShopSkeleton()`** gồm lưới 4 thẻ sản phẩm mô phỏng với ảnh bo góc, nhãn danh mục, dòng tiêu đề, giá tiền và nút thêm giỏ hàng.
+
+### 2. Động Cơ Thông Báo Nhắc Nhở Chăm Sóc Cây Trồng Thông Minh (Nhóm 3)
+* **Khởi Tạo `NotificationService` Độc Lập ([notification_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/notification_service.dart))**:
+  * **Kiểm tra thông minh**: Tự động rà soát các cây trong `MyGarden` đến hạn tưới (`isNeedsWater`), bón phân (`isNeedsFertilizer`) hoặc lau lá (`isNeedsClean`).
+  * **Đối chiếu khung giờ hẹn**: So sánh thời gian thực với khung giờ nhắc nhở `reminderTime` của từng chậu cây (07:00, 09:30, 17:30, 20:00).
+  * **Cơ chế chống spam**: Sử dụng `SharedPreferences` lưu vết ngày thông báo (`notified_plant_{id}_{task}`); mỗi tác vụ chỉ nhắc tối đa 1 lần trong ngày.
+  * **Tự động hoãn/tắt thông báo khi hoàn thành sớm (`silenceForToday`)**: Khi người dùng tưới nước, bón phân hoặc bấm "Hoàn tất mọi việc hôm nay" trên màn hình Chi tiết cây (`plant_detail_screen.dart`), hệ thống lập tức đánh dấu hoàn thành cho ngày hôm nay và tự động im lặng.
+* **Giao Diện Banner Nổi Sang Trọng (`_SmartNotificationWidget`)**:
+  * Card nổi bo góc 20px, màu xanh rêu đậm hoàng gia (`#1E3A24`), trượt từ trên xuống với hiệu ứng `easeOutBack`.
+  * Hiển thị nhãn giờ hẹn, tên cây, mô tả nhiệm vụ và 2 nút hành động nhanh: *"Chi tiết cây"* (chuyển sang màn hình cây) và *"Tưới ngay" / "Đã bón phân"* (hoàn thành tác vụ 1 chạm).
+* **Tích Hợp Vào Vòng Đời Ứng Dụng (`main_navigation_screen.dart`)**:
+  * Tự động quét khi mở app và duy trì timer định kỳ mỗi 3 phút khi người dùng đang sử dụng ứng dụng.
+* **Tích Hợp Cài Đặt & Nút Thử Nghiệm (`settings_screen.dart`)**:
+  * Đồng bộ công tắc *"Nhắc nhở tưới cây & chăm sóc"* với `NotificationService.isEnabled()`.
+  * Bổ sung mục *"Kiểm tra thử thông báo ngay"* cho phép người dùng trải nghiệm ngay banner nhắc nhở 1 chạm.
+
+---
+
+## 4.23. Hoàn Thiện Toàn Diện Hệ Thống Nhật Ký Cây Trồng (Plant Diary & System Timeline)
+*Ngày cập nhật: 26 tháng 10, 2026*
+
+### 1. Phân Tách 2 Luồng Dữ Liệu Rõ Ràng (System Log & Personal Journal)
+* **Model Dữ Liệu [diary_entry.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/models/diary_entry.dart)**:
+  * Phân biệt rõ hai thuộc tính `type: 'system'` (nhật ký hệ thống) và `type: 'user'` (nhật ký người dùng).
+  * Hỗ trợ lưu trữ ảnh đính kèm (base64/link), thẻ phân loại sinh trưởng (`tag`), màu sắc (`tagBgColor`, `tagTextColor`), tiêu đề và thời gian chi tiết.
+* **Tự Động Ghi Nhận Hoạt Động Chăm Sóc (Zero Effort for Users)**:
+  * Trong [garden_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/providers/garden_provider.dart), các hàm `waterPlant` (tưới nước), `fertilizePlant` (bón phân), `cleanPlant` (vệ sinh lá & kiểm tra sâu bệnh) tự động tạo mốc nhật ký vào Firestore Subcollection `MyGarden/{plantId}/DiaryNotes`.
+  * Tự động gộp mốc *"Chào mừng về vườn mới"* dựa trên `createdAt` của chậu cây.
+
+### 2. Giao Diện Người Dùng Chuẩn Thẩm Mỹ Thiên Nhiên ([plant_diary_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/plant_diary_screen.dart))
+* **Sticky Glassmorphism Header & Bộ Lọc Dạng Viên Thuốc (Pill Tabs)**:
+  * Thanh trượt 3 chế độ xem: **🌟 Tất cả**, **✍️ Của tôi** và **⚙️ Hoạt động**.
+* **Trục Thời Gian Timeline Cao Cấp**:
+  * Đường nối xanh pastel mềm mại (`#D6E8CF`), các node icon phát sáng theo từng phân loại (giọt nước xanh dương, bình thí nghiệm hổ phách, lá cây xanh ngọc, mầm cây xanh rêu).
+  * Hiển thị ngày giờ thân thiện (*"Hôm nay, 14:30"*, *"Hôm qua, 09:15"*, *"26/10/2026"*).
+  * Hỗ trợ xem ảnh phóng to và nút xóa bài viết an toàn cho các trang nhật ký cá nhân.
+* **Nâng Cấp Nút Bấm "Viết Nhật Ký" Hoàng Gia Sang Trọng**:
+  * Thay thế icon cây bút vuông thông thường bằng **Icon Cây Bút Máy Hoàng Gia (`Icons.history_edu_rounded`)** màu vàng kim quý phái (`#FFD700`).
+  * Nền xanh rêu đậm (`#1E3A24`), viền ánh kim vàng nhẹ và đổ bóng nổi 3D bồng bềnh.
+* **Modal Viết Nhật Ký Mới Đầy Đủ Tiện Nghi**:
+  * Chụp ảnh từ camera hoặc chọn từ thư viện ảnh máy ảnh.
+  * Bộ thẻ mốc sinh trưởng: *🌱 Đâm chồi, 🌸 Ra hoa, 🪴 Thay chậu, ✂️ Cắt tỉa, 📸 Kỷ niệm, 💚 Tâm tình*.
+  * Ô nhập tiêu đề và cảm nghĩ thoáng đãng, lưu trữ trực tiếp vào Firestore thời gian thực.
+* **Trải Nghiệm Trang Con Dạng Side-Sheet Trượt Phải Sang Trái & Tinh Chỉnh UI**:
+  * **Trang Nhật Ký Dạng Sub-page Side-sheet**: Khi mở Nhật ký từ trang Chi tiết cây ([plant_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/plant_detail_screen.dart)), trang trượt mượt mà từ bên phải qua trái (`SlideTransition`), chừa lại một khoảng ~48px bên trái với nền mờ scrim để người dùng vẫn nhìn thấy cây trồng phía sau. Hỗ trợ vuốt ngang sang phải hoặc chạm vùng bên trái để đóng nhanh.
+  * **Làm Sạch Văn Bản Tác Vụ Chăm Sóc**: Loại bỏ hoàn toàn các cụm từ thừa thãi như `(Bấm để hoàn thành)`, `(Bấm để bón)`, `(Bấm để hoàn tất)` – chỉ giữ nguyên trạng thái ngắn gọn, thanh lịch: *"Đã đến hạn tưới"*, *"Đã đến hạn bón phân"*, *"Đã đến hạn kiểm tra"*.
+  * **Tối Giản Bộ Lọc & Khôi Phục Icon**:
+    * Các tab lọc được chuyển thành văn bản tinh gọn không icon: `Tất cả`, `Của tôi`, `Hoạt động`.
+    * Khôi phục icon `Icons.menu_book` ở nút Nhật ký trang Chi tiết và `Icons.edit_square` / `Icons.edit_note_rounded` cho hành động Viết nhật ký.
+  * **Hỗ Trợ Thêm Nhiều Ảnh Vào Nhật Ký (Multi-Image Gallery)**:
+    * Cho phép chọn nhiều ảnh từ thư viện (`pickMultiImage`) hoặc chụp trực tiếp từ camera, đính kèm tối đa 8 ảnh/trang nhật ký.
+    * Giao diện chọn ảnh hiển thị dải ngang với nhãn "Ảnh bìa", nút xóa từng ảnh và nút "+ Thêm ảnh" linh hoạt.
+    * Thẻ dòng thời gian tự động hiển thị album ảnh cuộn ngang kèm bộ đếm số lượng ảnh.
+    * **Xem Ảnh Phóng To Toàn Màn Hình (`_openImageViewer`)**: Khi chạm vào bất kỳ ảnh nào trên dòng thời gian, mở trình xem ảnh toàn màn hình có hỗ trợ vuốt chuyển ảnh (PageView), chỉ số trang và tính năng zoom hai ngón tay phóng to/thu nhỏ (`InteractiveViewer`).
+  * **Tối Ưu Độ Tương Phản Màu Chữ & Bỏ Icon Mốc Sinh Trưởng**:
+    * Ô nhập tiêu đề và nội dung được cập nhật font chữ đen than đậm (`#1B1C1A`), hint text xám trung tính (`#6B7280`), nền trắng viền xám sáng (`#CBD5E1`) giúp chữ gõ vào rõ nét 100%, không còn bị mờ.
+    * Tinh giản văn bản placeholder: bỏ gợi ý rườm rà `(VD: Hôm nay nhú thêm 2 lá mới)` chỉ giữ `"Tiêu đề"`; khu vực chọn ảnh làm rõ thành `"Thêm ảnh chụp cho cây (Tối đa 8 ảnh)"`.
+    * Toàn bộ icon emoji ở các mốc sinh trưởng được loại bỏ, chỉ giữ lại chữ ngắn gọn thanh nhã: `Đâm chồi`, `Ra hoa`, `Thay chậu`, `Cắt tỉa`, `Kỷ niệm`, `Tâm tình`.
+* **Tích Hợp ImgBB Cloud Storage Đám Mây & Dịch Vụ Di Chuyển Dữ Liệu Vĩnh Viễn (100% Miễn Phí)**:
+  * **Giải pháp Lưu trữ Không Cần Thẻ Tín Dụng**: Thay vì Firebase Storage yêu cầu nâng cấp gói trả phí Blaze (cần thẻ thanh toán quốc tế), hệ thống chuyển sang tích hợp trực tiếp với **ImgBB API** (`https://api.imgbb.com/1/upload`) với khóa API cá nhân, hỗ trợ lưu trữ ảnh vĩnh viễn, không giới hạn số lượng ảnh, miễn phí 100%.
+  * **Dịch vụ Lưu trữ Chuyên dụng ([storage_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/storage_service.dart))**: Tự động tải ảnh nhật ký và ảnh chụp cây mới lên ImgBB Cloud thông qua `Dio`, nhận về Direct URL cố định (`https://i.ibb.co/...`), tự động fallback sang Base64 nén khi mất mạng để bài viết nhật ký không bao giờ bị mất.
+  * **Công cụ Đồng bộ & Di chuyển Ảnh Toàn Diện ([migration_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/migration_service.dart))**:
+    * Quét toàn bộ ảnh Unsplash/link ngoài trong `ShopProducts` và `MyGarden` $\rightarrow$ Tự động tải về máy chủ và lưu lên ImgBB $\rightarrow$ Cập nhật lại đường dẫn mới vào Firestore.
+    * Quét toàn bộ ảnh Base64 trong `DiaryNotes` $\rightarrow$ Giải mã và đưa lên ImgBB Cloud $\rightarrow$ Tối ưu dung lượng document Firestore từ hàng trăm KB xuống dưới 1 KB/bản ghi!
+    * Bổ sung nút 1 chạm **"Chuyển ảnh sang ImgBB Cloud"** trong trang Cài đặt ([settings_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/settings_screen.dart)) kèm hộp thoại theo dõi tiến trình trực quan.
+  * **Tối Ưu Tốc Độ Tải Ảnh Tức Thì (Background Pre-Upload UX)**:
+    * Kích hoạt tiến trình upload ảnh lên ImgBB Cloud ở chế độ chạy ngầm ngay khoảnh khắc người dùng chọn/chụp ảnh (`_DiaryDraftPhoto`). Trong lúc người dùng đang gõ tiêu đề & nội dung bài viết, ảnh đã được tải lên hoàn tất, giúp thời gian bấm "Lưu trang nhật ký" giảm từ ~10s xuống còn **chưa đầy 0.2s** (gần như tức thì).
+    * Hiển thị **vòng tròn tiến trình mờ mờ với % thực tế chạy từ 0% $\rightarrow$ 100%** trên từng ảnh ngay khi đang tải ngầm (đã loại bỏ icon đám mây xanh theo yêu cầu để giao diện tối giản, sạch sẽ nhất).
+    * Nếu người dùng gõ thông tin trước rồi chọn ảnh và bấm Lưu ngay lập tức: Nút bấm hiển thị trực tiếp tiến trình theo thời gian thực: *"Đang tải ảnh (65%)..."* rồi *"Đang lưu bài viết..."*, giúp trải nghiệm hoàn toàn mượt mà, minh bạch, loại bỏ cảm giác bị lag.
+    * Nén ảnh kích thước phù hợp (`maxWidth: 960`, `maxHeight: 960`, `imageQuality: 72`), giảm dung lượng truyền tải từ 2MB xuống 150KB.
+    * **Chuẩn Hóa Toast Thông Báo (SnackBar)**: Đổi màu chữ thông báo thành trắng sáng nổi bật (`Colors.white`), font Inter đậm nét, loại bỏ hoàn toàn biểu tượng lá `🌿` theo yêu cầu.
+
+*   **Nâng Cấp Giao Diện Thêm Cây Vào Vườn (`add_plant_to_garden_screen.dart`)**:
+    * **Hiệu Ứng Nút Nhận Diện Chống Đơ**: Khi bấm nút, nút lập tức hiển thị Spinner xoay vòng tròn trắng kèm trạng thái *"Đang nhận diện & phân tích cây..."*, giữ vững tông màu nền rêu đậm `#364534` chuẩn thương hiệu mà không bị mờ xám hay tạo cảm giác lag/đơ.
+    * **Loại Bỏ Hoàn Toàn Giao Diện "Đổi Key"**: Xóa bỏ banner trạng thái Gemini AI kèm nút đổi Key khỏi màn hình, tối ưu không gian hiển thị liền mạch và an toàn.
+    * **Chuẩn Hóa Dấu Tích Màu Trắng Trên ChoiceChip**: Chuyển dấu tick checkmark của các chip chỗ đặt cây, khung giờ nhắc nhở và tình trạng sức khỏe sang màu trắng thuần (`checkmarkColor: Colors.white`), tạo độ tương phản sắc nét trên nền xanh rêu `#364534`.
+    * **Xóa Bỏ Icon Emoji Khung Giờ**: Xóa bỏ các biểu tượng mặt trời/mặt trăng (🌅, 🌤️, 🌇, 🌙) ở các khung giờ nhắc nhở và chip "Giờ khác...", chuyển sang giao diện chữ tối giản và tinh gọn.
+    * **Đồng Bộ Đầy Đủ Chức Năng Chăm Sóc Cây**:
+        * Bổ sung **Tình trạng sức khỏe cây ban đầu** (Khỏe mạnh, Cần chú ý, Đang phục hồi).
+        * Bổ sung **Chu kỳ bón phân dinh dưỡng** với Radio Button (Cần bón phân / Không cần bón) kết hợp Slider điều chỉnh chu kỳ từ 7 - 60 ngày.
+        * Bổ sung **Chu kỳ kiểm tra sâu bệnh & lau lá** với Slider điều chỉnh từ 1 - 14 ngày.
+        * Bổ sung **Ghi chú chăm sóc riêng**, tự động kế thừa mô tả đặc điểm người dùng đã nhập trước đó.
+    * **Chuẩn Hóa Toàn Bộ Toast / SnackBar**: Rà soát và cập nhật 100% các thông báo SnackBar (Thêm cây, Tạo vườn, Xóa cây, Báo lỗi) sang màu chữ trắng (`color: Colors.white`) rõ ràng, loại bỏ biểu tượng lá `🌿`.
+
+*   **Tái Thiết Kế & Nâng Cấp Toàn Diện Trang Chủ ([home_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/screens/home_screen.dart))**:
+    * **Widget Thời Tiết Có Ảnh Nền Động Theo Giờ & Thời Tiết**:
+      * Khôi phục thiết kế widget thời tiết có ảnh nền bao trọn (background image) tuyệt đẹp như mẫu thiết kế ban đầu.
+      * Tự động chuyển đổi ảnh nền sinh thái theo thời tiết và thời gian thực trong ngày:
+        - Buổi sáng: Bình minh rực nắng qua tán cây (`morning golden sunlight`).
+        - Buổi trưa: Vòm lá nhiệt đới xanh mướt mát mẻ dưới nắng hè (`lush canopy green leaf sunlight`).
+        - Buổi chiều: Ánh hoàng hôn ấm áp chiếu qua khu vườn (`sunset golden hour garden`).
+        - Buổi tối: Không gian phòng cây xanh ấm cúng về đêm (`cozy indoor plants night warm light`).
+      * Lớp phủ kính mờ Glassmorphism hiển thị nhiệt độ (29°C), độ ẩm (72%), trạng thái nắng nhẹ, số chậu cây cần tưới hôm nay và lời khuyên chăm sóc thực tế theo độ ẩm không khí.
+    * **Loại Bỏ 4 Nút Tắt Tròn & Tinh Giản Giao Diện**:
+      * Đã loại bỏ hoàn toàn 4 nút tắt tròn (Khám bệnh, Thêm cây, Bác sĩ Floria, Cửa hàng) để tránh làm rối mắt và giải phóng không gian theo đúng yêu cầu người dùng.
+    * **Khôi Phục Phần Chat Trợ Lý Floria Nguyên Bản**:
+      * Phục dựng lại thẻ Trợ lý Floria danh tiếng với gam màu xanh pastel dịu mát (`#D6E8CF`), điểm nhấn biểu tượng ngôi sao lấp lánh (`Icons.auto_awesome`), thông điệp chào đón thông minh và nút *"Hỏi ngay"* dẫn trực tiếp vào màn hình trò chuyện AI ([ai_assistant_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/chatbot/screens/ai_assistant_screen.dart)).
+    * **Hiển Thị Đầy Đủ Tất Cả Khu Vườn & Chuyển Tab Tự Động**:
+      * Khắc phục tình trạng chỉ hiển thị 1 vườn duy nhất: Hệ thống tích hợp bộ lọc chip thông minh hỗ trợ hiển thị **"Tất cả các vườn"** và từng khu vườn riêng biệt của người dùng (Ban công, Phòng khách, Sân thượng...) kèm số lượng cây thực tế trong từng vườn.
+      * Tải danh sách cây trồng thật từ Firestore, hiển thị hình ảnh chuẩn, tên cây, vị trí đặt và duy nhất huy hiệu **Tình trạng sức khỏe** (Khỏe mạnh, Cần chú ý, Đang phục hồi), loại bỏ hoàn toàn đếm ngược ngày tưới.
+      * Tích hợp cơ chế tự động chuyển tab Bottom Nav: Khi bấm nút **"Xem tất cả"** hoặc nút **"Đến khu vườn ➔"**, ứng dụng lập tức chuyển mượt mà sang tab Khu vườn (index 1 trên `MainNavigationScreen`).
+    * **Cẩm Nang Chăm Sóc Cây Lưu Trữ CSDL & Hỗ Trợ Chèn Ảnh Mọi Vị Trí**:
+      * **Model Đa Khối ([handbook_article.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/models/handbook_article.dart))**: Thiết kế cấu trúc bài viết linh hoạt theo các khối `HandbookBlock` (khối văn bản `text`, khối hình ảnh `image` kèm chú thích `caption`, khối mẹo chuyên gia `tip`), cho phép chèn ảnh vào bất kỳ đoạn nào trong bài viết.
+      * **Dịch Vụ Firestore ([handbook_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/services/handbook_service.dart))**: Lưu trữ dữ liệu cẩm nang vào Firestore Collection `PlantHandbook`, tự động stream thời gian thực và khởi tạo sẵn 4 bài viết cẩm nang mẫu phong phú có chèn ảnh minh họa sinh động xen kẽ nội dung.
+      * **Giao Diện Đọc Bài Viết Chuẩn Tạp Chí**: Modal xem cẩm nang hỗ trợ render mượt mà các khối chữ, ảnh minh họa có bo góc đổ bóng và khung ghi chú mẹo nổi bật, hỗ trợ cuộn êm ái.
+
+*   **Lưu Trữ CSDL Cho 5 Bệnh Của Lá & Widget Thời Tiết Trang Chủ**:
+    * **Lưu Trữ 5 Bệnh Của Lá Vào CSDL Firestore (`DiseasesInfo`)**:
+      * Xây dựng Model [disease_info.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/models/disease_info.dart) và Service [disease_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/services/disease_service.dart) quản lý danh mục 5 bệnh lá chuẩn khoa học của AI Engine (`Healthy`, `Anthracnose`, `Leaf_Spot`, `Bacterial_Blight`, `Powdery_Mildew`).
+      * Tự động khởi tạo dữ liệu chuyên sâu vào Firestore Collection `DiseasesInfo`: tên tiếng Việt, tiếng Anh, mức độ nghiêm trọng (Bình thường / Cảnh báo / Nguy hiểm), nguyên nhân, 3 triệu chứng nhận biết, 4 bước phác đồ điều trị, danh sách thuốc đặc trị gợi ý, ảnh minh họa sắc nét và biện pháp phòng ngừa.
+      * Bổ sung script [seed_diseases.py](file:///d:/Plan/utrasupervip/AI_Engine/seed_diseases.py) cho backend/AI Engine.
+    * **Lưu Trữ Ảnh Nền & Câu Thoại Biên Tập Widget Trang Chủ Vào CSDL Firestore (`HomeWeatherWidgets`)**:
+      * Xây dựng Model [weather_widget_config.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/models/weather_widget_config.dart) và Service [weather_widget_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/services/weather_widget_service.dart).
+      * **Tách bạch chuẩn xác**:
+        - **Dữ liệu lưu CSDL Firestore (`HomeWeatherWidgets`)**: Chỉ lưu trữ ảnh nền chất lượng cao (`heroImageUrl`), câu chào/thông điệp chính (`mainTitle`), nhãn biên tập (`badgeText`) và câu thoại lời khuyên chăm cây (`advice`) theo khung giờ (`startHour` - `endHour`). Admin có thể tự do thay đổi ảnh nền và câu thoại theo mùa/dịp lễ trực tiếp trên Firebase Console mà không cần sửa code.
+        - **Dữ liệu môi trường động**: Nhiệt độ, độ ẩm, trạng thái thời tiết và ánh sáng hoàn toàn được tính toán động dựa theo thời gian thực tế của thiết bị chứ không lưu cứng trong CSDL.
+      * Tích hợp khung hiển thị câu thoại lời khuyên (`advice`) sang trọng ngay dưới các chỉ số sinh thái trên Widget trang chủ.
+    * **Chuyển Đổi Toàn Bộ Ảnh Unsplash Sang ImgBB Cloud & Cập Nhật Firestore**:
+      * Đã chạy script tự động [upload_and_migrate_all_to_imgbb.py](file:///d:/Plan/utrasupervip/AI_Engine/upload_and_migrate_all_to_imgbb.py) tải toàn bộ ảnh từ Unsplash về và lưu trữ vĩnh viễn lên **ImgBB Cloud Storage** (`https://i.ibb.co/...`).
+      * Cập nhật đồng bộ 100% các collection trên **Firebase Firestore**:
+        - `DiseasesInfo`: Toàn bộ 5 bệnh lá cây đã chuyển sang link ảnh ImgBB trực tiếp.
+        - `HomeWeatherWidgets`: Cả 4 khung giờ widget (sáng, trưa, chiều, tối) đã chuyển sang link ảnh nền ImgBB.
+        - `PlantHandbook`: Cả 4 bài viết cẩm nang và các ảnh minh họa chèn trong bài đã chuyển sang link ImgBB.
+      * Cập nhật toàn bộ link ảnh mặc định trong source code Flutter ([weather_widget_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/services/weather_widget_service.dart), [disease_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/services/disease_service.dart), [handbook_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/services/handbook_service.dart)) và backend AI ([seed_diseases.py](file:///d:/Plan/utrasupervip/AI_Engine/seed_diseases.py)), loại bỏ hoàn toàn phụ thuộc vào link ngoài Unsplash.
+
+### Tái Thiết Lập CSDL Bệnh Lá (DiseasesInfo) & Tách Biệt Vai Trò Trợ Lý AI Floria
+*   **Loại bỏ ảnh thừa & Phác đồ điều trị tĩnh**:
+    *   Xóa bỏ trường `imageUrl` khỏi `DiseasesInfo` vì không cần thiết và tránh ảnh không phản ánh đúng mầm bệnh thực tế.
+    *   Loại bỏ các bước phác đồ điều trị tĩnh dạng cứng (Bước 1, 2, 3) và thuốc gợi ý cố định; chuyển đổi hoàn toàn nhiệm vụ này cho **Trợ lý AI Floria** để sinh lời khuyên động cá nhân hóa theo từng loại cây và mức độ bệnh thực tế.
+*   **Chuẩn Hóa Dữ Liệu Bệnh Học & Cơ Chế Sinh Bệnh**:
+    *   Lưu trữ nền tảng bệnh học trong `DiseasesInfo` trên Firestore: `id`, `nameVi`, `nameEn`, `severity`, `pathogen` (tác nhân gây bệnh: chủng nấm/vi khuẩn), `mechanism` (cơ chế gây hại biểu mô lá), `favorableConditions` (môi trường thuận lợi bùng phát), `prevention` (biện pháp canh tác phòng ngừa).
+    *   Thực thi nạp và cập nhật lại toàn bộ 5 tài liệu trong collection `DiseasesInfo` trên Firestore (`floria-71734`) qua [seed_diseases.py](file:///d:/Plan/utrasupervip/AI_Engine/seed_diseases.py) và [disease_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/services/disease_service.dart).
+*   **Nâng Cấp Giao Diện Chẩn Đoán & Tinh Gọn Trực Quan**:
+    *   **Thẻ Hồ Sơ Bệnh Học & Cơ Chế** ([diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/screens/diagnosis_report_screen.dart)): Hiển thị trực quan Tác nhân (Pathogen), Cơ chế gây bệnh, Môi trường phát sinh và Phòng ngừa canh tác.
+    *   **Khắc phục lỗi Mức độ nguy hại không hiển thị**: Sửa lỗi key mismatch giữa Backend (`severity`) và Frontend (`severity_vi`), đồng thời kết nối trực tiếp với dữ liệu `disease?.severity` từ Firestore để hiển thị chính xác mức độ (An toàn, Trung bình, Cảnh báo, Nguy hiểm, Rất nguy hiểm) kèm màu sắc badge tương ứng.
+    *   **Tự động ghi bệnh án vào Nhật ký cây trồng (`PlantDiary`)**: Khi nhấn "Cập nhật bệnh án", hệ thống vừa cập nhật tình trạng sức khỏe của cây vừa tự động tạo một mục nhật ký hoạt động hệ thống (`health` category) ghi lại chẩn đoán, tác nhân, mức độ nguy hại, độ tin cậy và ảnh chụp lá đã quét.
+    *   **Đồng bộ thiết kế Toast thông báo (SnackBar)**: Chuẩn hóa màu nền (`#1E3A24`), icon tròn với viền mờ và chữ trắng tương phản cao sắc nét, đồng bộ 100% với các thông báo hệ thống khác.
+    *   **Chuẩn hóa văn bản và kiểu chữ Ghi chú chăm sóc**: Đổi nội dung tự động từ *"Chẩn đoán AI"* thành *"Chẩn đoán Trợ lý Floria"*; đồng thời tăng độ sắc nét cho ô nhập văn bản `TextField` trong Modal chỉnh sửa cây (`#1B1C1A`, font-weight 600) giúp người dùng dễ đọc và chỉnh sửa.
+    *   Cập nhật modal chẩn đoán lá cây tại [plant_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/plant_detail_screen.dart): *"Floria sẽ phân tích các vết đốm, mầm bệnh thán thư, cháy lá vi khuẩn hoặc phấn trắng và đề xuất phác đồ điều trị."*
+
+### Khắc Phục Lỗi Đồng Bộ Lịch Chăm Sóc Cây Trồng (Decouple Care Schedule)
+*   **Hiện tượng**: Khi cây có cả tác vụ *"Tưới nước"* và *"Kiểm tra sâu bệnh & Lau lá"* cùng đến hạn (hoặc đang chờ), người dùng chỉ bấm nút *"Tưới nước"* nhưng tác vụ *"Kiểm tra sâu bệnh & Lau lá"* cũng tự động chuyển sang hoàn thành (Đã chu toàn, hiện tick xanh).
+*   **Nguyên nhân kỹ thuật**:
+    *   Trong `GardenPlant.fromFirestore` ([garden_plant.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/models/garden_plant.dart)), trường `lastCleanDate` và `lastFertDate` trước đây đặt giá trị dự phòng (fallback) là `lastWateredDate` khi trên Firestore chưa có trường `lastCleaned` / `lastFertilized`.
+    *   Đồng thời `nextCheckPest` được tính bằng `lastCleanDate + cleanFreq`.
+    *   Khi người dùng bấm tưới nước, hàm `waterPlant()` cập nhật `lastWatered = now` lên Firestore. Khi stream bắn snapshot mới về, `lastCleanDate` bị kéo theo bằng `now`, khiến `nextCheckPest` bị cộng thêm 3 ngày vào tương lai $\rightarrow$ `isNeedsClean` chuyển ngay sang `false` và hiển thị như đã làm xong.
+*   **Giải pháp đã xử lý**:
+    *   **Tách độc lập hoàn toàn các mốc thời gian**: Sửa hàm khởi tạo `GardenPlant` và `fromFirestore` để `lastCleanDate` và `lastFertDate` dùng dự phòng là `createdAt` (thời điểm tạo cây) thay vì `lastWateredDate`.
+    *   **Backfill dữ liệu trên Firestore**: Khởi tạo và lưu rõ ràng các trường `lastCleaned`, `nextCheckPest`, `lastFertilized`, `nextFertilizing` cho toàn bộ tài liệu trong collection `MyGarden`.
+    *   **Khôi phục trạng thái kiểm tra sâu bệnh**: Đặt lại hạn kiểm tra sâu bệnh cho cây của người dùng về trạng thái *"Đã đến hạn kiểm tra"* để người dùng tiếp tục thao tác và nghiệm thu chính xác.
+
+---
+
 ## 5. Kế Hoạch & Lộ Trình Phát Triển Trong Tương Lai (Next Sprint)
 
 ### 1. Tối Ưu Hóa Trải Nghiệm Người Dùng (UI/UX Refinement)
-- [ ] **Rà soát & Hoàn thiện Micro-animations**:
-  - Thêm hiệu ứng Skeleton Loading khi tải dữ liệu Vườn của tôi và Cửa hàng.
-  - Tối ưu hiệu ứng chuyển cảnh mượt mà giữa Báo cáo chẩn đoán $\rightarrow$ Chi tiết cây $\rightarrow$ Chatbot.
-- [ ] **Cải thiện màn hình Kết quả Chẩn đoán (`diagnosis_report_screen.dart`)**:
-  - Tinh gọn các khối thông tin dài dòng, làm nổi bật "Mức độ khẩn cấp" và "3 bước xử lý ngay".
-  - Bổ sung nút bấm 1 chạm: *"Hỏi trợ lý Floria về kết quả chẩn đoán này"*.
+- [x] **Rà soát & Hoàn thiện Micro-animations**:
+  - Đã thêm hiệu ứng Skeleton Loading khi tải dữ liệu Vườn của tôi và Cửa hàng. ✅
+- [x] **Cải thiện màn hình Kết quả Chẩn đoán (`diagnosis_report_screen.dart`)**:
+  - Bổ sung nút bấm 1 chạm: *"Hỏi trợ lý Floria về cây này / kết quả chẩn đoán này"*. ✅
 - [ ] **Tối ưu hiển thị Responsive & Thiết bị Di động**:
   - Kiểm tra padding, margin và cỡ chữ trên các dòng điện thoại màn hình nhỏ và tablet.
-  - Tinh chỉnh bàn phím ảo không che khuất thanh chat và thanh chuyển đổi chế độ.
 
 ### 2. Mở Rộng Tính Năng Lịch Chăm Sóc & Thông Báo Nhắc Nhở (Smart Scheduling & Push Notifications)
-- [ ] **Thông Báo Đẩy Thông Minh (Local / Push Notifications)**:
-  - Tích hợp thông báo đẩy cục bộ hoặc Firebase Cloud Messaging (FCM) gửi thông báo nhắc nhở tưới cây, bón phân đúng khung giờ hẹn (07:00, 09:30, 17:30, 20:00).
-  - Tự động hoãn thông báo nếu hôm nay trời mưa hoặc người dùng đã bấm đánh dấu hoàn thành sớm.
+- [x] **Thông Báo Đẩy Thông Minh & Nhắc Lịch Chăm Sóc**:
+  - Tích hợp `NotificationService` gửi thông báo nổi thông minh nhắc nhở tưới cây, bón phân đúng khung giờ hẹn (07:00, 09:30, 17:30, 20:00). ✅
+  - Tự động hoãn thông báo nếu người dùng đã bấm đánh dấu hoàn thành sớm (`silenceForToday`). ✅
+- [ ] **Mở Rộng Thêm Các Tác Vụ Chăm Sóc Khác**:
+  - Cho phép tùy chỉnh thêm/bớt và đổi tên tác vụ tự do theo ý người dùng.
+
+### 3. Nâng Cấp Trợ Lý Floria Đa Phương Thức (Multimodal AI Chatbot)
+- [x] **Gửi Ảnh Trực Tiếp Trong Khung Chat & Đa phương thức**:
+  - Đã hỗ trợ đính kèm ảnh và phân tích thị giác với Gemini Vision. ✅
+
+### 4. Hoàn Thiện Vận Hành Cửa Hàng & Thanh Toán (E-Commerce & Orders)
+- [ ] **Tích Hợp Cổng Thanh Toán Trực Tuyến**:
+  - Kết nối thanh toán qua VNPay, MoMo, hoặc phương thức Nhận hàng trả tiền (COD).
+- [ ] **Quản Lý Đơn Hàng & Lịch Sử Mua Sắm**:
+  - Màn hình theo dõi trạng thái đơn hàng (Đang xử lý $\rightarrow$ Đang giao $\rightarrow$ Đã giao).
 - [ ] **Mở Rộng Thêm Các Tác Vụ Chăm Sóc Khác**:
   - Bổ sung các nhiệm vụ chuyên sâu theo từng loài cây: *Cắt tỉa cành vàng*, *Lau bụi phiến lá*, *Xoay chậu hứng sáng*, *Thay chậu & đất mới định kỳ*.
   - Cho phép tùy chỉnh thêm/bớt và đổi tên tác vụ tự do theo ý người dùng.

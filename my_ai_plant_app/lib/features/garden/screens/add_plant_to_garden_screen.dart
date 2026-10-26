@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/gemini_service.dart';
+import '../../../core/services/storage_service.dart';
 import '../providers/garden_provider.dart';
 import '../models/user_garden.dart';
 
@@ -57,9 +58,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 88,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 75,
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
@@ -72,17 +73,40 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Lỗi khi chọn ảnh: $e"), backgroundColor: Colors.red.shade700),
+          SnackBar(
+            content: Text(
+              "Lỗi khi chọn ảnh: $e",
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
   }
 
-  // Đảm bảo lấy được URL vĩnh viễn lưu trữ trên backend thay vì đường dẫn blob tạm thời của trình duyệt
+  // Đảm bảo lấy được URL vĩnh viễn trên ImgBB Cloud
   Future<String?> _ensurePermanentImageUrl(Map<String, dynamic> wikiData) async {
     if (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty) {
       return _uploadedImageUrl;
     }
+    // Ưu tiên 1: Upload trực tiếp lên ImgBB Cloud
+    if (_imageBytes != null) {
+      try {
+        final storageUrl = await StorageService.uploadPlantPhoto(
+          bytes: _imageBytes!,
+          plantName: wikiData['name_vi'] ?? 'plant',
+        );
+        if (storageUrl != null && storageUrl.isNotEmpty) {
+          _uploadedImageUrl = storageUrl;
+          return _uploadedImageUrl;
+        }
+      } catch (e) {
+        debugPrint("Lỗi upload lên ImgBB Cloud: $e");
+      }
+    }
+    // Ưu tiên 2: Upload lên Backend Server cục bộ nếu có
     if (_imageBytes != null && _selectedImage != null) {
       try {
         final dio = Dio();
@@ -152,9 +176,12 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
   Future<void> _handleScan() async {
     if (_imageBytes == null || _selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Vui lòng chụp ảnh hoặc chọn ảnh lá cây trước nhé!"),
-          backgroundColor: Color(0xFFE06C00),
+        SnackBar(
+          content: Text(
+            "Vui lòng chụp ảnh hoặc chọn ảnh lá cây trước nhé!",
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+          backgroundColor: const Color(0xFFE06C00),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -163,9 +190,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
 
     setState(() {
       _isLoading = true;
-      _statusText = _hasGeminiKey
-          ? "Google Gemini đang phân tích ảnh và đối chiếu miêu tả..."
-          : "AI Engine đang phân tích đặc điểm nhận dạng thực vật...";
+      _statusText = "Đang nhận diện & phân tích cây...";
     });
 
     try {
@@ -296,6 +321,18 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
           _statusText = null;
         });
 
+        // Kích hoạt upload ảnh cây lên ImgBB Cloud ngầm ngay trong lúc người dùng xem thông tin và chọn phòng
+        if (_imageBytes != null && (_uploadedImageUrl == null || _uploadedImageUrl!.isEmpty)) {
+          StorageService.uploadPlantPhoto(
+            bytes: _imageBytes!,
+            plantName: nameVi,
+          ).then((url) {
+            if (url != null && url.isNotEmpty && mounted) {
+              _uploadedImageUrl = url;
+            }
+          }).catchError((_) {});
+        }
+
         _showSaveToGardenBottomSheet(
           nameVi: nameVi,
           scientificName: prediction,
@@ -313,7 +350,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("$e".replaceAll("Exception: ", "")),
+            content: Text(
+              "$e".replaceAll("Exception: ", ""),
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
+            ),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -365,12 +405,37 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
       timesPerWeek = 1;
     }
 
+    // Tình trạng sức khỏe ban đầu
+    String selectedHealth = 'Khỏe mạnh';
+
+    // Bón phân dinh dưỡng
+    bool enableFertilizer = true;
+    int fertilizeDays = 20;
+    if (wikiData['fertilizer'] != null) {
+      final fertText = wikiData['fertilizer'].toString().toLowerCase();
+      if (fertText.contains("tháng")) {
+        fertilizeDays = 30;
+      } else if (fertText.contains("tuần")) {
+        final match = RegExp(r'(\d+)').firstMatch(fertText);
+        final weeks = int.tryParse(match?.group(1) ?? '2') ?? 2;
+        fertilizeDays = weeks * 7;
+      }
+    }
+
+    // Kiểm tra sâu bệnh & lau lá
+    int checkPestDays = 3;
+
+    // Ghi chú chăm sóc riêng
+    final TextEditingController noteCtrl = TextEditingController(
+      text: _aiHintNotesCtrl.text.trim(),
+    );
+
     String reminderTime = "07:00";
     final List<Map<String, String>> presetTimes = [
-      {"label": "🌅 07:00 (Sáng sớm)", "time": "07:00"},
-      {"label": "🌤️ 09:30", "time": "09:30"},
-      {"label": "🌇 17:30 (Chiều mát)", "time": "17:30"},
-      {"label": "🌙 20:00 (Tối)", "time": "20:00"},
+      {"label": "07:00 (Sáng sớm)", "time": "07:00"},
+      {"label": "09:30", "time": "09:30"},
+      {"label": "17:30 (Chiều mát)", "time": "17:30"},
+      {"label": "20:00 (Tối)", "time": "20:00"},
     ];
 
     showModalBottomSheet(
@@ -423,7 +488,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                               : Container(
                                   width: 72,
                                   height: 72,
-                                  color: const Color(0xFF364534).withOpacity(0.08),
+                                  color: const Color(0xFF364534).withValues(alpha: 0.08),
                                   child: const Icon(Icons.local_florist, color: Color(0xFF364534), size: 32),
                                 ),
                         ),
@@ -437,7 +502,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF364534).withOpacity(0.1),
+                                      color: const Color(0xFF364534).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -587,7 +652,57 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // 2. Chỗ đặt cây trong khu vườn
+                    // 2. Tình trạng sức khỏe ban đầu
+                    Text(
+                      "Tình trạng sức khỏe ban đầu",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        'Khỏe mạnh',
+                        'Cần chú ý',
+                        'Đang phục hồi',
+                      ].map((h) {
+                        final isSelected = selectedHealth == h;
+                        Color chipColor;
+                        if (h == 'Khỏe mạnh') {
+                          chipColor = const Color(0xFF15803D);
+                        } else if (h == 'Cần chú ý') {
+                          chipColor = const Color(0xFFD97706);
+                        } else {
+                          chipColor = const Color(0xFF2563EB);
+                        }
+                        return ChoiceChip(
+                          label: Text(h),
+                          selected: isSelected,
+                          checkmarkColor: Colors.white,
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedHealth = h);
+                          },
+                          selectedColor: chipColor,
+                          backgroundColor: Colors.white,
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : const Color(0xFF1B1C1A),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(color: isSelected ? chipColor : const Color(0xFFE4E2DF)),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // 3. Chỗ đặt cây trong khu vườn
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -620,6 +735,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           return ChoiceChip(
                             label: Text(zone),
                             selected: isSel,
+                            checkmarkColor: Colors.white,
                             onSelected: (val) {
                               if (val) {
                                 setModalState(() {
@@ -653,6 +769,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             ],
                           ),
                           selected: isCustomZone,
+                          checkmarkColor: Colors.white,
                           onSelected: (val) {
                             setModalState(() {
                               isCustomZone = true;
@@ -701,7 +818,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
 
                     const SizedBox(height: 18),
 
-                    // 3. Tần suất tưới nước (Theo khuyến nghị từ điển & tùy chỉnh người dùng)
+                    // 4. Tần suất tưới nước (Theo khuyến nghị từ điển & tùy chỉnh người dùng)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -716,7 +833,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF364534).withOpacity(0.08),
+                            color: const Color(0xFF364534).withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -801,7 +918,242 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // 4. Khung giờ nhắc nhở tưới cây
+                    // 5. Chu kỳ bón phân dinh dưỡng
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Yêu cầu bón phân dinh dưỡng:",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1B1C1A),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: enableFertilizer ? const Color(0xFFFEF3C7) : const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: enableFertilizer ? const Color(0xFFFDE68A) : const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          child: Text(
+                            enableFertilizer ? "Mỗi $fertilizeDays ngày / lần" : "Không áp dụng",
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: enableFertilizer ? const Color(0xFFB45309) : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Nhóm Radio Button (Cần bón phân / Không cần bón)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                enableFertilizer = true;
+                                if (fertilizeDays <= 0) fertilizeDays = 20;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: enableFertilizer ? const Color(0xFFFEF3C7) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: enableFertilizer ? const Color(0xFFF59E0B) : const Color(0xFFE4E2DF),
+                                  width: enableFertilizer ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Radio<bool>(
+                                    value: true,
+                                    groupValue: enableFertilizer,
+                                    activeColor: const Color(0xFFD97706),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                    onChanged: (val) {
+                                      if (val == true) {
+                                        setModalState(() {
+                                          enableFertilizer = true;
+                                          if (fertilizeDays <= 0) fertilizeDays = 20;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      "Cần bón phân",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: enableFertilizer ? const Color(0xFF92400E) : const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                enableFertilizer = false;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: !enableFertilizer ? const Color(0xFFF3F4F6) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: !enableFertilizer ? const Color(0xFF9CA3AF) : const Color(0xFFE4E2DF),
+                                  width: !enableFertilizer ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Radio<bool>(
+                                    value: false,
+                                    groupValue: enableFertilizer,
+                                    activeColor: const Color(0xFF4B5563),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                    onChanged: (val) {
+                                      if (val == false) {
+                                        setModalState(() {
+                                          enableFertilizer = false;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      "Không cần bón",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: !enableFertilizer ? const Color(0xFF1F2937) : const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (enableFertilizer) ...[
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: const Color(0xFFF59E0B),
+                          inactiveTrackColor: const Color(0xFFE4E8E2),
+                          thumbColor: const Color(0xFFF59E0B),
+                          overlayColor: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          valueIndicatorColor: const Color(0xFF78350F),
+                          valueIndicatorTextStyle: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                          showValueIndicator: ShowValueIndicator.onDrag,
+                        ),
+                        child: Slider(
+                          value: fertilizeDays.toDouble().clamp(7, 60),
+                          min: 7,
+                          max: 60,
+                          divisions: 53,
+                          label: "$fertilizeDays ngày/lần",
+                          onChanged: (val) {
+                            setModalState(() => fertilizeDays = val.round());
+                          },
+                        ),
+                      ),
+                    ] else ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 8),
+                        child: Text(
+                          "💡 Loài cây này không yêu cầu phân bón (ví dụ: cây không khí, sen đá giai đoạn nghỉ...). Tác vụ bón phân sẽ được tắt khỏi lịch nhắc việc.",
+                          style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF6B7280), fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+
+                    // 6. Chu kỳ kiểm tra sâu bệnh & lau lá
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Chu kỳ kiểm tra sâu bệnh & lau lá:",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1B1C1A),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFBAE6FD)),
+                          ),
+                          child: Text(
+                            "Mỗi $checkPestDays ngày / lần",
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF0369A1)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: const Color(0xFF0284C7),
+                        inactiveTrackColor: const Color(0xFFE4E8E2),
+                        thumbColor: const Color(0xFF0284C7),
+                        overlayColor: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                        valueIndicatorColor: const Color(0xFF0C4A6E),
+                        valueIndicatorTextStyle: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                        showValueIndicator: ShowValueIndicator.onDrag,
+                      ),
+                      child: Slider(
+                        value: checkPestDays.toDouble().clamp(1, 14),
+                        min: 1,
+                        max: 14,
+                        divisions: 13,
+                        label: "$checkPestDays ngày/lần",
+                        onChanged: (val) {
+                          setModalState(() => checkPestDays = val.round());
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // 7. Khung giờ nhắc nhở tưới cây
                     Text(
                       "Khung giờ nhắc nhở",
                       style: GoogleFonts.inter(
@@ -820,6 +1172,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           return ChoiceChip(
                             label: Text(item['label']!),
                             selected: isSel,
+                            checkmarkColor: Colors.white,
                             onSelected: (val) {
                               if (val) setModalState(() => reminderTime = item['time']!);
                             },
@@ -839,19 +1192,13 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           );
                         }),
                         ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.access_time, size: 15),
-                              const SizedBox(width: 4),
-                              Text(
-                                !presetTimes.any((t) => t['time'] == reminderTime)
-                                    ? reminderTime
-                                    : "Giờ khác...",
-                              ),
-                            ],
+                          label: Text(
+                            !presetTimes.any((t) => t['time'] == reminderTime)
+                                ? reminderTime
+                                : "Giờ khác...",
                           ),
                           selected: !presetTimes.any((t) => t['time'] == reminderTime),
+                          checkmarkColor: Colors.white,
                           onSelected: (val) async {
                             final pickedTime = await showTimePicker(
                               context: modalContext,
@@ -891,6 +1238,33 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 18),
+
+                    // 8. Ghi chú chăm sóc
+                    Text(
+                      "Ghi chú chăm sóc:",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1B1C1A),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: noteCtrl,
+                      maxLines: 2,
+                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1B1C1A)),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: "Ví dụ: Đặt cạnh cửa sổ hướng đông, tưới buổi sáng...",
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF747871)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DF))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DF))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF364534), width: 1.5)),
+                      ),
+                    ),
                     const SizedBox(height: 24),
 
                     // Nút xác nhận lưu vào vườn
@@ -921,8 +1295,11 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             imageUrl: permanentUrl,
                             plantType: plantType,
                             waterFrequencyDays: finalCalculatedDays,
+                            fertilizeFrequencyDays: enableFertilizer ? fertilizeDays : 0,
+                            checkPestFrequencyDays: checkPestDays,
+                            healthStatus: selectedHealth,
                             reminderTime: reminderTime,
-                            notes: _aiHintNotesCtrl.text.trim(),
+                            notes: noteCtrl.text.trim(),
                             wikiData: wikiData,
                           );
 
@@ -936,8 +1313,12 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          "Đã thêm '$finalNickname' vào '$finalZone' thành công! 🌿",
-                                          style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                                          "Đã thêm '$finalNickname' vào '$finalZone' thành công!",
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                            fontSize: 13.5,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -952,7 +1333,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(gardenProvider.errorMessage ?? "Có lỗi khi lưu cây."),
+                                  content: Text(
+                                    gardenProvider.errorMessage ?? "Có lỗi khi lưu cây.",
+                                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
+                                  ),
                                   backgroundColor: Colors.red.shade700,
                                   behavior: SnackBarBehavior.floating,
                                 ),
@@ -1038,65 +1422,6 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
               _buildImageSelector(),
               const SizedBox(height: 24),
 
-              // Banner Trạng thái AI (Gemini Multimodal / AI Engine)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _hasGeminiKey
-                      ? const Color(0xFF364534).withOpacity(0.06)
-                      : Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _hasGeminiKey
-                        ? const Color(0xFF364534).withOpacity(0.2)
-                        : Colors.amber.shade200,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _hasGeminiKey ? Icons.auto_awesome : Icons.info_outline,
-                      size: 20,
-                      color: _hasGeminiKey ? const Color(0xFF364534) : Colors.amber.shade900,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _hasGeminiKey
-                            ? "Google Gemini AI sẵn sàng: Phân tích kết hợp cả ảnh & miêu tả nhận dạng."
-                            : "Đang dùng AI Engine mặc định. Bật Gemini để đọc ảnh + miêu tả nhận dạng.",
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: _hasGeminiKey ? const Color(0xFF364534) : Colors.amber.shade900,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => GeminiService.showApiKeyDialog(
-                        context,
-                        onSaved: _checkGeminiKey,
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size(50, 30),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        _hasGeminiKey ? "Đổi Key" : "Cài đặt",
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: _hasGeminiKey ? const Color(0xFF364534) : Colors.amber.shade900,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               // 2. Ghi chú bổ sung hỗ trợ AI nhận dạng
               Row(
                 children: [
@@ -1112,7 +1437,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF364534).withOpacity(0.08),
+                      color: const Color(0xFF364534).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -1167,6 +1492,8 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF364534),
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFF364534),
+                    disabledForegroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 3,
                   ),
@@ -1182,8 +1509,12 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _statusText ?? "Đang phân tích...",
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                                _statusText ?? "Đang nhận diện & phân tích cây...",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -1192,13 +1523,14 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.document_scanner_outlined, size: 22),
+                            const Icon(Icons.document_scanner_outlined, size: 22, color: Colors.white),
                             const SizedBox(width: 10),
                             Text(
                               'Nhận diện & Thêm vào vườn',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
+                                color: Colors.white,
                                 letterSpacing: 0.3,
                               ),
                             ),
@@ -1221,7 +1553,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF364534).withOpacity(0.3)),
+          border: Border.all(color: const Color(0xFF364534).withValues(alpha: 0.3)),
           color: Colors.white,
         ),
         child: Column(
@@ -1268,7 +1600,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         border: Border.all(color: const Color(0xFFE4E2DF), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF364534).withOpacity(0.03),
+            color: const Color(0xFF364534).withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -1280,7 +1612,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: const Color(0xFF364534).withOpacity(0.08),
+              color: const Color(0xFF364534).withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.add_a_photo_outlined, size: 30, color: Color(0xFF364534)),

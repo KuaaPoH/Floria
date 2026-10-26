@@ -14,6 +14,8 @@ import '../../garden/providers/garden_provider.dart';
 import '../../garden/models/garden_plant.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
 import '../../shop/screens/shop_screen.dart';
+import '../models/disease_info.dart';
+import '../services/disease_service.dart';
 
 class DiagnosisReportScreen extends StatefulWidget {
   final bool isDiseaseScan;
@@ -373,9 +375,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           const SizedBox(height: 16),
           if (top3.isNotEmpty) _buildResultStack(scanProvider),
           const SizedBox(height: 16),
-          _buildCauseCard(scanProvider),
-          const SizedBox(height: 16),
-          _buildTreatmentCard(scanProvider),
+          _buildDiseasePathologyCard(scanProvider),
           const SizedBox(height: 16),
           _buildActionPills(context, scanProvider, docId, null),
         ],
@@ -1044,68 +1044,114 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-  Widget _buildCauseCard(ScanProvider scanProvider) {
+  Widget _buildDiseasePathologyCard(ScanProvider scanProvider) {
     final result = scanProvider.scanResult;
-    final String severityVi = result?['severity_vi']?.toString() ?? "Đang cập nhật";
-    final String cause = result?['cause']?.toString() ?? "Chưa xác định rõ tác nhân gây bệnh.";
-    final String predictionVi = result?['prediction_vi']?.toString() ?? "Phân tích mầm bệnh";
-    final bool isHealthy = result?['prediction']?.toString().toLowerCase() == 'healthy';
+    final String prediction = result?['prediction']?.toString() ?? "Healthy";
+    final String predictionVi = result?['prediction_vi']?.toString() ?? "Lá khỏe mạnh";
+    final bool isHealthy = prediction.toLowerCase() == 'healthy';
 
-    final Color badgeColor = isHealthy ? primaryStrong : stateError;
+    return FutureBuilder<DiseaseInfo?>(
+      future: DiseaseService.getDiseaseById(prediction),
+      builder: (context, snapshot) {
+        final disease = snapshot.data;
+        final String severity = disease?.severity ??
+            result?['severity_vi']?.toString() ??
+            result?['severity']?.toString() ??
+            (isHealthy ? "Khỏe mạnh" : "Cảnh báo");
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            isHealthy ? primarySoft : stateError.withOpacity(0.12),
-            Colors.white.withOpacity(0.92),
-          ],
-        ),
-        border: Border.all(color: badgeColor.withOpacity(0.18)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("NGUYÊN NHÂN & MẦM BỆNH", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-                  Text(predictionVi, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: badgeColor.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(severityVi, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: badgeColor)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: _buildInfoCell("Tình trạng", isHealthy ? "Lá bình thường" : "Nhiễm bệnh")),
-                const SizedBox(width: 12),
-                Expanded(child: _buildInfoCell("Mức độ", severityVi)),
+        final Color badgeColor = isHealthy
+            ? primaryStrong
+            : (severity.contains("Nguy hiểm")
+                ? stateError
+                : (severity.contains("Trung bình") || severity.contains("Cảnh báo") ? stateWarning : primaryStrong));
+
+        final String pathogen = disease?.pathogen ??
+            result?['pathogen']?.toString() ??
+            result?['cause']?.toString() ??
+            (isHealthy ? "Tự nhiên, không phát hiện vi nấm hay vi khuẩn gây hại." : "Đang cập nhật tác nhân...");
+        final String mechanism = disease?.mechanism ??
+            result?['mechanism']?.toString() ??
+            (isHealthy ? "Mô biểu bì nguyên vẹn, các lục lạp quang hợp bình thường." : "Mầm bệnh tấn công làm suy giảm diệp lục lá.");
+        final String favorableConditions = disease?.favorableConditions ??
+            result?['favorable_conditions']?.toString() ??
+            (isHealthy ? "Ánh sáng tán xạ, thông thoáng, chu kỳ ẩm ổn định." : "Ẩm độ cao, kém thông thoáng, đọng nước trên mặt lá.");
+        final String prevention = disease?.prevention ??
+            result?['prevention']?.toString() ??
+            (isHealthy ? "Tiếp tục duy trì chế độ chăm sóc và vị trí hiện tại." : "Giữ thông thoáng, cách ly và hạn chế tưới ướt sũng lá.");
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                isHealthy ? primarySoft : badgeColor.withOpacity(0.08),
+                Colors.white.withOpacity(0.94),
               ],
             ),
+            border: Border.all(color: badgeColor.withOpacity(0.18)),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
           ),
-          const SizedBox(height: 12),
-          _buildInfoCell("Tác nhân & Cơ chế", cause),
-        ],
-      ),
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "HỒ SƠ BỆNH HỌC & CƠ CHẾ",
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          predictionVi,
+                          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold, color: text),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: badgeColor.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      severity,
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: badgeColor),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: _buildInfoCell("Tình trạng", isHealthy ? "Lá bình thường" : "Nhiễm bệnh")),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildInfoCell("Mức độ nguy hại", severity)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInfoCell("Tác nhân gây bệnh (Pathogen)", pathogen),
+              const SizedBox(height: 12),
+              _buildInfoCell("Cơ chế gây hại biểu mô lá", mechanism),
+              const SizedBox(height: 12),
+              _buildInfoCell("Môi trường bùng phát bệnh", favorableConditions),
+              const SizedBox(height: 12),
+              _buildInfoCell("Phòng ngừa canh tác & Cách ly", prevention),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1159,98 +1205,6 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-  Widget _buildTreatmentCard(ScanProvider scanProvider) {
-    final result = scanProvider.scanResult;
-    final dynamic stepsRaw = result?['treatment_steps'];
-    List<String> steps = [];
-    if (stepsRaw is List) {
-      steps = stepsRaw.map((e) => e.toString()).toList();
-    } else if (stepsRaw is String && stepsRaw.isNotEmpty) {
-      steps = [stepsRaw];
-    }
-    if (steps.isEmpty) {
-      steps = [
-        "Cách ly cây bệnh ra khỏi khu vực các cây khỏe mạnh xung quanh.",
-        "Cắt tỉa các lá bị đốm hoặc cháy nặng bằng kéo đã khử trùng cồn 70 độ.",
-        "Điều chỉnh lượng nước tưới chỉ vào gốc cây, tránh làm ướt sũng bề mặt lá."
-      ];
-    }
-
-    final bool isHealthy = result?['prediction']?.toString().toLowerCase() == 'healthy';
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [primarySoft, Colors.white.withOpacity(0.94)],
-        ),
-        border: Border.all(color: primary.withOpacity(0.18)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(isHealthy ? "HƯỚNG DẪN DUY TRÌ" : "PHÁC ĐỒ ĐIỀU TRỊ", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-                  Text(isHealthy ? "Chăm sóc phòng ngừa" : "Hành động khuyến nghị", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: primaryStrong.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text("Khuyên dùng", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: primaryStrong)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...steps.asMap().entries.map((entry) {
-            int idx = entry.key + 1;
-            String textStep = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _buildInfoCell("Bước $idx", textStep),
-            );
-          }),
-          if (!isHealthy) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ShopScreen()),
-                  );
-                },
-                icon: const Icon(Icons.medical_services_outlined, size: 18, color: Colors.white),
-                label: Text(
-                  "Xem thuốc & vật tư đặc trị tại Cửa hàng",
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E6F40),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   Widget _buildInfoCell(String label, String value) {
     return Container(
@@ -1294,9 +1248,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     if (widget.isDiseaseScan) {
       final result = scanProvider.scanResult;
       final String predictionVi = result?['prediction_vi']?.toString() ?? "Bệnh lá";
-      final String severityVi = result?['severity_vi']?.toString() ?? "Cần chú ý";
-      final String cause = result?['cause']?.toString() ?? "";
       final bool isHealthy = result?['prediction']?.toString().toLowerCase() == 'healthy';
+      final String severityVi = result?['severity_vi']?.toString() ?? result?['severity']?.toString() ?? (isHealthy ? "Khỏe mạnh" : "Cần chú ý");
+      final String cause = result?['cause']?.toString() ?? "";
       final double confidence = double.tryParse(result?['confidence']?.toString() ?? '95') ?? 95.0;
 
       return Column(
@@ -1309,6 +1263,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     onPressed: () async {
                       final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
                       final String newStatus = isHealthy ? 'Khỏe mạnh' : 'Bị $predictionVi';
+                      final String newNotes = 'Chẩn đoán Trợ lý Floria ngày ${DateTime.now().day}/${DateTime.now().month}: $predictionVi (Độ tin cậy: ${confidence.toStringAsFixed(1)}%)';
                       final bool success = await gardenProvider.updatePlantInfo(
                         widget.currentPlant!.id,
                         nickname: widget.currentPlant!.nickname,
@@ -1316,32 +1271,63 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                         waterFrequencyDays: widget.currentPlant!.waterFrequencyDays,
                         reminderTime: widget.currentPlant!.reminderTime,
                         healthStatus: newStatus,
-                        notes: 'Chẩn đoán AI ngày ${DateTime.now().day}/${DateTime.now().month}: $predictionVi (Độ tin cậy: ${confidence.toStringAsFixed(1)}%)',
+                        notes: newNotes,
                       );
 
+                      if (success) {
+                        unawaited(gardenProvider.addDiaryEntry(
+                          plantId: widget.currentPlant!.id,
+                          type: 'system',
+                          category: 'health',
+                          title: isHealthy ? 'Kiểm tra sức khỏe: Khỏe mạnh' : 'Chẩn đoán bệnh: $predictionVi',
+                          content: isHealthy
+                              ? 'Trợ lý Floria kiểm tra phiến lá không phát hiện mầm bệnh. Cây đạt độ tin cậy ${confidence.toStringAsFixed(1)}%.'
+                              : 'Trợ lý Floria chẩn đoán phát hiện [$predictionVi] (Mức độ: $severityVi, Độ tin cậy: ${confidence.toStringAsFixed(1)}%).${cause.isNotEmpty ? '\nNguyên nhân: $cause' : ''}',
+                          imageUrl: result?['image_url']?.toString(),
+                          tag: isHealthy ? '🌿 Khỏe mạnh' : '🩺 Bệnh án lá',
+                          tagBgColor: isHealthy ? 0xFFDCFCE7 : 0xFFFEE2E2,
+                          tagTextColor: isHealthy ? 0xFF166534 : 0xFF991B1B,
+                        ));
+                      }
+
                       if (context.mounted) {
+                        ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: success ? const Color(0xFF1E3A24) : const Color(0xFF7F1D1D),
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             content: Row(
                               children: [
-                                Icon(
-                                  success ? Icons.check_circle : Icons.error,
-                                  color: Colors.white,
+                                Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.16),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    success ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                                    color: success ? const Color(0xFF4ADE80) : const Color(0xFFF87171),
+                                    size: 20,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     success
-                                        ? "Đã cập nhật tình trạng [$newStatus] vào ${widget.currentPlant!.nameVi}!"
+                                        ? "Đã cập nhật tình trạng [$newStatus] & lưu vào nhật ký cây!"
                                         : "Chưa thể cập nhật bệnh án vào cây.",
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            backgroundColor: success ? primaryStrong : Colors.red.shade700,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                         );
                       }
@@ -1481,6 +1467,38 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              final plantName = data?['name_vi'] ?? docId.replaceAll('_', ' ');
+              final sciName = data?['scientific_name'] ?? docId.replaceAll('_', ' ');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AiAssistantScreen(
+                    plantNameVi: plantName,
+                    scientificName: sciName,
+                    diseaseContext: "Tôi vừa nhận diện được cây $plantName ($sciName). Hãy hướng dẫn tôi cách chăm sóc, lượng nước tưới, vị trí đặt phù hợp và những lưu ý quan trọng để cây luôn khỏe mạnh!",
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2C392B),
+              foregroundColor: const Color(0xFFFFD700),
+              elevation: 4,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+            icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
+            label: Text(
+              "Hỏi Trợ lý Floria về cây này",
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         Row(

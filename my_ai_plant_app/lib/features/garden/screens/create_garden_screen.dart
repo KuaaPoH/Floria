@@ -99,8 +99,8 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "Đã tạo khu vườn '${_nameController.text.trim()}' thành công! 🌿",
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  "Đã tạo khu vườn '${_nameController.text.trim()}' thành công!",
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
                 ),
               ),
             ],
@@ -115,7 +115,10 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(gardenProvider.errorMessage ?? "Có lỗi khi tạo khu vườn."),
+          content: Text(
+            gardenProvider.errorMessage ?? "Có lỗi khi tạo khu vườn.",
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),

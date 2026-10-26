@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/widgets/custom_image.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import '../models/shop_product.dart';
 import '../providers/shop_provider.dart';
 import 'cart_screen.dart';
@@ -271,12 +272,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
                 // Danh sách sản phẩm (Product Grid)
                 if (shopProvider.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: CircularProgressIndicator(color: Color(0xFF2E6F40)),
-                    ),
-                  )
+                  _buildShopSkeleton()
                 else if (products.isEmpty)
                   Center(
                     child: Padding(
@@ -309,6 +305,60 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildShopSkeleton() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 0.65,
+      ),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE0E5DD)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ShimmerLoading(
+                height: 130,
+                width: double.infinity,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ShimmerLoading(width: 60, height: 10),
+                    const SizedBox(height: 8),
+                    const ShimmerLoading(width: double.infinity, height: 14),
+                    const SizedBox(height: 6),
+                    const ShimmerLoading(width: 80, height: 14),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        ShimmerLoading(width: 60, height: 16),
+                        ShimmerLoading(width: 28, height: 28, shape: BoxShape.circle),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

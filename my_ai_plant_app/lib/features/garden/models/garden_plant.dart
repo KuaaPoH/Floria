@@ -49,10 +49,10 @@ class GardenPlant {
     this.notes = '',
     this.wikiData = const {},
     required this.createdAt,
-  })  : lastFertilized = lastFertilized ?? lastWatered,
-        nextFertilizing = nextFertilizing ?? (lastFertilized ?? lastWatered).add(Duration(days: fertilizeFrequencyDays)),
-        lastCleaned = lastCleaned ?? lastWatered,
-        nextCheckPest = nextCheckPest ?? (lastCleaned ?? lastWatered).add(Duration(days: checkPestFrequencyDays));
+  })  : lastFertilized = lastFertilized ?? createdAt,
+        nextFertilizing = nextFertilizing ?? (lastFertilized ?? createdAt).add(Duration(days: fertilizeFrequencyDays > 0 ? fertilizeFrequencyDays : 20)),
+        lastCleaned = lastCleaned ?? createdAt,
+        nextCheckPest = nextCheckPest ?? (lastCleaned ?? createdAt).add(Duration(days: checkPestFrequencyDays > 0 ? checkPestFrequencyDays : 3));
 
   // Kiểm tra xem cây đã đến hạn cần tưới chưa
   bool get isNeedsWater {
@@ -151,25 +151,26 @@ class GardenPlant {
       return fallback;
     }
 
-    final lastWateredDate = parseTimestamp(data['lastWatered'], DateTime.now());
+    final createdDate = parseTimestamp(data['createdAt'], DateTime.now());
+    final lastWateredDate = parseTimestamp(data['lastWatered'], createdDate);
     final freq = (data['waterFrequencyDays'] as num?)?.toInt() ?? 3;
     final nextWateringDate = parseTimestamp(
       data['nextWatering'],
-      lastWateredDate.add(Duration(days: freq)),
+      lastWateredDate.add(Duration(days: freq > 0 ? freq : 3)),
     );
 
     final fertFreq = (data['fertilizeFrequencyDays'] as num?)?.toInt() ?? 20;
-    final lastFertDate = parseTimestamp(data['lastFertilized'], lastWateredDate);
+    final lastFertDate = parseTimestamp(data['lastFertilized'], createdDate);
     final nextFertDate = parseTimestamp(
       data['nextFertilizing'],
-      lastFertDate.add(Duration(days: fertFreq)),
+      lastFertDate.add(Duration(days: fertFreq > 0 ? fertFreq : 20)),
     );
 
     final cleanFreq = (data['checkPestFrequencyDays'] as num?)?.toInt() ?? 3;
-    final lastCleanDate = parseTimestamp(data['lastCleaned'], lastWateredDate);
+    final lastCleanDate = parseTimestamp(data['lastCleaned'], createdDate);
     final nextCleanDate = parseTimestamp(
       data['nextCheckPest'],
-      lastCleanDate.add(Duration(days: cleanFreq)),
+      lastCleanDate.add(Duration(days: cleanFreq > 0 ? cleanFreq : 3)),
     );
 
     return GardenPlant(

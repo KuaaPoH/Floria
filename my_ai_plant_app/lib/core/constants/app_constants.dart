@@ -12,6 +12,10 @@ class AppConstants {
     }
   }
 
+  // ImgBB Cloud Storage API Key
+  static const String imgbbApiKey = 'fd14b90942ffdd9837b7f62d6ca8dc65';
+  static const String imgbbUploadUrl = 'https://api.imgbb.com/1/upload';
+
   // URL của Spring Boot Backend trung tâm
   // Tự động nhận diện nền tảng: Web dùng localhost:8080, thiết bị di động dùng IP mạng LAN
   static String get baseUrl {

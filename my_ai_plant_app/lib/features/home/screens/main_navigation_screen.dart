@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../../core/services/notification_service.dart';
+import '../../garden/providers/garden_provider.dart';
 import 'home_screen.dart';
 import '../../scan/screens/scan_screen.dart';
 import '../../profile/screens/profile_screen.dart';
@@ -16,20 +20,43 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late int _currentIndex;
-
   late final List<Widget> _screens;
+  Timer? _notificationCheckTimer;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _screens = [
-      const HomeScreen(isEmbedded: true),
+      HomeScreen(
+        isEmbedded: true,
+        onNavigateToGarden: () => _onTabTapped(1),
+      ),
       const GardenScreen(),
       const ScanScreen(),
       const ShopScreen(),
       const ProfileScreen(),
     ];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkReminders();
+    });
+
+    _notificationCheckTimer = Timer.periodic(const Duration(minutes: 3), (_) {
+      _checkReminders();
+    });
+  }
+
+  void _checkReminders() {
+    if (!mounted) return;
+    final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
+    NotificationService.checkAndNotifyPendingTasks(context, gardenProvider.plants);
+  }
+
+  @override
+  void dispose() {
+    _notificationCheckTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -69,7 +96,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             borderRadius: BorderRadius.circular(36), // Bo tron
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF364534).withOpacity(0.12),
+                color: const Color(0xFF364534).withValues(alpha: 0.12),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),
