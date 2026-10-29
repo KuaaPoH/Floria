@@ -11,7 +11,7 @@ import 'diagnosis_report_screen.dart';
 class CameraScanningScreen extends StatefulWidget {
   final String selectedModel;
 
-  const CameraScanningScreen({super.key, required this.selectedModel});
+  const CameraScanningScreen({super.key, this.selectedModel = 'floria_vision'});
 
   @override
   State<CameraScanningScreen> createState() => _CameraScanningScreenState();

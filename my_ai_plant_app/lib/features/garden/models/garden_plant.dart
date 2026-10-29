@@ -95,6 +95,33 @@ class GardenPlant {
     return diff < 0 ? 0 : diff;
   }
 
+  // Kiểm tra cây có bất kỳ công việc chăm sóc nào đến hạn hôm nay không
+  bool get isNeedsAnyCare => isNeedsWater || isNeedsFertilizer || isNeedsClean;
+
+  // Trạng thái hiển thị thực tế (kết hợp tình trạng bệnh lý và lịch chăm sóc đến hạn)
+  String get effectiveStatusText {
+    final s = healthStatus.trim();
+    if (s.startsWith('Bị') || s == 'Cần điều trị') {
+      return s;
+    }
+    if (s == 'Đang phục hồi') {
+      return s;
+    }
+    if (isNeedsWater || s == 'Cần tưới nước') {
+      return 'Cần tưới nước';
+    }
+    if (isNeedsFertilizer) {
+      return 'Cần bón phân';
+    }
+    if (isNeedsClean) {
+      return 'Cần kiểm tra';
+    }
+    if (s == 'Cần chú ý') {
+      return s;
+    }
+    return 'Khỏe mạnh';
+  }
+
   // Tính toán mức độ ẩm đất giả lập (1.0 = Đầy đủ ẩm, 0.0 = Rất khô)
   double get estimatedSoilMoisture {
     final now = DateTime.now();

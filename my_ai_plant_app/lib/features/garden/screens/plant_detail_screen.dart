@@ -359,26 +359,32 @@ class PlantDetailScreen extends StatelessWidget {
     final title = currentPlant?.nickname ?? plant?["title"] ?? "Cây cảnh";
     final sciName = currentPlant?.scientificName ?? plant?["scientificName"] ?? "";
     final location = currentPlant?.zone ?? plant?["location"] ?? "Phòng khách";
-    final isWaterNeeded = currentPlant?.isNeedsWater ?? false;
-    final healthStatus = currentPlant?.healthStatus ?? plant?["status"] ?? "Khỏe mạnh";
-    final statusText = isWaterNeeded ? "Cần tưới nước" : healthStatus;
+    final statusText = currentPlant?.effectiveStatusText ?? plant?["status"] ?? "Khỏe mạnh";
 
     Color statusBg = const Color(0xFFE8F2E3);
     Color statusFg = const Color(0xFF364534);
     IconData statusIcon = Icons.check_circle;
 
-    if (isWaterNeeded || healthStatus == 'Cần tưới nước') {
-      statusBg = const Color(0xFFFFF3E0);
-      statusFg = const Color(0xFFE06C00);
-      statusIcon = Icons.water_drop;
-    } else if (healthStatus == 'Bị sâu bệnh' || healthStatus == 'Bị vàng lá') {
+    if (statusText.startsWith('Bị') || statusText == 'Cần điều trị') {
       statusBg = const Color(0xFFFFEBEE);
       statusFg = const Color(0xFFD32F2F);
       statusIcon = Icons.warning_amber_rounded;
-    } else if (healthStatus == 'Cần chú ý') {
+    } else if (statusText == 'Cần tưới nước') {
+      statusBg = const Color(0xFFFFF3E0);
+      statusFg = const Color(0xFFE06C00);
+      statusIcon = Icons.water_drop;
+    } else if (statusText == 'Cần bón phân') {
+      statusBg = const Color(0xFFFEF3C7);
+      statusFg = const Color(0xFFD97706);
+      statusIcon = Icons.science_rounded;
+    } else if (statusText == 'Cần kiểm tra' || statusText == 'Cần chú ý') {
       statusBg = const Color(0xFFFFF8E1);
       statusFg = const Color(0xFFF57F17);
-      statusIcon = Icons.priority_high;
+      statusIcon = Icons.shield_outlined;
+    } else if (statusText == 'Đang phục hồi') {
+      statusBg = const Color(0xFFDBEAFE);
+      statusFg = const Color(0xFF2563EB);
+      statusIcon = Icons.autorenew_rounded;
     }
 
     final light = currentPlant?.wikiData['light'] ?? "Sáng yếu đến trung bình";

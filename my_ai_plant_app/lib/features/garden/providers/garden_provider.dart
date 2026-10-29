@@ -303,6 +303,10 @@ class GardenProvider extends ChangeNotifier {
       final plant = _plants[plantIndex];
       final now = DateTime.now();
       final nextDate = now.add(Duration(days: plant.waterFrequencyDays));
+      final stillNeedsCare = plant.isNeedsFertilizer || plant.isNeedsClean;
+      final newHealthStatus = (plant.healthStatus.startsWith('Bị') || plant.healthStatus == 'Đang phục hồi')
+          ? plant.healthStatus
+          : (stillNeedsCare ? 'Cần chú ý' : 'Khỏe mạnh');
 
       await _firestore
           .collection(plantsCollection)
@@ -310,7 +314,7 @@ class GardenProvider extends ChangeNotifier {
           .update({
         'lastWatered': Timestamp.fromDate(now),
         'nextWatering': Timestamp.fromDate(nextDate),
-        'healthStatus': 'Khỏe mạnh',
+        'healthStatus': newHealthStatus,
       });
 
       // Tự động ghi nhật ký hoạt động hệ thống
@@ -341,6 +345,10 @@ class GardenProvider extends ChangeNotifier {
       final plant = _plants[plantIndex];
       final now = DateTime.now();
       final nextDate = now.add(Duration(days: plant.fertilizeFrequencyDays));
+      final stillNeedsCare = plant.isNeedsWater || plant.isNeedsClean;
+      final newHealthStatus = (plant.healthStatus.startsWith('Bị') || plant.healthStatus == 'Đang phục hồi')
+          ? plant.healthStatus
+          : (stillNeedsCare ? 'Cần chú ý' : 'Khỏe mạnh');
 
       await _firestore
           .collection(plantsCollection)
@@ -348,6 +356,7 @@ class GardenProvider extends ChangeNotifier {
           .update({
         'lastFertilized': Timestamp.fromDate(now),
         'nextFertilizing': Timestamp.fromDate(nextDate),
+        'healthStatus': newHealthStatus,
       });
 
       // Tự động ghi nhật ký hoạt động hệ thống
@@ -378,6 +387,10 @@ class GardenProvider extends ChangeNotifier {
       final plant = _plants[plantIndex];
       final now = DateTime.now();
       final nextCheck = now.add(Duration(days: plant.checkPestFrequencyDays));
+      final stillNeedsCare = plant.isNeedsWater || plant.isNeedsFertilizer;
+      final newHealthStatus = (plant.healthStatus.startsWith('Bị') || plant.healthStatus == 'Đang phục hồi')
+          ? plant.healthStatus
+          : (stillNeedsCare ? 'Cần chú ý' : 'Khỏe mạnh');
 
       await _firestore
           .collection(plantsCollection)
@@ -385,6 +398,7 @@ class GardenProvider extends ChangeNotifier {
           .update({
         'lastCleaned': Timestamp.fromDate(now),
         'nextCheckPest': Timestamp.fromDate(nextCheck),
+        'healthStatus': newHealthStatus,
       });
 
       // Tự động ghi nhật ký hoạt động hệ thống

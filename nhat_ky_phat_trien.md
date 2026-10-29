@@ -1,5 +1,5 @@
 # Nhật Ký Phát Triển Dự Án AgriSmart / BotaniScan
-*Ngày cập nhật: 15 tháng 10, 2026*
+*Ngày cập nhật: 30 tháng 10, 2026*
 
 Tài liệu này ghi lại toàn bộ tiến độ, các công việc đã hoàn thành và định hướng phát triển tiếp theo của hệ thống nhận diện bệnh lá cây trồng thông minh **AgriSmart**.
 
@@ -831,48 +831,114 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 
 ---
 
-## 5. Kế Hoạch & Lộ Trình Phát Triển Trong Tương Lai (Next Sprint)
+## 4.24. Chặn Câu Hỏi Ngoài Chủ Đề Thực Vật Ở Trợ Lý Floria & Đồng Bộ Trạng Thái Cây Thực Tế Trên Trang Chủ
+*Ngày cập nhật: 29 tháng 10, 2026*
 
-### 1. Tối Ưu Hóa Trải Nghiệm Người Dùng (UI/UX Refinement)
-- [x] **Rà soát & Hoàn thiện Micro-animations**:
-  - Đã thêm hiệu ứng Skeleton Loading khi tải dữ liệu Vườn của tôi và Cửa hàng. ✅
-- [x] **Cải thiện màn hình Kết quả Chẩn đoán (`diagnosis_report_screen.dart`)**:
-  - Bổ sung nút bấm 1 chạm: *"Hỏi trợ lý Floria về cây này / kết quả chẩn đoán này"*. ✅
-- [ ] **Tối ưu hiển thị Responsive & Thiết bị Di động**:
-  - Kiểm tra padding, margin và cỡ chữ trên các dòng điện thoại màn hình nhỏ và tablet.
+### 1. Giới Hạn Phạm Vi Chủ Đề Nghiêm Ngặt Cho Trợ Lý Floria (Domain Guardrails)
+*   **Bổ sung Quy tắc Kiểm duyệt Chủ đề (`gemini_service.dart`)**:
+    *   Cấu hình System Instruction bắt buộc cho cả `chatWithDoctor` và `chatWithDoctorStream`: Trợ lý Floria **chỉ được phép** tư vấn các chủ đề về thực vật học, cây cảnh, nông nghiệp, làm vườn, kỹ thuật chăm sóc cây, chẩn đoán sâu bệnh, phong thủy/ý nghĩa cây và vật tư cửa hàng Floria.
+    *   **Từ chối câu hỏi ngoài lề**: Lịch sự từ chối mọi câu hỏi không liên quan đến cây cối (lập trình, toán học, lịch sử, chính trị, nấu ăn, bóng đá, giải trí, tài chính...) và hướng người dùng quay lại chủ đề chăm sóc cây trồng. Chống Prompt Injection và tuyệt đối không gắn thẻ `[RECOMMEND_PRODUCT]` hay `[CARE_SCHEDULE]` khi từ chối.
+    *   **Kiểm duyệt hình ảnh trong khung chat**: Nếu người dùng gửi ảnh không phải thực vật/cây trồng/vật tư làm vườn (ảnh người, thú cưng, đồ vật, màn hình...), Trợ lý Floria nhận diện và lịch sự từ chối phân tích, mời chụp lại ảnh cây cảnh hoặc lá cây cần kiểm tra.
+*   **Làm sạch mã nguồn `ai_assistant_screen.dart`**:
+    *   Xóa các hàm chuyển đổi chế độ không còn dùng (`_buildModeSwitcher`, `_buildModeTabItem`, `_toggleDeepThinking`) và đồng bộ toàn bộ câu chữ sang danh xưng *"Trợ lý Floria"*.
 
-### 2. Mở Rộng Tính Năng Lịch Chăm Sóc & Thông Báo Nhắc Nhở (Smart Scheduling & Push Notifications)
-- [x] **Thông Báo Đẩy Thông Minh & Nhắc Lịch Chăm Sóc**:
-  - Tích hợp `NotificationService` gửi thông báo nổi thông minh nhắc nhở tưới cây, bón phân đúng khung giờ hẹn (07:00, 09:30, 17:30, 20:00). ✅
-  - Tự động hoãn thông báo nếu người dùng đã bấm đánh dấu hoàn thành sớm (`silenceForToday`). ✅
-- [ ] **Mở Rộng Thêm Các Tác Vụ Chăm Sóc Khác**:
-  - Cho phép tùy chỉnh thêm/bớt và đổi tên tác vụ tự do theo ý người dùng.
+### 2. Khắc Phục Lỗi Hiển Thị Trạng Thái Cây "Khỏe Mạnh" Khi Cây Đang Đến Hạn Chăm Sóc (`home_screen.dart`, `garden_screen.dart`, `plant_detail_screen.dart`)
+*   **Nguyên nhân**: Phần *"Khu vườn của tôi"* trên Trang chủ trước đây chỉ đọc trường tĩnh `plant.healthStatus` (mặc định là `"Khỏe mạnh"` trên Firestore) mà không kiểm tra các cờ đến hạn chăm sóc thực tế (`isNeedsWater`, `isNeedsFertilizer`, `isNeedsClean`). Dẫn đến việc cây ở dưới mục *"Lịch chăm sóc hôm nay"* đang báo cần tưới nước / kiểm tra sâu bệnh nhưng thẻ cây ở trên lại hiện tích xanh `"Khỏe mạnh"`.
+*   **Giải pháp đồng bộ toàn hệ thống**:
+    *   Xây dựng thuộc tính tính toán thời gian thực `effectiveStatusText` và `isNeedsAnyCare` trong `GardenPlant` ([garden_plant.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/models/garden_plant.dart)) theo thứ tự ưu tiên:
+        1. Đang có bệnh lý (`Bị ...` / `Cần điều trị`) $\rightarrow$ Cảnh báo đỏ (`#DC2626`).
+        2. Đến hạn tưới nước (`isNeedsWater`) $\rightarrow$ Hiện **`Cần tưới nước`** màu cam (`#E06C00`, icon giọt nước).
+        3. Đến hạn bón phân (`isNeedsFertilizer`) $\rightarrow$ Hiện **`Cần bón phân`** màu vàng hổ phách (`#D97706`, icon bình thí nghiệm).
+        4. Đến hạn kiểm tra sâu bệnh & lau lá (`isNeedsClean`) $\rightarrow$ Hiện **`Cần kiểm tra`** màu vàng cam (`#D97706`, icon khiên bảo vệ).
+        5. Trạng thái `"Cần chú ý"` / `"Đang phục hồi"` $\rightarrow$ Màu vàng cam / xanh dương.
+        6. Khi tất cả lịch chăm sóc đều đã hoàn thành và không có bệnh $\rightarrow$ Hiện **`Khỏe mạnh`** màu xanh lá (`#15803D`, icon tích tròn).
+    *   Đồng bộ hiển thị `effectiveStatusText` trên cả 3 màn hình: Trang chủ ([home_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/screens/home_screen.dart)), Quản lý khu vườn ([garden_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/garden_screen.dart)) và Chi tiết cây ([plant_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/garden/screens/plant_detail_screen.dart)).
+    *   Sửa thêm bộ đếm số cây trên từng thẻ Khu vườn trong `garden_screen.dart` để hiển thị chính xác số cây thuộc riêng từng vườn thay vì dùng chung tổng số cây.
 
-### 3. Nâng Cấp Trợ Lý Floria Đa Phương Thức (Multimodal AI Chatbot)
-- [x] **Gửi Ảnh Trực Tiếp Trong Khung Chat & Đa phương thức**:
-  - Đã hỗ trợ đính kèm ảnh và phân tích thị giác với Gemini Vision. ✅
+---
 
-### 4. Hoàn Thiện Vận Hành Cửa Hàng & Thanh Toán (E-Commerce & Orders)
-- [ ] **Tích Hợp Cổng Thanh Toán Trực Tuyến**:
-  - Kết nối thanh toán qua VNPay, MoMo, hoặc phương thức Nhận hàng trả tiền (COD).
-- [ ] **Quản Lý Đơn Hàng & Lịch Sử Mua Sắm**:
-  - Màn hình theo dõi trạng thái đơn hàng (Đang xử lý $\rightarrow$ Đang giao $\rightarrow$ Đã giao).
-- [ ] **Mở Rộng Thêm Các Tác Vụ Chăm Sóc Khác**:
-  - Bổ sung các nhiệm vụ chuyên sâu theo từng loài cây: *Cắt tỉa cành vàng*, *Lau bụi phiến lá*, *Xoay chậu hứng sáng*, *Thay chậu & đất mới định kỳ*.
-  - Cho phép tùy chỉnh thêm/bớt và đổi tên tác vụ tự do theo ý người dùng.
+## 4.25. Tinh Giản Giao Diện Camera Quét Ảnh & Dọn Dẹp Các Trang Gói Mua Premium
+*Ngày cập nhật: 30 tháng 10, 2026*
 
-### 3. Nâng Cấp Trợ Lý Floria Đa Phương Thức (Multimodal AI Chatbot)
-- [ ] **Gửi Ảnh Trực Tiếp Trong Khung Chat**:
-  - Cho phép người dùng chụp ảnh hoặc chọn ảnh lá cây đính kèm trực tiếp vào tin nhắn khi trò chuyện với Trợ lý Floria (Gemini 3 Vision stream).
-- [ ] **Gợi Ý Câu Hỏi Thông Minh Tiếp Theo (Dynamic Smart Follow-ups)**:
-  - Sau mỗi câu trả lời của Trợ lý Floria, hiển thị 2-3 chip gợi ý câu hỏi tiếp nối tự nhiên (VD: *"Liều lượng pha thế nào?"*, *"Sau bao lâu thì khỏi bệnh?"*).
+### 1. Tinh Giản Màn Hình Hướng Dẫn Chụp Ảnh ([scan_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/screens/scan_screen.dart))
+*   **Loại bỏ hoàn toàn khu vực chọn mô hình AI**:
+    *   Hệ thống backend hiện đã chuẩn hóa và sử dụng mô hình ONNX quán quân Google EfficientNetV2 (`tf_efficientnetv2_b0`) duy nhất, đạt độ chính xác cao nhất (90% nhận diện loài và 92.5% nhận diện bệnh).
+    *   Xóa bỏ phần `_buildAiModelSection()` và danh sách chọn mô hình mock cũ (`Floria Flash`, `Floria Vision`, `Floria Pro`, `Floria Platinum`).
+    *   Màn hình hướng dẫn chụp ảnh giờ đây chỉ tập trung vào các mẹo chụp chuẩn xác (**NÊN** / **KHÔNG NÊN**) và nút **"Mở camera ngay"** nổi bật.
+    *   Đơn giản hóa [camera_scanning_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/scan/screens/camera_scanning_screen.dart), không yêu cầu truyền tham số mô hình rườm rà.
 
-### 4. Hoàn Thiện Vận Hành Cửa Hàng & Thanh Toán (E-Commerce & Orders)
-- [ ] **Tích Hợp Cổng Thanh Toán Trực Tuyến**:
-  - Kết nối thanh toán qua VNPay, MoMo, hoặc phương thức Nhận hàng trả tiền (COD).
-- [ ] **Quản Lý Đơn Hàng & Lịch Sử Mua Sắm**:
-  - Màn hình theo dõi trạng thái đơn hàng (Đang xử lý $\rightarrow$ Đang giao $\rightarrow$ Đã giao).
-  - Tự động liên kết sản phẩm đã mua vào hồ sơ cây trong Vườn của tôi để nhắc nhở hạn dùng thuốc/phân.
+### 2. Xóa Bỏ Toàn Diện Tính Năng & Các Màn Hình Mua Gói Premium
+*   **Xóa bỏ các màn hình thanh toán & nâng cấp VIP**:
+    *   Xóa file `premium_screen.dart` (màn hình giới thiệu các gói Floria Pro / VIP).
+    *   Xóa file `payment_screen.dart` (màn hình thanh toán thẻ tín dụng, MoMo, Apple Pay).
+*   **Dọn dẹp Trang Cá Nhân ([profile_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/profile_screen.dart))**:
+    *   Xóa huy hiệu nhãn `'Premium'` trên góc tiêu đề cá nhân.
+    *   Xóa mục shortcut `'Gói Premium'` trong danh sách cài đặt và phím tắt.
+    *   Toàn bộ tính năng cao cấp của Floria đều mở miễn phí 100% cho mọi người dùng.
+
+---
+
+## 4.26. Nâng Cấp Hồ Sơ Cá Nhân, Ảnh Đại Diện Không Dùng ImgBB & Hệ Thống Sổ Địa Chỉ + Bản Đồ Tương Tác + Thẻ Thanh Toán
+*Ngày cập nhật: 30 tháng 10, 2026*
+
+### 1. Cơ Chế Avatar Phân Tầng Thông Minh & Lưu Trữ Trực Tiếp Firestore ([auth_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/auth/providers/auth_provider.dart))
+*   **Ưu tiên hiển thị ảnh đại diện riêng (`effectivePhotoUrl`)**:
+    1.  **Ảnh đại diện tùy chỉnh (`customPhotoUrl`)**: Nếu người dùng đã tải lên ảnh đại diện riêng trong ứng dụng, hệ thống ưu tiên hiển thị ảnh này.
+    2.  **Ảnh đại diện tài khoản Google (`googlePhotoUrl` / `user.photoURL`)**: Nếu đăng nhập bằng Google và chưa đổi ảnh riêng, app tự động hiển thị avatar Google.
+    3.  **Ký tự viết tắt mặc định**: Hiển thị khung tròn xanh lá cùng chữ cái đầu của tên nếu chưa có ảnh.
+*   **Loại bỏ phụ thuộc ImgBB cho Avatar**:
+    *   Nén ảnh đại diện về kích thước tối ưu `400x400px` (`imageQuality: 75`, dung lượng chỉ ~15–25KB) và lưu trực tiếp dưới dạng Data URI Base64 (`data:image/jpeg;base64,...`) ngay trong document `Users/{uid}` trên Cloud Firestore.
+    *   Tốc độ cập nhật ảnh đại diện diễn ra tức thì, không lo lỗi mạng bên thứ 3 hay giới hạn API Key.
+*   **Hỗ trợ khôi phục ảnh Google (`resetToDefaultAvatar`)**: Cho phép người dùng xóa ảnh tùy chỉnh để quay về ảnh đại diện Google gốc chỉ với 1 chạm.
+
+### 2. Nâng Cấp Giao Diện Trang Cá Nhân & Thông Báo Toast Hiện Đại ([profile_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/profile_screen.dart))
+*   **Khắc phục lỗi màu chữ bị chìm trong BottomSheet & Dialog**: Thiết lập tường minh màu chữ xanh đen đậm (`#1F2A21`) và xám rêu (`#6A756B`) trên nền sáng cho toàn bộ menu chọn ảnh đại diện và hộp thoại sửa thông tin.
+*   **Thiết kế lại Toast thông báo nổi (`_showModernToast`)**:
+    *   Thay thế `SnackBar` tràn ngang màn hình cũ bằng viên thuốc nổi gọn gàng (`maxWidth: 380px`), nền xanh đen sang trọng (`#1E2D22`), viền mảnh phát sáng nhẹ và icon tròn tinh tế.
+
+### 3. Xây Dựng Sổ Địa Chỉ Hành Chính Mới Nhất & Bản Đồ Ghim Vị Trí Nhận Hàng ([address_payment_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/address_payment_screen.dart), [user_checkout_models.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/models/user_checkout_models.dart))
+*   **Tích hợp API Đơn vị Hành chính Việt Nam mới nhất sau sáp nhập (`esgoo.net/api-tinhthanh-new`)**:
+    *   Không hardcode dữ liệu: Tải trực tiếp danh sách **34 Tỉnh/Thành phố mới** và **Phường/Xã/Đặc khu** theo mô hình hành chính 2 cấp mới nhất.
+    *   Tự động tra cứu tọa độ GPS chuẩn xác của từng Phường/Xã theo mã hành chính (`esgoo.net/api-tinhthanh/5/{code}.htm`), khắc phục triệt để tình trạng nhảy sai vị trí đối với các tên phường mới sau sáp nhập (như *Phường Vinh Lộc - Tỉnh Nghệ An*).
+*   **Bản đồ tương tác ghim vị trí nhận hàng (`_InteractiveMapPicker`)**:
+    *   Sử dụng lớp bản đồ đường phố tiếng Việt (`mt1.google.com/vt/lyrs=m&hl=vi`) sắc nét, không yêu cầu API Key.
+    *   Hỗ trợ giữ chuột/ngón tay kéo bản đồ 4 hướng mượt mà (đã khóa xung đột cuộn dọc với hộp thoại bên ngoài), lăn chuột phóng to/thu nhỏ, bấm chấm ghim trực tiếp và tự động gợi ý điền tên đường (`Reverse Geocode`).
+    *   Tích hợp nút **"Mở rộng"** ngay ở góc trên bên trái bản đồ để mở cửa sổ bản đồ kích thước lớn.
+*   **Nút Tick Tròn Mặc Định (`_buildCircularCheckOption`)**:
+    *   Thiết kế nút chọn mặc định dạng hình tròn (`BoxShape.circle`), nền xanh lá (`#3E8055`) với dấu tick màu trắng (`Colors.white`) nổi bật.
+*   **Quản lý Thẻ Ngân Hàng Đã Lưu & Liên Kết Giỏ Hàng ([cart_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/cart_screen.dart))**:
+    *   Cho phép thêm, xóa, đặt thẻ ngân hàng mặc định trong trang *Địa chỉ & Thẻ thanh toán* (đã loại bỏ các chữ `VNPay Sandbox` thừa).
+    *   Khi vào **Giỏ hàng (`cart_screen.dart`)** để thanh toán, hệ thống tự động hiển thị địa chỉ nhận hàng mặc định, danh sách thẻ ngân hàng đã lưu kèm tùy chọn **Thanh toán khi nhận hàng (COD)**, và có nút *"Chỉnh sửa"* / *"Quản lý thẻ"* dẫn thẳng về trang quản lý.
+
+---
+
+## 5. Kế Hoạch & Định Hướng Phát Triển Trong Tương Lai (Future Roadmap)
+
+### 1. Hoàn Thiện Trang Cá Nhân & Cài Đặt (Profile & Settings)
+- [ ] **Trang Nhắc Tưới Tập Trung (`WateringRemindersScreen`)**:
+  - Xây dựng màn hình quản lý tập trung toàn bộ khung giờ nhắc nhở của tất cả các chậu cây trong các khu vườn khi người dùng bấm vào mục *"Nhắc tưới"* trong Trang cá nhân.
+- [ ] **Trung Tâm Hỗ Trợ & Câu Hỏi Thường Gặp (`SupportCenterScreen`)**:
+  - Xây dựng màn hình hướng dẫn sử dụng, mẹo chụp ảnh chẩn đoán bệnh lá chuẩn xác, chính sách đổi trả vật tư và liên hệ hỗ trợ khi bấm vào *"Trung tâm hỗ trợ"*.
+- [ ] **Hoàn Thiện Các Mục Trong Cài Đặt (`settings_screen.dart`)**:
+  - Hoàn thiện chức năng Đổi mật khẩu (cho tài khoản Email), Quản lý quyền riêng tư và Xóa bộ nhớ đệm (Cache).
+
+### 2. Hoàn Thiện Luồng Thanh Toán & Quản Lý Đơn Hàng (E-Commerce & Order Tracking)
+- [x] **Sổ địa chỉ hành chính mới + Ghim bản đồ + Lưu thẻ ngân hàng & Chọn phương thức thanh toán ở Giỏ hàng**. ✅
+- [ ] **Tích Hợp Cổng Thanh Toán Sandbox VNPay Thực Tế**:
+  - Tạo URL thanh toán chuẩn chuẩn mã băm `HMAC-SHA512` (`vnp_SecureHash`) và mở WebView/Trình duyệt thanh toán VNPay khi người dùng chọn thanh toán qua thẻ ngân hàng đã lưu.
+- [ ] **Lưu Đơn Hàng Lên Firestore (`Orders` Collection) & Màn Hình Lịch Sử Đơn Hàng**:
+  - Lưu chi tiết đơn hàng (danh sách vật tư, tổng tiền, địa chỉ nhận hàng kèm tọa độ ghim bản đồ, phương thức thanh toán, trạng thái đơn hàng) vào Firestore.
+  - Xây dựng màn hình theo dõi trạng thái đơn hàng (*Chờ xác nhận $\rightarrow$ Đang giao hàng $\rightarrow$ Đã giao*).
+
+### 3. Tối Ưu Hóa Trải Nghiệm & Mở Rộng Hệ Sinh Thái Chăm Sóc Cây
+- [x] **Rà soát & Hoàn thiện Skeleton Loading, Toast thông báo hiện đại và Nút hỏi nhanh Trợ lý Floria**. ✅
+- [x] **Thông báo nhắc lịch chăm sóc thông minh (`NotificationService`) & Đồng bộ trạng thái cây thời gian thực**. ✅
+- [ ] **Tích Hợp Thời Tiết Thực Tế Theo Vị Trí Địa Chỉ Người Dùng**:
+  - Tận dụng tọa độ (`latitude`, `longitude`) từ địa chỉ mặc định người dùng đã ghim để lấy nhiệt độ & độ ẩm thời tiết thực tế tại khu vực đó cho Widget Thời tiết ngoài Trang chủ.
+- [ ] **Tối Ưu Hiển Thị Đa Thiết Bị (Responsive Mobile / Web)**:
+  - Kiểm thử và tinh chỉnh trải nghiệm mượt mà trên cả trình duyệt Web lẫn thiết bị di động Android/iOS thực tế.
+
+
 
 
 

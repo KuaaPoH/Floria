@@ -841,11 +841,23 @@ class _HomeScreenState extends State<HomeScreen> {
             clipBehavior: Clip.none,
             child: Row(
               children: displayedPlants.map((plant) {
-                // Xác định màu và icon tình trạng sức khỏe
+                // Xác định màu và icon tình trạng thực tế (kết hợp bệnh lý & lịch chăm sóc đến hạn)
                 Color healthColor;
                 IconData healthIcon;
-                final status = plant.healthStatus;
-                if (status == 'Cần chú ý') {
+                final status = plant.effectiveStatusText;
+                if (status.startsWith('Bị') || status == 'Cần điều trị') {
+                  healthColor = const Color(0xFFDC2626);
+                  healthIcon = Icons.warning_amber_rounded;
+                } else if (status == 'Cần tưới nước') {
+                  healthColor = const Color(0xFFE06C00);
+                  healthIcon = Icons.water_drop_rounded;
+                } else if (status == 'Cần bón phân') {
+                  healthColor = const Color(0xFFD97706);
+                  healthIcon = Icons.science_rounded;
+                } else if (status == 'Cần kiểm tra') {
+                  healthColor = const Color(0xFFD97706);
+                  healthIcon = Icons.shield_outlined;
+                } else if (status == 'Cần chú ý') {
                   healthColor = const Color(0xFFD97706);
                   healthIcon = Icons.warning_amber_rounded;
                 } else if (status == 'Đang phục hồi') {

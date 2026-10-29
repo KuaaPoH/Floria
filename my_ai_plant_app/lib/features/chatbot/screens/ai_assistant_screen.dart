@@ -99,13 +99,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     }
   }
 
-  void _toggleDeepThinking(bool isDeep) async {
-    setState(() {
-      _enableDeepThinking = isDeep;
-    });
-    await GeminiService.saveDeepThinkingMode(isDeep);
-  }
-
   Future<void> _checkApiKey() async {
     final hasKey = await GeminiService.hasApiKey();
     if (mounted) {
@@ -799,7 +792,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          aiPlaceholder.text = "⚠️ Đã có sự cố khi kết nối với Bác sĩ Cây trồng AI: ${e.toString().replaceAll('Exception: ', '')}.\n\nVui lòng kiểm tra lại Google Gemini API Key hoặc kết nối mạng.";
+          aiPlaceholder.text = "⚠️ Đã có sự cố khi kết nối với Trợ lý Floria: ${e.toString().replaceAll('Exception: ', '')}.\n\nVui lòng kiểm tra lại kết nối mạng.";
           aiPlaceholder.isStreaming = false;
         });
         _scrollToBottom();
@@ -1683,98 +1676,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     );
   }
 
-  Widget _buildModeSwitcher() {
-    return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF3EE),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFDDE3DC)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildModeTabItem(
-                  icon: Icons.bolt_rounded,
-                  label: "Siêu tốc",
-                  isSelected: !_enableDeepThinking,
-                  activeBgColor: Colors.white,
-                  activeTextColor: const Color(0xFF1B5E20),
-                  onTap: () => _toggleDeepThinking(false),
-                ),
-                const SizedBox(width: 4),
-                _buildModeTabItem(
-                  icon: Icons.psychology_rounded,
-                  label: "Suy nghĩ sâu",
-                  isSelected: _enableDeepThinking,
-                  activeBgColor: const Color(0xFF673AB7),
-                  activeTextColor: Colors.white,
-                  onTap: () => _toggleDeepThinking(true),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModeTabItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required Color activeBgColor,
-    required Color activeTextColor,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? activeBgColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isSelected ? activeTextColor : const Color(0xFF687466),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeTextColor : const Color(0xFF687466),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
   Widget _buildInputDock() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1818,7 +1719,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "Đã đính kèm ảnh cây để AI chẩn đoán",
+                        "Đã đính kèm ảnh cây để Trợ lý Floria chẩn đoán",
                         style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF364534), fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -1857,7 +1758,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       maxLines: null,
                       style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1B1C1A)),
                       decoration: InputDecoration(
-                        hintText: "Hỏi bác sĩ cây trồng về sâu bệnh, tưới nước...",
+                        hintText: "Hỏi Trợ lý Floria về sâu bệnh, tưới nước...",
                         hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF747871)),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

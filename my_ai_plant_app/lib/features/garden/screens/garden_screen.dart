@@ -482,11 +482,14 @@ class _GardenScreenState extends State<GardenScreen> {
             children: [
               ...gardens.map((g) {
                 final isActive = g.id == selectedId;
+                final gCount = gardenProvider.allUserPlants
+                    .where((p) => p.gardenId == g.id || (p.gardenId.isEmpty && g.id == gardens.first.id))
+                    .length;
                 return Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
                     onTap: () => gardenProvider.selectGarden(g),
-                    child: _buildUserGardenCard(isActive, g, "$plantCount cây"),
+                    child: _buildUserGardenCard(isActive, g, "$gCount cây"),
                   ),
                 );
               }),
@@ -856,8 +859,19 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
   Widget _buildPlantCard(BuildContext context, GardenPlant plant) {
-    final statusColor = plant.isNeedsWater ? const Color(0xFFE06C00) : const Color(0xFF4CAF50);
-    final statusText = plant.isNeedsWater ? "Cần tưới" : plant.healthStatus;
+    final statusText = plant.effectiveStatusText;
+    Color statusColor;
+    if (statusText.startsWith('Bị') || statusText == 'Cần điều trị') {
+      statusColor = const Color(0xFFDC2626);
+    } else if (statusText == 'Cần tưới nước') {
+      statusColor = const Color(0xFFE06C00);
+    } else if (statusText == 'Cần bón phân' || statusText == 'Cần kiểm tra' || statusText == 'Cần chú ý') {
+      statusColor = const Color(0xFFD97706);
+    } else if (statusText == 'Đang phục hồi') {
+      statusColor = const Color(0xFF2563EB);
+    } else {
+      statusColor = const Color(0xFF15803D);
+    }
     final imgUrl = plant.imageUrl ?? plant.wikiData['imageUrl'] ?? 'https://picsum.photos/seed/plant2/400/400';
 
     return GestureDetector(

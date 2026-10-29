@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
-import 'premium_screen.dart';
+import '../../garden/providers/garden_provider.dart';
+import 'address_payment_screen.dart';
 import 'settings_screen.dart';
 import '../../history/screens/history_screen.dart';
 
@@ -16,11 +19,401 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final ImagePicker _picker = ImagePicker();
+
+  void _showModernToast(String message, {bool isError = false}) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        duration: const Duration(seconds: 3),
+        content: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isError ? const Color(0xFF2D1618) : const Color(0xFF1E2D22),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isError
+                      ? const Color(0xFFFF6B6B).withValues(alpha: 0.35)
+                      : const Color(0xFF66BB6A).withValues(alpha: 0.35),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isError
+                          ? const Color(0xFFFF6B6B).withValues(alpha: 0.18)
+                          : const Color(0xFF4CAF50).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isError ? Icons.error_outline_rounded : Icons.check_rounded,
+                      color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      message,
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar(ImageSource source) async {
+    try {
+      final XFile? file = await _picker.pickImage(
+        source: source,
+        maxWidth: 400,
+        maxHeight: 400,
+        imageQuality: 75,
+      );
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.updateAvatar(bytes);
+
+      if (!mounted) return;
+      if (success) {
+        _showModernToast("Cập nhật ảnh đại diện thành công!");
+      } else {
+        _showModernToast("Không thể lưu ảnh đại diện. Vui lòng thử lại!", isError: true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showModernToast("Lỗi chọn ảnh: $e", isError: true);
+    }
+  }
+
+  void _showAvatarOptions(BuildContext context, AuthProvider authProvider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Ảnh đại diện",
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1F2A21),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3E8055).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.camera_alt, color: Color(0xFF3E8055)),
+              ),
+              title: Text(
+                "Chụp ảnh mới",
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2A21),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadAvatar(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3E8055).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.photo_library, color: Color(0xFF3E8055)),
+              ),
+              title: Text(
+                "Chọn từ thư viện",
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2A21),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadAvatar(ImageSource.gallery);
+              },
+            ),
+            if (authProvider.hasCustomAvatar)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.restore, color: Colors.orange),
+                ),
+                title: Text(
+                  "Dùng lại ảnh Google mặc định",
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2A21),
+                  ),
+                ),
+                subtitle: Text(
+                  "Xóa ảnh đại diện riêng và hiển thị ảnh tài khoản Google ban đầu",
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF6A756B),
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await authProvider.resetToDefaultAvatar();
+                  _showModernToast("Đã chuyển về ảnh đại diện Google mặc định!");
+                },
+              ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F9D69).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.edit_note, color: Color(0xFF4F9D69)),
+              ),
+              title: Text(
+                "Đổi tên & tiểu sử",
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2A21),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showEditProfileDialog(context, authProvider);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, AuthProvider authProvider) {
+    final nameController = TextEditingController(text: authProvider.userName ?? "");
+    final bioController = TextEditingController(
+      text: authProvider.bio ?? "Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.",
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE5F4EA),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.edit_note_rounded, color: Color(0xFF3E8055), size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                "Đổi tên & tiểu sử",
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1F2A21),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: "Tên hiển thị",
+                    prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF3E8055), size: 20),
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF6A756B), fontSize: 13),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F7F3),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF3E8055), width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: bioController,
+                  maxLines: 3,
+                  style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: "Tiểu sử / Giới thiệu hồ sơ",
+                    prefixIcon: const Icon(Icons.eco_outlined, color: Color(0xFF3E8055), size: 20),
+                    labelStyle: GoogleFonts.inter(color: const Color(0xFF6A756B), fontSize: 13),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F7F3),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF3E8055), width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Hủy", style: GoogleFonts.inter(color: const Color(0xFF6A756B), fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3E8055),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              final newName = nameController.text.trim();
+              final newBio = bioController.text.trim();
+              await authProvider.updateProfileInfo(
+                name: newName,
+                bio: newBio,
+              );
+              if (ctx.mounted) Navigator.pop(ctx);
+              _showModernToast("Đã cập nhật tên & tiểu sử!");
+            },
+            child: Text("Lưu", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarImage(String photoUrl, String name) {
+    if (photoUrl.startsWith('data:image')) {
+      try {
+        final bytes = base64Decode(photoUrl.split(',').last);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(name),
+        );
+      } catch (_) {
+        return _buildDefaultAvatar(name);
+      }
+    }
+    return Image.network(
+      photoUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(name),
+    );
+  }
+
+  Widget _buildDefaultAvatar(String name) {
+    final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'F';
+    return Container(
+      color: const Color(0xFFE5F4EA),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: GoogleFonts.inter(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF3E8055),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final String name = authProvider.userName ?? "Mai Nguyễn";
-    final String email = authProvider.userEmail ?? "mainguyen@example.com";
+    final gardenProvider = Provider.of<GardenProvider>(context);
+    final String name = authProvider.userName ?? "Nông Nghiệp Thông Minh";
+    final String email = authProvider.userEmail ?? "user@example.com";
+    final String bio = authProvider.bio ?? 'Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.';
+    final String? photoUrl = authProvider.effectivePhotoUrl;
+    final int plantCount = gardenProvider.allUserPlants.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F3),
@@ -59,22 +452,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-                  if (authProvider.isPremium)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5F4EA),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Premium',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF3E8055),
-                        ),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -102,61 +479,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Row(
                       children: [
-                    Stack(
-                      children: [
-                        Container(
-                          width: 74,
-                          height: 74,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(color: const Color(0xFF4F9D69).withValues(alpha: 0.24), blurRadius: 26, offset: const Offset(0, 16))
-                            ],
-                            image: const DecorationImage(
-                              image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuANPLjeFXrAvn9dHtMEZXQXJiU8Ol79-KlXfsIpwwj1E5CaTAz7DuisRoZDKPe1JzuZgYnS5K8Mgiu4FYC1VAkXEVyruaG7TeNOQg4xpKesRSLMhLI3JajuvB0AysglsresuKuJTKMHeIgCDtQCXwm24ls_3MXiNxCeTgEghtP_liQgKweDER5rpvvreR0eMHyCnZeQlQT_iu_M0QQwGIasimd6YfOlSe7cynmjqgra60Lxjn9DEbb7xQrkiBWPoRUOfTHh2PyJ4OY'),
-                              fit: BoxFit.cover,
+                        Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () => _showAvatarOptions(context, authProvider),
+                              child: Container(
+                                width: 74,
+                                height: 74,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFFE5F4EA),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4F9D69).withValues(alpha: 0.24),
+                                      blurRadius: 26,
+                                      offset: const Offset(0, 16),
+                                    )
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: authProvider.isUploadingAvatar
+                                    ? const Center(
+                                        child: SizedBox(
+                                          width: 28,
+                                          height: 28,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Color(0xFF3E8055),
+                                          ),
+                                        ),
+                                      )
+                                    : (photoUrl != null && photoUrl.isNotEmpty)
+                                        ? _buildAvatarImage(photoUrl, name)
+                                        : _buildDefaultAvatar(name),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () => _showAvatarOptions(context, authProvider),
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF17231A).withValues(alpha: 0.12),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      )
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 13,
+                                    color: Color(0xFF3E8055),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.12)),
-                              boxShadow: [
-                                BoxShadow(color: const Color(0xFF17231A).withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.edit,
-                              size: 12,
-                              color: Color(0xFF3E8055),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                name,
-                                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF1F2A21)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF1F2A21),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF6A756B)),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    tooltip: "Chỉnh sửa thông tin",
+                                    onPressed: () => _showEditProfileDialog(context, authProvider),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(
                                 email,
                                 style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6A756B)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.',
+                                bio,
                                 style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6A756B)),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -169,7 +593,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        _buildStatBox('Đang chăm', '12', 'cây'),
+                        _buildStatBox('Đang chăm', plantCount.toString(), 'cây'),
                         const SizedBox(width: 12),
                         _buildStatBox('Streak', '27', 'ngày'),
                         const SizedBox(width: 12),
@@ -259,6 +683,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Column(
                 children: [
                   _buildShortcutRow(
+                    icon: Icons.local_shipping_outlined,
+                    title: 'Địa chỉ & Thanh toán',
+                    desc: 'Sổ địa chỉ nhận hàng và thẻ ngân hàng đã lưu.',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddressAndPaymentScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildShortcutRow(
                     icon: Icons.history,
                     title: 'Lịch sử quét',
                     desc: 'Xem lại các chẩn đoán và giống cây đã nhận diện.',
@@ -277,21 +713,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () {},
                   ),
                   const SizedBox(height: 12),
-                  if (!authProvider.isPremium) ...[
-                    _buildShortcutRow(
-                      icon: Icons.workspace_premium_outlined,
-                      title: 'Gói Premium',
-                      desc: 'Theo dõi insight sâu hơn và mở khoá Floria 1.0 Pro.',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const PremiumScreen()),
-                        );
-                      },
-                      isHighlight: true,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   _buildShortcutRow(
                     icon: Icons.headset_mic_outlined,
                     title: 'Trung tâm hỗ trợ',
