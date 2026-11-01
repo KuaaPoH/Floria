@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/garden/models/garden_plant.dart';
@@ -12,7 +12,170 @@ class NotificationService {
   static const String _prefKeyEnabled = 'notifications_enabled';
   static const String _prefKeyPrefixNotified = 'notified_plant_';
 
+  static const String _prefKeyMorningTime = 'reminder_morning_time';
+  static const String _prefKeyEveningTime = 'reminder_evening_time';
+  static const String _prefKeyQuietEnabled = 'reminder_quiet_enabled';
+  static const String _prefKeyQuietStart = 'reminder_quiet_start';
+  static const String _prefKeyQuietEnd = 'reminder_quiet_end';
+
   static OverlayEntry? _activeOverlayEntry;
+  static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  static bool _isLocalNotificationsInitialized = false;
+
+  /// Khởi tạo hệ thống thông báo đẩy cấp hệ điều hành (Android / iOS)
+  static Future<void> initSystemNotifications() async {
+    if (_isLocalNotificationsInitialized) return;
+    try {
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwinSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+      );
+
+      await _localNotifications.initialize(
+        settings: initSettings,
+        onDidReceiveNotificationResponse: (response) {
+          debugPrint('Đã chạm vào thông báo hệ thống: ${response.payload}');
+        },
+      );
+
+      final androidImplementation = _localNotifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        await androidImplementation.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'floria_care_channel',
+            'Lịch chăm sóc cây Floria',
+            description: 'Thông báo nhắc nhở tưới nước, bón phân và chăm sóc cây từ Floria',
+            importance: Importance.high,
+            playSound: true,
+            enableVibration: true,
+          ),
+        );
+      }
+
+      _isLocalNotificationsInitialized = true;
+    } catch (e) {
+      debugPrint('Lỗi khởi tạo flutter_local_notifications: $e');
+    }
+  }
+
+  /// Bắn thông báo đẩy thật lên thanh trạng thái của thiết bị
+  static Future<void> showSystemNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    try {
+      if (!_isLocalNotificationsInitialized) {
+        await initSystemNotifications();
+      }
+
+      const androidDetails = AndroidNotificationDetails(
+        'floria_care_channel',
+        'Lịch chăm sóc cây Floria',
+        channelDescription: 'Thông báo nhắc nhở tưới nước, bón phân và chăm sóc cây từ Floria',
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        styleInformation: BigTextStyleInformation(''),
+      );
+
+      const notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
+
+      await _localNotifications.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: notificationDetails,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Lỗi phát thông báo hệ thống: $e');
+    }
+  }
+
+  // ===== Tùy chọn nhắc nhở toàn cục (cache đồng bộ để dùng ngay khi thêm cây mới) =====
+  static String cachedMorningTime = '07:30';
+  static String cachedEveningTime = '17:30';
+  static bool cachedQuietEnabled = false;
+  static String cachedQuietStart = '22:00';
+  static String cachedQuietEnd = '06:00';
+
+  /// Tải các tùy chọn nhắc nhở từ bộ nhớ máy vào cache
+  static Future<void> loadPreferences() async {
+    unawaited(initSystemNotifications());
+    final prefs = await SharedPreferences.getInstance();
+    cachedMorningTime = prefs.getString(_prefKeyMorningTime) ?? '07:30';
+    cachedEveningTime = prefs.getString(_prefKeyEveningTime) ?? '17:30';
+    cachedQuietEnabled = prefs.getBool(_prefKeyQuietEnabled) ?? false;
+    cachedQuietStart = prefs.getString(_prefKeyQuietStart) ?? '22:00';
+    cachedQuietEnd = prefs.getString(_prefKeyQuietEnd) ?? '06:00';
+  }
+
+  static Future<void> setMorningTime(String time) async {
+    cachedMorningTime = time;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyMorningTime, time);
+  }
+
+  static Future<void> setEveningTime(String time) async {
+    cachedEveningTime = time;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKeyEveningTime, time);
+  }
+
+  static Future<void> setQuietHours({bool? enabled, String? start, String? end}) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (enabled != null) {
+      cachedQuietEnabled = enabled;
+      await prefs.setBool(_prefKeyQuietEnabled, enabled);
+    }
+    if (start != null) {
+      cachedQuietStart = start;
+      await prefs.setString(_prefKeyQuietStart, start);
+    }
+    if (end != null) {
+      cachedQuietEnd = end;
+      await prefs.setString(_prefKeyQuietEnd, end);
+    }
+  }
+
+  /// Đổi chuỗi "HH:mm" thành số phút trong ngày
+  static int timeToMinutes(String time, {int fallback = 7 * 60}) {
+    try {
+      final parts = time.split(':');
+      if (parts.length != 2) return fallback;
+      return int.parse(parts[0].trim()) * 60 + int.parse(parts[1].trim());
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  /// Thời điểm hiện tại có nằm trong khung giờ Không làm phiền không (hỗ trợ khung qua nửa đêm)
+  static bool isInQuietHours([DateTime? at]) {
+    if (!cachedQuietEnabled) return false;
+    final now = at ?? DateTime.now();
+    final current = now.hour * 60 + now.minute;
+    final start = timeToMinutes(cachedQuietStart, fallback: 22 * 60);
+    final end = timeToMinutes(cachedQuietEnd, fallback: 6 * 60);
+    if (start == end) return false;
+    if (start < end) return current >= start && current < end;
+    return current >= start || current < end;
+  }
 
   /// Kiểm tra trạng thái bật/tắt thông báo
   static Future<bool> isEnabled() async {
@@ -30,7 +193,9 @@ class NotificationService {
   static Future<void> silenceForToday(String plantId, String taskType) async {
     final prefs = await SharedPreferences.getInstance();
     final today = _getTodayKey();
-    await prefs.setString('${_prefKeyPrefixNotified}${plantId}_$taskType', today);
+    await prefs.setString('$_prefKeyPrefixNotified${plantId}_$taskType', today);
+    // Đã làm rồi thì không nhắc lại vào buổi chiều nữa
+    await prefs.setString('$_prefKeyPrefixNotified${plantId}_${taskType}_evening', today);
   }
 
   /// Xóa lịch sử đã thông báo (dùng khi kiểm tra hoặc reset)
@@ -51,14 +216,14 @@ class NotificationService {
   /// Kiểm tra xem một tác vụ đã được thông báo trong ngày hôm nay chưa
   static Future<bool> _isAlreadyNotifiedToday(String plantId, String taskType) async {
     final prefs = await SharedPreferences.getInstance();
-    final lastDate = prefs.getString('${_prefKeyPrefixNotified}${plantId}_$taskType');
+    final lastDate = prefs.getString('$_prefKeyPrefixNotified${plantId}_$taskType');
     return lastDate == _getTodayKey();
   }
 
   /// Đánh dấu đã thông báo tác vụ này hôm nay
   static Future<void> _markNotifiedToday(String plantId, String taskType) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('${_prefKeyPrefixNotified}${plantId}_$taskType', _getTodayKey());
+    await prefs.setString('$_prefKeyPrefixNotified${plantId}_$taskType', _getTodayKey());
   }
 
   /// Động cơ quét và kích hoạt thông báo nhắc nhở chăm sóc cây
@@ -70,36 +235,36 @@ class NotificationService {
     final enabled = await isEnabled();
     if (!enabled || plants.isEmpty) return;
 
+    // Tải tùy chọn nhắc nhở & bỏ qua nếu đang trong khung giờ Không làm phiền
+    await loadPreferences();
+    if (isInQuietHours()) return;
+
     final now = DateTime.now();
     final currentMinutes = now.hour * 60 + now.minute;
+    final eveningMinutes = timeToMinutes(cachedEveningTime, fallback: 17 * 60 + 30);
 
     for (final plant in plants) {
       // 1. Phân tích giờ nhắc nhở của cây (mặc định 07:00 nếu chưa đặt)
-      int reminderMinutes = 7 * 60; // 07:00
-      try {
-        final parts = plant.reminderTime.split(':');
-        if (parts.length == 2) {
-          final h = int.parse(parts[0].trim());
-          final m = int.parse(parts[1].trim());
-          reminderMinutes = h * 60 + m;
-        }
-      } catch (_) {
-        reminderMinutes = 7 * 60;
-      }
+      final reminderMinutes = timeToMinutes(plant.reminderTime);
 
       // Chỉ nhắc nhở khi thời gian hiện tại đã đến hoặc qua khung giờ hẹn hôm nay
       if (currentMinutes < reminderMinutes) continue;
 
+      // Sau giờ nhắc buổi chiều: nhắc lại lần 2 cho các việc vẫn chưa làm
+      final isEveningSlot = currentMinutes >= eveningMinutes && reminderMinutes < eveningMinutes;
+      final slot = isEveningSlot ? '_evening' : '';
+      final titlePrefix = isEveningSlot ? 'Nhắc lại: ' : '';
+
       // 2. Kiểm tra tác vụ Tưới nước
       if (plant.isNeedsWater) {
-        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'water');
+        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'water$slot');
         if (!alreadyNotified) {
-          await _markNotifiedToday(plant.id, 'water');
+          await _markNotifiedToday(plant.id, 'water$slot');
           if (context.mounted) {
             _showSmartCareBanner(
               context: context,
               plant: plant,
-              taskTitle: 'Đã đến giờ tưới nước!',
+              taskTitle: '$titlePrefixĐã đến giờ tưới nước!',
               taskDesc: 'Cây ${plant.nickname} cần được cấp ẩm để duy trì độ tươi tốt.',
               icon: Icons.water_drop,
               iconColor: const Color(0xFF38BDF8),
@@ -117,14 +282,14 @@ class NotificationService {
 
       // 3. Kiểm tra tác vụ Bón phân (nếu cây có chu kỳ bón phân > 0)
       if (plant.isNeedsFertilizer && plant.fertilizeFrequencyDays > 0) {
-        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'fertilize');
+        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'fertilize$slot');
         if (!alreadyNotified) {
-          await _markNotifiedToday(plant.id, 'fertilize');
+          await _markNotifiedToday(plant.id, 'fertilize$slot');
           if (context.mounted) {
             _showSmartCareBanner(
               context: context,
               plant: plant,
-              taskTitle: 'Đã đến lịch bón phân vi lượng!',
+              taskTitle: '$titlePrefixĐã đến lịch bón phân vi lượng!',
               taskDesc: 'Bổ sung dinh dưỡng định kỳ cho ${plant.nickname}.',
               icon: Icons.science,
               iconColor: const Color(0xFFFBBF24),
@@ -142,14 +307,14 @@ class NotificationService {
 
       // 4. Kiểm tra tác vụ Lau lá / kiểm tra sâu bệnh
       if (plant.isNeedsClean) {
-        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'clean');
+        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'clean$slot');
         if (!alreadyNotified) {
-          await _markNotifiedToday(plant.id, 'clean');
+          await _markNotifiedToday(plant.id, 'clean$slot');
           if (context.mounted) {
             _showSmartCareBanner(
               context: context,
               plant: plant,
-              taskTitle: 'Vệ sinh lá & kiểm tra sâu bệnh!',
+              taskTitle: '${titlePrefix}Vệ sinh lá & kiểm tra sâu bệnh!',
               taskDesc: 'Lau bụi phiến lá cho ${plant.nickname} để quang hợp tối ưu.',
               icon: Icons.eco,
               iconColor: const Color(0xFF4ADE80),
@@ -213,6 +378,16 @@ class NotificationService {
   }) {
     _activeOverlayEntry?.remove();
     _activeOverlayEntry = null;
+
+    // Đồng thời bắn thông báo đẩy cấp hệ điều hành lên thanh trạng thái máy
+    unawaited(
+      showSystemNotification(
+        id: plant.id.hashCode,
+        title: '🌿 Floria: $taskTitle',
+        body: taskDesc,
+        payload: plant.id,
+      ),
+    );
 
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
@@ -347,10 +522,10 @@ class _SmartNotificationWidgetState extends State<_SmartNotificationWidget>
               decoration: BoxDecoration(
                 color: const Color(0xFF1E3A24), // Xanh rêu đậm hoàng gia
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -367,7 +542,7 @@ class _SmartNotificationWidgetState extends State<_SmartNotificationWidget>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: widget.iconColor.withOpacity(0.18),
+                          color: widget.iconColor.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(widget.icon, color: widget.iconColor, size: 20),
@@ -391,7 +566,7 @@ class _SmartNotificationWidgetState extends State<_SmartNotificationWidget>
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.12),
+                                    color: Colors.white.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(

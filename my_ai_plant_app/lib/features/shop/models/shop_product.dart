@@ -13,6 +13,7 @@ class ShopProduct {
   final String tag;
   final double rating;
   final int soldCount;
+  final int reviewCount;
   final bool inStock;
 
   ShopProduct({
@@ -30,6 +31,7 @@ class ShopProduct {
     this.tag = '',
     this.rating = 5.0,
     this.soldCount = 0,
+    this.reviewCount = 0,
     this.inStock = true,
   });
 
@@ -52,7 +54,46 @@ class ShopProduct {
       tag: data['tag'] ?? '',
       rating: (data['rating'] as num?)?.toDouble() ?? 5.0,
       soldCount: (data['soldCount'] as num?)?.toInt() ?? 0,
+      reviewCount: (data['reviewCount'] as num?)?.toInt() ?? 0,
       inStock: data['inStock'] ?? true,
+    );
+  }
+
+  ShopProduct copyWith({
+    String? id,
+    String? name,
+    String? category,
+    String? categoryKey,
+    int? price,
+    int? originalPrice,
+    String? imageUrl,
+    String? shortDesc,
+    String? description,
+    List<String>? indications,
+    String? usageGuide,
+    String? tag,
+    double? rating,
+    int? soldCount,
+    int? reviewCount,
+    bool? inStock,
+  }) {
+    return ShopProduct(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      categoryKey: categoryKey ?? this.categoryKey,
+      price: price ?? this.price,
+      originalPrice: originalPrice ?? this.originalPrice,
+      imageUrl: imageUrl ?? this.imageUrl,
+      shortDesc: shortDesc ?? this.shortDesc,
+      description: description ?? this.description,
+      indications: indications ?? this.indications,
+      usageGuide: usageGuide ?? this.usageGuide,
+      tag: tag ?? this.tag,
+      rating: rating ?? this.rating,
+      soldCount: soldCount ?? this.soldCount,
+      reviewCount: reviewCount ?? this.reviewCount,
+      inStock: inStock ?? this.inStock,
     );
   }
 
@@ -80,6 +121,31 @@ class ShopProduct {
     }
     return '${buffer.toString()}đ';
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'category': category,
+      'categoryKey': categoryKey,
+      'price': price,
+      'originalPrice': originalPrice,
+      'imageUrl': imageUrl,
+      'shortDesc': shortDesc,
+      'description': description,
+      'indications': indications,
+      'usageGuide': usageGuide,
+      'tag': tag,
+      'rating': rating,
+      'soldCount': soldCount,
+      'reviewCount': reviewCount,
+      'inStock': inStock,
+    };
+  }
+
+  factory ShopProduct.fromMap(Map<String, dynamic> data) {
+    return ShopProduct.fromFirestore(data, (data['id'] ?? '').toString());
+  }
 }
 
 class CartItem {
@@ -92,4 +158,22 @@ class CartItem {
   });
 
   int get totalPrice => product.price * quantity;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'productId': product.id,
+      'quantity': quantity,
+      'product': product.toMap(),
+    };
+  }
+
+  factory CartItem.fromMap(Map<String, dynamic> map) {
+    final prodMap = map['product'] is Map
+        ? Map<String, dynamic>.from(map['product'] as Map)
+        : <String, dynamic>{'id': map['productId'] ?? ''};
+    return CartItem(
+      product: ShopProduct.fromMap(prodMap),
+      quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+    );
+  }
 }

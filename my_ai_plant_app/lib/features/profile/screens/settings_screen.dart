@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/migration_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F3),
       appBar: AppBar(
@@ -117,6 +120,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
           const SizedBox(height: 24),
 
+          // Group 2.4: TÀI KHOẢN & BẢO MẬT
+          _buildGroupTitle('TÀI KHOẢN & BẢO MẬT'),
+          const SizedBox(height: 8),
+          _buildSettingsContainer([
+            if (authProvider.canChangePassword)
+              _buildArrowTile(
+                icon: Icons.lock_reset_rounded,
+                title: 'Đổi mật khẩu',
+                valueText: 'Gửi qua email',
+                onTap: () => _showChangePasswordDialog(context, authProvider),
+              )
+            else
+              _buildValueTile(
+                title: 'Đăng nhập bằng Google',
+                valueText: 'Do Google quản lý',
+              ),
+          ]),
+          const SizedBox(height: 24),
+
           // Group 2.5: DỮ LIỆU & ĐÁM MÂY
           _buildGroupTitle('DỮ LIỆU & ĐÁM MÂY'),
           const SizedBox(height: 8),
@@ -126,6 +148,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Chuyển ảnh sang ImgBB Cloud',
               valueText: 'Đồng bộ',
               onTap: () => _showMigrationDialog(context),
+            ),
+            const Divider(height: 1, thickness: 1, color: Color(0x144F9D69)),
+            _buildArrowTile(
+              icon: Icons.cleaning_services_outlined,
+              title: 'Xóa bộ nhớ đệm ảnh',
+              valueText: 'Dọn dẹp',
+              onTap: _clearImageCache,
             ),
           ]),
           const SizedBox(height: 24),
@@ -302,6 +331,151 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showToast(String message, {bool isError = false}) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        duration: const Duration(seconds: 4),
+        content: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isError ? const Color(0xFF2D1618) : const Color(0xFF1E2D22),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: (isError ? const Color(0xFFFF6B6B) : const Color(0xFF66BB6A)).withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isError ? Icons.error_outline_rounded : Icons.mark_email_read_outlined,
+                    color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      message,
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Đổi mật khẩu: dùng lại luồng gửi email đặt lại mật khẩu giống màn hình Đăng nhập
+  void _showChangePasswordDialog(BuildContext context, AuthProvider authProvider) {
+    final email = authProvider.userEmail ?? '';
+    bool isSending = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.lock_reset_rounded, color: Color(0xFF2E6F40)),
+              const SizedBox(width: 8),
+              Text(
+                'Đổi mật khẩu',
+                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: const Color(0xFF1F2A21)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Floria sẽ gửi một đường dẫn đổi mật khẩu đến email của bạn:',
+                style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF6A756B), height: 1.5),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF5EC),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.mail_outline_rounded, size: 18, color: Color(0xFF2E6F40)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        email,
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1E3A24)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Mở email và bấm vào đường dẫn để đặt mật khẩu mới. Nếu không thấy, hãy kiểm tra thư mục Spam.',
+                style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF6A756B), height: 1.5),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSending ? null : () => Navigator.pop(dialogCtx),
+              child: Text('Hủy', style: GoogleFonts.inter(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: isSending || email.isEmpty
+                  ? null
+                  : () async {
+                      setDialogState(() => isSending = true);
+                      final error = await authProvider.resetPassword(email);
+                      if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                      if (error == null) {
+                        _showToast('Đã gửi thư đổi mật khẩu về $email. Vui lòng kiểm tra hộp thư!');
+                      } else {
+                        _showToast(error, isError: true);
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E6F40),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: isSending
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text('Gửi email', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dọn bộ nhớ đệm ảnh đang giữ trong RAM (ảnh sẽ được tải lại khi cần)
+  void _clearImageCache() {
+    final cache = PaintingBinding.instance.imageCache;
+    final count = cache.currentSize;
+    cache.clear();
+    cache.clearLiveImages();
+    _showToast('Đã dọn dẹp $count ảnh trong bộ nhớ đệm.');
   }
 
   void _showMigrationDialog(BuildContext context) {

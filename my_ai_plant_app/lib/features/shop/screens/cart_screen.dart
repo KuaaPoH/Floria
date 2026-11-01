@@ -6,6 +6,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../profile/models/user_checkout_models.dart';
 import '../../profile/screens/address_payment_screen.dart';
 import '../providers/shop_provider.dart';
+import 'order_history_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -18,6 +19,7 @@ class _CartScreenState extends State<CartScreen> {
   String? _selectedAddressId;
   // Giá trị: 'cod' hoặc id của thẻ đã lưu (VD: 'card_ncb_sandbox')
   String? _selectedPaymentOption;
+  bool _isPlacingOrder = false;
 
   void _showModernToast(String message, {bool isError = false}) {
     if (!mounted) return;
@@ -141,6 +143,16 @@ class _CartScreenState extends State<CartScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long_outlined, color: Color(0xFF2E6F40)),
+            tooltip: "Lịch sử đơn hàng",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+              );
+            },
+          ),
           if (items.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFBA1A1A)),
@@ -795,119 +807,199 @@ class _CartScreenState extends State<CartScreen> {
                     const SizedBox(width: 20),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (activeAddress == null) {
-                            _showModernToast(
-                              "Vui lòng thêm địa chỉ nhận hàng trước khi đặt mua!",
-                              isError: true,
-                            );
-                            _openAddressAndPaymentScreen();
-                            return;
-                          }
+                        onPressed: _isPlacingOrder
+                            ? null
+                            : () async {
+                                if (activeAddress == null) {
+                                  _showModernToast(
+                                    "Vui lòng thêm địa chỉ nhận hàng trước khi đặt mua!",
+                                    isError: true,
+                                  );
+                                  _openAddressAndPaymentScreen();
+                                  return;
+                                }
 
-                          String paymentLabel = "Thanh toán khi nhận hàng (COD)";
-                          if (_selectedPaymentOption != 'cod') {
-                            final card = savedCards.firstWhere(
-                              (c) => c.id == _selectedPaymentOption,
-                              orElse: () => savedCards.first,
-                            );
-                            paymentLabel = "${card.bankName} (${card.maskedCardNumber})";
-                          }
+                                String paymentMethod = 'cod';
+                                String paymentLabel = "Thanh toán khi nhận hàng (COD)";
+                                if (_selectedPaymentOption != 'cod' && savedCards.isNotEmpty) {
+                                  paymentMethod = 'card';
+                                  final card = savedCards.firstWhere(
+                                    (c) => c.id == _selectedPaymentOption,
+                                    orElse: () => savedCards.first,
+                                  );
+                                  paymentLabel =
+                                      "${card.bankName.replaceAll('(VNPay Sandbox)', '').trim()} (${card.maskedCardNumber})";
+                                }
 
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              contentPadding: const EdgeInsets.all(24),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 70,
-                                    height: 70,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFE5F4EA),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.check_circle_rounded,
-                                      color: Color(0xFF2E6F40),
-                                      size: 40,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Đặt hàng thành công!",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF191C19),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF5F7F3),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Người nhận: ${activeAddress!.recipientName} (${activeAddress.phone})",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF1F2A21),
+                                setState(() => _isPlacingOrder = true);
+                                try {
+                                  final createdOrder = await shopProvider.placeOrder(
+                                    address: activeAddress,
+                                    paymentMethod: paymentMethod,
+                                    paymentLabel: paymentLabel,
+                                  );
+                                  if (!mounted) return;
+                                  setState(() => _isPlacingOrder = false);
+
+                                  if (createdOrder == null) {
+                                    _showModernToast("Không thể tạo đơn hàng. Vui lòng thử lại!", isError: true);
+                                    return;
+                                  }
+
+                                  if (!context.mounted) return;
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (ctx) => AlertDialog(
+                                      backgroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                      contentPadding: const EdgeInsets.all(24),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 70,
+                                            height: 70,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFE5F4EA),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.check_circle_rounded,
+                                              color: Color(0xFF2E6F40),
+                                              size: 40,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "Giao đến: ${activeAddress.address}",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: const Color(0xFF4A554C),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            "Đặt hàng thành công!",
+                                            style: GoogleFonts.inter(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF191C19),
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "Thanh toán: $paymentLabel",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E6F40),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "Mã đơn: #${createdOrder.orderCode}",
+                                            style: GoogleFonts.inter(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF2E6F40),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        shopProvider.clearCart();
-                                        Navigator.pop(ctx);
-                                        Navigator.pop(context);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF364534),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF5F7F3),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "Người nhận: ${createdOrder.recipientName} (${createdOrder.recipientPhone})",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 12.5,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color(0xFF1F2A21),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  "Giao đến: ${createdOrder.shippingAddress}",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 12,
+                                                    color: const Color(0xFF4A554C),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  "Thanh toán: ${createdOrder.paymentLabel}",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color(0xFF2E6F40),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  "Tổng cộng: ${createdOrder.formattedTotal} (${createdOrder.totalItemsCount} sản phẩm)",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 12.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: const Color(0xFF1F2A21),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: OutlinedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(ctx);
+                                                    Navigator.pop(context);
+                                                  },
+                                                  style: OutlinedButton.styleFrom(
+                                                    foregroundColor: const Color(0xFF364534),
+                                                    side: const BorderSide(color: Color(0xFF364534)),
+                                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    "Đóng",
+                                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(ctx);
+                                                    Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (_) => const OrderHistoryScreen(),
+                                                      ),
+                                                    );
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: const Color(0xFF364534),
+                                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    "Xem đơn hàng",
+                                                    style: GoogleFonts.inter(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      child: const Text("Hoàn tất", style: TextStyle(color: Colors.white)),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                  );
+                                } catch (e) {
+                                  if (mounted) {
+                                    setState(() => _isPlacingOrder = false);
+                                    _showModernToast("Lỗi tạo đơn hàng: $e", isError: true);
+                                  }
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF364534),
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -916,14 +1008,23 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: Text(
-                          "Đặt hàng ngay",
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: _isPlacingOrder
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                "Đặt hàng ngay",
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ],

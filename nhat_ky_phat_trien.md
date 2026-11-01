@@ -912,31 +912,133 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 
 ---
 
+---
+
+## 4.27. Trung Tâm Nhắc Tưới, Trung Tâm Hỗ Trợ FAQ & Đổi Mật Khẩu Qua Email
+*Ngày cập nhật: 01 tháng 11, 2026*
+
+### 1. Màn Hình Nhắc Tưới & Chăm Sóc ([watering_reminders_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/watering_reminders_screen.dart))
+*   **Thẻ trạng thái nhắc nhở & Quyền thiết bị**:
+    *   Bật/tắt nhắc nhở hệ thống và nút *"Thử thông báo ngay"*.
+    *   Tích hợp thư viện `permission_handler` và khai báo `POST_NOTIFICATIONS` trên Android: Thẻ **Quyền thông báo thiết bị** tự động nhận biết quyền hệ điều hành (*Đã cấp* / *Chưa cấp*), có nút **"Cấp quyền ngay"** (`Permission.notification.request()`) và nút **"Cài đặt máy"** (`openAppSettings()`).
+    *   Tự động phát hiện và cập nhật trạng thái quyền ngay khi người dùng từ phần Cài đặt máy quay trở lại ứng dụng (`WidgetsBindingObserver`).
+*   **Việc cần làm hôm nay**: Gom việc tưới nước, bón phân và kiểm tra sâu bệnh đã đến hạn (hoặc còn ≤ 12 giờ) từ **tất cả khu vườn**, việc quá hạn lâu nhất xếp lên đầu. Bấm nút tick tròn là ghi nhận hoàn thành ngay, không cần vào từng cây.
+*   **Không làm phiền**: Tạm dừng mọi banner nhắc trong khung giờ cài đặt (mặc định `22:00 – 06:00`, chạy được cả khi khung giờ qua nửa đêm). (Đã loại bỏ thẻ *Khung giờ nhắc mặc định* để giao diện tinh gọn, tập trung).
+*   [notification_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/notification_service.dart): thêm phần lưu tùy chọn (SharedPreferences + bộ nhớ cache), kiểm tra khung giờ Không làm phiền và nhắc lại buổi chiều. `main_navigation_screen.dart` giờ quét nhắc nhở trên toàn bộ cây (`allUserPlants`) thay vì chỉ khu vườn đang chọn.
+
+### 2. Trung Tâm Hỗ Trợ ([support_center_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/support_center_screen.dart))
+*   10 câu hỏi thường gặp, chia 3 nhóm (Quét ảnh & AI, Lịch chăm sóc, Tài khoản & Mua sắm), hiển thị dạng thẻ chạm để mở rộng.
+*   Nút *"Hỏi Trợ lý Floria"* và thẻ liên hệ (Hotline / Email / Giờ hỗ trợ, chạm để sao chép). Thông tin liên hệ đặt trong `SupportContactInfo` (Người phụ trách: Trần Ngọc Hải – Hotline: 0866 459 082; email hỗ trợ đang là dữ liệu tạm).
+
+### 3. Cài Đặt ([settings_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/settings_screen.dart))
+*   **Đổi mật khẩu**: Chỉ hiện với tài khoản Email/Mật khẩu (`AuthProvider.canChangePassword`); tài khoản Google sẽ thấy dòng *"Do Google quản lý"*. Dùng lại luồng `resetPassword()` của màn hình Đăng nhập để gửi đường dẫn đổi mật khẩu về email.
+*   **Xóa bộ nhớ đệm ảnh**: Dọn `imageCache` của Flutter.
+
+---
+
+## 4.28. Lưu Trữ Giỏ Hàng Bền Vững, Hiệu Ứng Bay Vào Giỏ (Fly-to-Cart), Đặt Hàng Firestore & Lịch Sử Đơn Hàng
+*Ngày cập nhật: 01 tháng 11, 2026*
+
+### 1. Lưu Giỏ Hàng Bền Vững Đa Tầng ([shop_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/providers/shop_provider.dart), [shop_product.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/models/shop_product.dart))
+*   **Không bao giờ mất giỏ hàng khi tắt/mở lại ứng dụng**:
+    *   Tự động lưu trữ giỏ hàng (`_persistCart`) đồng thời vào **`SharedPreferences`** trên thiết bị (`floria_cart_<uid>`) và trường **`cartItems` trên Cloud Firestore** (`Users/{uid}`).
+    *   Khi khởi động lại app hoặc chuyển đổi tài khoản (`authStateChanges`), hệ thống tự động khôi phục giỏ hàng ngay lập tức và đồng bộ lại thông tin giá/tồn kho mới nhất từ danh mục sản phẩm.
+
+### 2. Hiệu Ứng Thêm Vào Giỏ Hàng Sống Động ([cart_animation_helper.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/widgets/cart_animation_helper.dart))
+*   **Hiệu ứng ảnh sản phẩm bay vào giỏ (`playFlyToCart`)**: Khi bấm nút thêm giỏ hàng tại Cửa hàng ([shop_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/shop_screen.dart)) hoặc Chi tiết sản phẩm ([product_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/product_detail_screen.dart)), một huy hiệu tròn chứa ảnh sản phẩm sẽ bay theo đường cong Bezier từ vị trí nút bấm thẳng vào biểu tượng Giỏ hàng trên góc màn hình.
+*   **Hiệu ứng nảy giỏ hàng & Nút xác nhận**: Biểu tượng giỏ hàng phóng nảy nhẹ (`AnimatedScale`) kèm số lượng nhảy mượt mà (`AnimatedSwitcher`), nút bấm chuyển sang dấu tích xanh `✓` và hiển thị Toast viên thuốc có ảnh sản phẩm cùng nút **"Xem giỏ"** nhanh.
+
+### 3. Đặt Hàng Lên Firestore & Màn Hình Lịch Sử Đơn Hàng ([order_model.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/models/order_model.dart), [order_history_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/order_history_screen.dart), [cart_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/cart_screen.dart))
+*   **Tạo đơn hàng thực tế trên Cloud Firestore (`Orders` Collection)**:
+    *   Sinh mã đơn chuẩn `#FLR-YYMMDD-XXXX`, lưu đầy đủ danh sách sản phẩm, tổng thanh toán, thông tin người nhận, địa chỉ kèm tọa độ GPS bản đồ, phương thức thanh toán (COD / Thẻ ngân hàng) và tự động làm sạch giỏ hàng sau khi đặt.
+*   **Màn hình Lịch sử & Theo dõi đơn hàng (`OrderHistoryScreen`)**:
+    *   Truy cập nhanh từ Trang cá nhân (*"Đơn hàng của tôi"*), từ đầu trang Cửa hàng (*"Đơn mua"*) hoặc ngay sau khi đặt hàng thành công.
+    *   Lọc đơn theo 5 trạng thái: **Tất cả**, **Chờ xác nhận**, **Đang giao**, **Đã giao**, **Đã hủy** kèm số lượng từng mục.
+    *   Hiển thị thanh tiến trình 3 bước trực quan (*Chờ xác nhận $\rightarrow$ Đang giao $\rightarrow$ Đã giao*), xem chi tiết đơn hàng, hỗ trợ **Hủy đơn**, **Xác nhận đã nhận hàng**, và nút **"Mua lại"** để thêm nhanh toàn bộ sản phẩm của đơn cũ vào giỏ.
+
+---
+
+---
+
+## 4.29. Thời Tiết Thực Tế Open-Meteo Theo Vị Trí, Thông Báo Đẩy Thiết Bị (Local Notifications) & Đánh Giá Đơn Hàng Sau Giao
+*Ngày cập nhật: 02 tháng 11, 2026*
+
+### 1. Thời Tiết Thực Tế Theo Vị Trí Người Dùng ([realtime_weather_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/services/realtime_weather_service.dart), [current_weather_data.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/models/current_weather_data.dart), [home_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/home/screens/home_screen.dart))
+*   **Kết nối API thời tiết thời gian thực Open-Meteo**:
+    *   Tự động phát hiện tọa độ GPS (`latitude`, `longitude`) và Tỉnh/Thành từ địa chỉ nhận hàng mặc định của người dùng trên Cloud Firestore (`Users/{uid}/addresses`).
+    *   Gọi REST API của Open-Meteo (miễn phí, không phụ thuộc API key, tốc độ phản hồi dưới 1 giây) để lấy nhiệt độ thực tế (`temperature_2m`), độ ẩm tương đối (`relative_humidity_2m`), mã tình trạng WMO (`weather_code`) và tốc độ gió.
+    *   Hỗ trợ bộ đệm cache 25 phút trong bộ nhớ và lưu bền vững vào `SharedPreferences`, giảm thiểu tối đa lưu lượng mạng.
+    *   Tự động chuyển đổi mã WMO sang ngôn ngữ tiếng Việt thân thiện với người chăm cây (*Nắng đẹp*, *Nắng nhẹ ít mây*, *Trời râm mát*, *Sương mù ẩm*, *Mưa rào*, *Dông sét cần che cây*...).
+    *   Tích hợp chế độ dự phòng thông minh (Fallback theo khung giờ sinh thái) khi thiết bị mất kết nối mạng.
+
+### 2. Thông Báo Đẩy Thiết Bị Cấp Hệ Điều Hành ([notification_service.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/core/services/notification_service.dart), [AndroidManifest.xml](file:///d:/Plan/utrasupervip/my_ai_plant_app/android/app/src/main/AndroidManifest.xml))
+*   **Tích hợp `flutter_local_notifications`**:
+    *   Đăng ký kênh thông báo ưu tiên cao `floria_care_channel` (*Lịch chăm sóc cây Floria*) với đầy đủ âm thanh, rung và biểu tượng launcher app.
+    *   Bổ sung quyền `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `VIBRATE`, `SCHEDULE_EXACT_ALARM` vào `AndroidManifest.xml`.
+    *   Đồng bộ 2 tầng thông báo: Khi đến giờ nhắc chăm sóc cây, hệ thống vừa hiển thị Banner trượt sang trọng trong ứng dụng vừa đẩy thông báo thật lên thanh trạng thái / trung tâm thông báo của hệ điều hành.
+
+### 3. Đánh Giá Sản Phẩm Sau Khi Nhận Hàng & Đồng Bộ Đánh Giá Thực Tế ([order_history_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/order_history_screen.dart), [product_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/product_detail_screen.dart), [shop_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/providers/shop_provider.dart), [order_model.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/models/order_model.dart), [shop_product.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/models/shop_product.dart))
+*   **Trải nghiệm đánh giá đơn hàng hoàn tất & Đính kèm ảnh thực tế**:
+    *   Với đơn hàng ở trạng thái **"Đã giao"** (`completed`), xuất hiện nút **"Đánh giá"** viền vàng sang trọng.
+    *   Mở BottomSheet đánh giá chuyên nghiệp: Chọn 1–5 sao với nhãn cảm xúc trực quan (*Tuyệt vời*, *Hài lòng*, *Bình thường*...), chọn nhanh các ưu điểm (*Giao hàng nhanh*, *Đóng gói cẩn thận*, *Cây/vật tư chất lượng*...) và khung nhập nhận xét có độ tương phản cao (`#191C19`), rõ nét trên nền sáng.
+    *   **Tích hợp tải ảnh đánh giá lên Cloud (ImgBB)**: Cho phép chụp từ Camera hoặc chọn từ Thư viện, upload trực tiếp lên ImgBB API, hiển thị thumbnail ảnh xem trước có nút xóa `❌` và hiệu ứng loading khi đang tải ảnh.
+    *   Lưu trữ đồng thời vào đơn hàng (`isReviewed`, `rating`, `reviewNote`, `reviewImages`, `reviewedAt`) và tạo bản ghi chi tiết trong Firestore collection `ProductReviews`.
+    *   **Cập nhật tự động lượt mua & Điểm sao thật**: Mỗi khi đặt hàng, hệ thống tự động tăng `soldCount`. Khi gửi đánh giá, hệ thống tính toán lại điểm trung bình cộng số sao và tổng số lượt đánh giá (`reviewCount`), đồng bộ tức thì lên Firestore và giao diện Cửa hàng.
+    *   **Hiển thị mục "Đánh giá từ khách hàng" trong Chi tiết sản phẩm**: Hiển thị bảng tổng hợp điểm sao, danh sách nhận xét thực tế kèm avatar khách hàng, ngày đánh giá, nội dung nhận xét và bộ sưu tập ảnh thực tế (chạm vào để phóng to toàn màn hình).
+
+### 4. Cập Nhật Thông Tin Hỗ Trợ Chính Thức ([support_center_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/support_center_screen.dart))
+*   Cập nhật email hỗ trợ chính thức thành `trankenn04@gmail.com` đồng bộ cùng Hotline phụ trách của anh Trần Ngọc Hải (`0866 459 082`).
+
+---
+
+## 4.30. Tối Ưu Hóa Toàn Diện E-Commerce: Giỏ Hàng Bền Vững, Hiệu Ứng Bay Vào Giỏ, Đánh Giá Đính Kèm Ảnh ImgBB & Đồng Bộ Dữ Liệu Thật
+*Ngày cập nhật: 02 tháng 11, 2026*
+
+### 1. Đồng Bộ Tài Khoản & Bảo Mật Cá Nhân ([auth_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/auth/providers/auth_provider.dart), [settings_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/profile/screens/settings_screen.dart))
+*   **Bảo toàn Avatar Google**: Khắc phục lỗi mất ảnh đại diện Gmail sau khi đăng nhập bằng cách ưu tiên đọc `effectivePhotoUrl` từ cả `photoUrl` của Firebase Auth lẫn `userAvatar` trên Firestore.
+*   **Tinh chỉnh Đổi mật khẩu**: Làm rõ cơ chế đổi mật khẩu tài khoản app qua liên kết gửi về email, đồng thời tự động ẩn hoặc thông báo phù hợp khi người dùng đăng nhập bằng phương thức Google Sign-In.
+
+### 2. Trải Nghiệm Mua Sắm Mượt Mà & Giỏ Hàng Bền Vững ([cart_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/cart_screen.dart), [shop_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/shop_screen.dart), [cart_animation_helper.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/widgets/cart_animation_helper.dart))
+*   **Lưu trữ giỏ hàng bền vững**: Lưu danh sách sản phẩm và số lượng vào `SharedPreferences`, đảm bảo giỏ hàng không bị mất khi thoát ứng dụng hoặc tải lại trang.
+*   **Hiệu ứng Parabolic Fly-to-Cart**: Bổ sung hoạt họa đường cong ném ảnh sản phẩm bay thẳng vào biểu tượng giỏ hàng trên thanh tiêu đề khi bấm thêm món.
+*   **Khắc phục tràn bố cục (RenderFlex Overflow)**: Tinh chỉnh lại tiêu đề Shop, padding và kích thước các nút bấm trên header để loại bỏ triệt để sọc vàng đen tràn viền.
+*   **Loại bỏ thông báo dư thừa**: Tắt toast thông báo và xóa số đếm badge gây rối mắt trên nút Đơn mua.
+
+### 3. Cải Tiến Trang Chi Tiết Sản Phẩm ([product_detail_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/product_detail_screen.dart))
+*   **Cặp nút thao tác thông minh**: Phân tách thanh đáy thành 1 nút nhỏ hình giỏ hàng (thêm món) và 1 nút lớn "Mua ngay" màu xanh đậm thương hiệu giúp chuyển thẳng đến màn hình thanh toán.
+*   **Mục Đánh giá từ khách hàng**: Hiển thị điểm số trung bình, danh sách các bài nhận xét thực tế kèm ảnh đại diện khách hàng, số sao, ngày đánh giá và bộ sưu tập ảnh feedback thực tế (chạm vào xem kích thước đầy đủ).
+
+### 4. Nâng Cấp Hệ Thống Đánh Giá Đơn Hàng ([order_history_screen.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/screens/order_history_screen.dart), [shop_provider.dart](file:///d:/Plan/utrasupervip/my_ai_plant_app/lib/features/shop/providers/shop_provider.dart))
+*   **Sửa màu chữ khung nhập nhận xét**: Đổi sang màu đen đậm `#191C19` tương phản sắc nét, loại bỏ hiện tượng chữ mờ/trắng khó đọc.
+*   **Tải ảnh feedback lên Cloud ImgBB**: Tương tự như tính năng trong nhật ký khu vườn, hỗ trợ chụp hoặc chọn ảnh từ máy, tải lên ImgBB Cloud, hiển thị thumbnail có nút xóa `❌` và chỉ báo loading.
+*   **Cập nhật số lượt mua & Điểm sao thật**: Tự động tăng `soldCount` khi đặt hàng và tính toán lại điểm `rating`, số lượt `reviewCount` hiển thị trên toàn bộ thẻ sản phẩm Cửa hàng.
+
+---
+
 ## 5. Kế Hoạch & Định Hướng Phát Triển Trong Tương Lai (Future Roadmap)
 
 ### 1. Hoàn Thiện Trang Cá Nhân & Cài Đặt (Profile & Settings)
-- [ ] **Trang Nhắc Tưới Tập Trung (`WateringRemindersScreen`)**:
-  - Xây dựng màn hình quản lý tập trung toàn bộ khung giờ nhắc nhở của tất cả các chậu cây trong các khu vườn khi người dùng bấm vào mục *"Nhắc tưới"* trong Trang cá nhân.
-- [ ] **Trung Tâm Hỗ Trợ & Câu Hỏi Thường Gặp (`SupportCenterScreen`)**:
-  - Xây dựng màn hình hướng dẫn sử dụng, mẹo chụp ảnh chẩn đoán bệnh lá chuẩn xác, chính sách đổi trả vật tư và liên hệ hỗ trợ khi bấm vào *"Trung tâm hỗ trợ"*.
-- [ ] **Hoàn Thiện Các Mục Trong Cài Đặt (`settings_screen.dart`)**:
-  - Hoàn thiện chức năng Đổi mật khẩu (cho tài khoản Email), Quản lý quyền riêng tư và Xóa bộ nhớ đệm (Cache).
+- [x] **Trang Nhắc Tưới Tập Trung (`WateringRemindersScreen`)**. ✅
+- [x] **Trung Tâm Hỗ Trợ & Câu Hỏi Thường Gặp (`SupportCenterScreen`)** (Người phụ trách: Trần Ngọc Hải – Hotline: 0866 459 082 – Email: trankenn04@gmail.com). ✅
+- [x] **Đổi mật khẩu qua email (ẩn với tài khoản Google) & Xóa bộ nhớ đệm**. ✅
+- [x] **Thông báo đẩy của hệ điều hành (`flutter_local_notifications` + channel ưu tiên cao + xin quyền thiết bị)**. ✅
 
 ### 2. Hoàn Thiện Luồng Thanh Toán & Quản Lý Đơn Hàng (E-Commerce & Order Tracking)
 - [x] **Sổ địa chỉ hành chính mới + Ghim bản đồ + Lưu thẻ ngân hàng & Chọn phương thức thanh toán ở Giỏ hàng**. ✅
+- [x] **Lưu giỏ hàng bền vững + Hiệu ứng bay vào giỏ + Lưu Đơn Hàng Lên Firestore (`Orders` Collection) & Màn Hình Lịch Sử Đơn Hàng**. ✅
+- [x] **Đánh giá sản phẩm sau khi nhận hàng (1-5 sao + chọn ưu điểm + viết nhận xét + lưu ProductReviews)**. ✅
+- [ ] **Tích Hợp Chuyển Khoản Mã VietQR Động Theo Đơn Hàng**:
+  - Tự động sinh mã VietQR theo chuẩn Napas kèm đúng số tiền của đơn hàng và cú pháp nội dung là mã đơn `#FLR-...`.
 - [ ] **Tích Hợp Cổng Thanh Toán Sandbox VNPay Thực Tế**:
-  - Tạo URL thanh toán chuẩn chuẩn mã băm `HMAC-SHA512` (`vnp_SecureHash`) và mở WebView/Trình duyệt thanh toán VNPay khi người dùng chọn thanh toán qua thẻ ngân hàng đã lưu.
-- [ ] **Lưu Đơn Hàng Lên Firestore (`Orders` Collection) & Màn Hình Lịch Sử Đơn Hàng**:
-  - Lưu chi tiết đơn hàng (danh sách vật tư, tổng tiền, địa chỉ nhận hàng kèm tọa độ ghim bản đồ, phương thức thanh toán, trạng thái đơn hàng) vào Firestore.
-  - Xây dựng màn hình theo dõi trạng thái đơn hàng (*Chờ xác nhận $\rightarrow$ Đang giao hàng $\rightarrow$ Đã giao*).
+  - Tạo URL thanh toán chuẩn mã băm `HMAC-SHA512` (`vnp_SecureHash`) và mở WebView thanh toán VNPay khi người dùng chọn thẻ ngân hàng.
 
 ### 3. Tối Ưu Hóa Trải Nghiệm & Mở Rộng Hệ Sinh Thái Chăm Sóc Cây
 - [x] **Rà soát & Hoàn thiện Skeleton Loading, Toast thông báo hiện đại và Nút hỏi nhanh Trợ lý Floria**. ✅
 - [x] **Thông báo nhắc lịch chăm sóc thông minh (`NotificationService`) & Đồng bộ trạng thái cây thời gian thực**. ✅
-- [ ] **Tích Hợp Thời Tiết Thực Tế Theo Vị Trí Địa Chỉ Người Dùng**:
-  - Tận dụng tọa độ (`latitude`, `longitude`) từ địa chỉ mặc định người dùng đã ghim để lấy nhiệt độ & độ ẩm thời tiết thực tế tại khu vực đó cho Widget Thời tiết ngoài Trang chủ.
+- [x] **Tích Hợp Thời Tiết Thực Tế Theo Vị Trí Địa Chỉ Người Dùng (Open-Meteo REST API + Cache 25 phút)**. ✅
 - [ ] **Tối Ưu Hiển Thị Đa Thiết Bị (Responsive Mobile / Web)**:
   - Kiểm thử và tinh chỉnh trải nghiệm mượt mà trên cả trình duyệt Web lẫn thiết bị di động Android/iOS thực tế.
+
 
 
 

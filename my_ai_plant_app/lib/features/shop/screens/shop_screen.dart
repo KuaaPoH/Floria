@@ -5,7 +5,9 @@ import '../../../core/widgets/custom_image.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../models/shop_product.dart';
 import '../providers/shop_provider.dart';
+import '../widgets/cart_animation_helper.dart';
 import 'cart_screen.dart';
+import 'order_history_screen.dart';
 import 'product_detail_screen.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -17,6 +19,38 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey _cartIconKey = GlobalKey();
+  final Map<String, GlobalKey> _addBtnKeys = {};
+  final Set<String> _justAddedIds = {};
+  bool _cartBouncing = false;
+
+  GlobalKey _keyForProduct(String productId) {
+    return _addBtnKeys.putIfAbsent(productId, () => GlobalKey());
+  }
+
+  void _triggerAddToCart(ShopProduct product, ShopProvider provider) {
+    final sourceKey = _keyForProduct(product.id);
+    setState(() => _justAddedIds.add(product.id));
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _justAddedIds.remove(product.id));
+    });
+
+    CartAnimationHelper.playFlyToCart(
+      context: context,
+      sourceKey: sourceKey,
+      cartIconKey: _cartIconKey,
+      imageUrl: product.imageUrl,
+      onComplete: () {
+        if (!mounted) return;
+        setState(() => _cartBouncing = true);
+        Future.delayed(const Duration(milliseconds: 220), () {
+          if (mounted) setState(() => _cartBouncing = false);
+        });
+      },
+    );
+
+    provider.addToCart(product);
+  }
 
   final List<Map<String, String>> _categories = [
     {'title': 'Tất cả', 'key': 'all'},
@@ -52,69 +86,129 @@ class _ShopScreenState extends State<ShopScreen> {
                 // Header & Nút giỏ hàng
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'VẬT TƯ & DƯỢC PHẨM CÂY TRỒNG',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                              color: const Color(0xFF6A756B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Cửa hàng',
+                            style: GoogleFonts.inter(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                              color: const Color(0xFF1F2A21),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'VẬT TƯ & DƯỢC PHẨM CÂY TRỒNG',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2,
-                            color: const Color(0xFF6A756B),
+                        // Nút Lịch sử đơn hàng (icon tròn gọn gàng kèm badge số lượng)
+                        Tooltip(
+                          message: 'Đơn mua của tôi',
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFFE0E5DD)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.receipt_long_outlined, color: Color(0xFF2E6F40), size: 21),
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Cửa hàng',
-                          style: GoogleFonts.inter(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
-                            color: const Color(0xFF1F2A21),
+                        const SizedBox(width: 8),
+
+                        // Nút Giỏ hàng với hiệu ứng nảy khi có sản phẩm bay vào
+                        AnimatedScale(
+                          scale: _cartBouncing ? 1.2 : 1.0,
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutBack,
+                          child: InkWell(
+                            key: _cartIconKey,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CartScreen()),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              height: 44,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: _cartBouncing ? const Color(0xFFE5F4EA) : Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: _cartBouncing ? const Color(0xFF2E6F40) : const Color(0xFFE0E5DD),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2E6F40), size: 21),
+                                  const SizedBox(width: 5),
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 220),
+                                    transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                                    child: Text(
+                                      '${shopProvider.cartCount}',
+                                      key: ValueKey<int>(shopProvider.cartCount),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF2E6F40),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CartScreen()),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE0E5DD)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2E6F40), size: 20),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${shopProvider.cartCount}',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF2E6F40),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -157,7 +251,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF17231A).withOpacity(0.06),
+                        color: const Color(0xFF17231A).withValues(alpha: 0.06),
                         blurRadius: 24,
                         offset: const Offset(0, 10),
                       ),
@@ -181,7 +275,7 @@ class _ShopScreenState extends State<ShopScreen> {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                const Color(0xFF18221B).withOpacity(0.85),
+                                const Color(0xFF18221B).withValues(alpha: 0.85),
                               ],
                             ),
                           ),
@@ -219,7 +313,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                 'Nano Bạc Đồng & Tinh dầu Neem giúp bảo vệ cây toàn diện không độc hại.',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.85),
+                                  color: Colors.white.withValues(alpha: 0.85),
                                 ),
                               ),
                             ],
@@ -378,7 +472,7 @@ class _ShopScreenState extends State<ShopScreen> {
           border: Border.all(color: const Color(0xFFE0E5DD)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -455,6 +549,31 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                     const Spacer(),
 
+                    // Đánh giá sao thật và số lượng đã bán
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                        const SizedBox(width: 3),
+                        Text(
+                          product.rating.toStringAsFixed(1),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF191C19),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '• Đã bán ${product.soldCount}',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            color: const Color(0xFF747871),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+
                     // Giá và nút thêm giỏ
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -486,28 +605,26 @@ class _ShopScreenState extends State<ShopScreen> {
                           ),
                         ),
                         InkWell(
-                          onTap: () {
-                            provider.addToCart(product);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Đã thêm '${product.name}' vào giỏ! 🌿"),
-                                backgroundColor: const Color(0xFF2E6F40),
-                                duration: const Duration(seconds: 1),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
+                          key: _keyForProduct(product.id),
+                          onTap: () => _triggerAddToCart(product, provider),
                           borderRadius: BorderRadius.circular(10),
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
                             padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE5F4EA),
+                              color: _justAddedIds.contains(product.id)
+                                  ? const Color(0xFF2E6F40)
+                                  : const Color(0xFFE5F4EA),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
-                              Icons.add_shopping_cart_rounded,
+                            child: Icon(
+                              _justAddedIds.contains(product.id)
+                                  ? Icons.check_rounded
+                                  : Icons.add_shopping_cart_rounded,
                               size: 16,
-                              color: Color(0xFF2E6F40),
+                              color: _justAddedIds.contains(product.id)
+                                  ? Colors.white
+                                  : const Color(0xFF2E6F40),
                             ),
                           ),
                         ),

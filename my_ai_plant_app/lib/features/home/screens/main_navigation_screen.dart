@@ -38,6 +38,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       const ProfileScreen(),
     ];
 
+    // Nạp sẵn giờ nhắc mặc định & khung Không làm phiền vào cache
+    NotificationService.loadPreferences();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkReminders();
     });
@@ -50,7 +53,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _checkReminders() {
     if (!mounted) return;
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
-    NotificationService.checkAndNotifyPendingTasks(context, gardenProvider.plants);
+    NotificationService.checkAndNotifyPendingTasks(context, gardenProvider.allUserPlants);
   }
 
   @override

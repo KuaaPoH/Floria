@@ -8,7 +8,10 @@ import '../../auth/screens/login_screen.dart';
 import '../../garden/providers/garden_provider.dart';
 import 'address_payment_screen.dart';
 import 'settings_screen.dart';
+import 'support_center_screen.dart';
+import 'watering_reminders_screen.dart';
 import '../../history/screens/history_screen.dart';
+import '../../shop/screens/order_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigate; // Callback de chuyen tab tu trang ca nhan
@@ -695,6 +698,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Đơn hàng của tôi',
+                    desc: 'Theo dõi trạng thái giao hàng và lịch sử mua vật tư.',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const OrderHistoryScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildShortcutRow(
                     icon: Icons.history,
                     title: 'Lịch sử quét',
                     desc: 'Xem lại các chẩn đoán và giống cây đã nhận diện.',
@@ -709,15 +724,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildShortcutRow(
                     icon: Icons.water_drop_outlined,
                     title: 'Nhắc tưới',
-                    desc: 'Tinh chỉnh thời điểm cho từng chậu cây trong nhà.',
-                    onTap: () {},
+                    desc: 'Việc chăm sóc hôm nay, quyền thiết bị và chế độ không làm phiền.',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const WateringRemindersScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
                     icon: Icons.headset_mic_outlined,
                     title: 'Trung tâm hỗ trợ',
-                    desc: 'Liên hệ với chúng tôi để được giải đáp thắc mắc.',
-                    onTap: () {},
+                    desc: 'Câu hỏi thường gặp và thông tin liên hệ hỗ trợ.',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SupportCenterScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(

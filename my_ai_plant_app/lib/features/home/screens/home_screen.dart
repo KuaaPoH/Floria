@@ -13,6 +13,8 @@ import '../models/handbook_article.dart';
 import '../services/handbook_service.dart';
 import '../models/weather_widget_config.dart';
 import '../services/weather_widget_service.dart';
+import '../models/current_weather_data.dart';
+import '../services/realtime_weather_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isEmbedded;
@@ -233,179 +235,185 @@ class _HomeScreenState extends State<HomeScreen> {
         final config = WeatherWidgetService.getConfigForHour(snapshot.data, hour);
         // 1. Ảnh nền và câu thoại biên tập tùy biến lưu từ Firestore
         final heroImage = config.heroImageUrl;
-        final badgeText = config.badgeText;
         final mainTitle = config.mainTitle;
 
-        // 2. Các chỉ số thời tiết, nhiệt độ, độ ẩm động theo thời gian thực tế của thiết bị
-        String weatherText;
-        String statHumidity;
-        String statLight;
-        if (hour >= 5 && hour < 11) {
-          weatherText = "Nắng sớm • 27°C";
-          statHumidity = "Độ ẩm: 75%";
-          statLight = "Ánh sáng: Mềm dịu";
-        } else if (hour >= 11 && hour < 15) {
-          weatherText = "Nắng gắt • 32°C";
-          statHumidity = "Độ ẩm: 62%";
-          statLight = "Ánh sáng: Nắng gắt (Cần che)";
-        } else if (hour >= 15 && hour < 18) {
-          weatherText = "Thoáng đãng • 29°C";
-          statHumidity = "Độ ẩm: 70%";
-          statLight = "Ánh sáng: Tán xạ";
-        } else {
-          weatherText = "Mát mẻ • 25°C";
-          statHumidity = "Độ ẩm: 82%";
-          statLight = "Ánh sáng: Đèn phòng";
-        }
+        return FutureBuilder<CurrentWeatherData>(
+          future: RealtimeWeatherService.fetchCurrentWeather(),
+          initialData: RealtimeWeatherService.getFallbackWeather(hour),
+          builder: (context, weatherSnap) {
+            final weather = weatherSnap.data ?? RealtimeWeatherService.getFallbackWeather(hour);
+            final weatherText = "${weather.conditionText} • ${weather.formattedTemp}";
+            final statHumidity = weather.formattedHumidity;
 
-        final statNextWater = (hour >= 18 || hour < 5) ? "Lần tưới: Sáng mai" : "Lần tưới: Hôm nay";
+            String statLight;
+            if (weather.weatherCode >= 51 || weather.weatherCode == 3) {
+              statLight = "Ánh sáng: Tán xạ râm mát";
+            } else if (hour >= 11 && hour < 15) {
+              statLight = "Ánh sáng: Nắng gắt (Cần che)";
+            } else if (hour >= 15 && hour < 18) {
+              statLight = "Ánh sáng: Tán xạ chiều dịu";
+            } else if (hour >= 5 && hour < 11) {
+              statLight = "Ánh sáng: Mềm dịu sáng sớm";
+            } else {
+              statLight = "Ánh sáng: Đèn phòng";
+            }
 
-        return Container(
-          width: double.infinity,
-          height: 290,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            image: DecorationImage(
-              image: NetworkImage(heroImage),
-              fit: BoxFit.cover,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF364534).withValues(alpha: 0.18),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              )
-            ],
-          ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withValues(alpha: 0.1),
-              Colors.black.withValues(alpha: 0.4),
-              const Color(0xFF1B1C1A).withValues(alpha: 0.88),
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Badge thời tiết mờ kính
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                  ),
-                  child: Text(
-                    badgeText,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+            final statNextWater = (hour >= 18 || hour < 5) ? "Lần tưới: Sáng mai" : "Lần tưới: Hôm nay";
+
+            return Container(
+              width: double.infinity,
+              height: 290,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                image: DecorationImage(
+                  image: NetworkImage(heroImage),
+                  fit: BoxFit.cover,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF364534).withValues(alpha: 0.65),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.wb_sunny_rounded, color: Color(0xFFFDE047), size: 12),
-                      const SizedBox(width: 5),
-                      Text(
-                        weatherText,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF364534).withValues(alpha: 0.18),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.4),
+                      const Color(0xFF1B1C1A).withValues(alpha: 0.88),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Tiêu đề chính
-            Text(
-              mainTitle,
-              style: GoogleFonts.inter(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                height: 1.25,
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Đường gạch mờ
-            Container(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
-            const SizedBox(height: 12),
-
-            // Các chỉ số sinh thái
-            Row(
-              children: [
-                _buildHeroStat(Icons.water_drop_outlined, statHumidity),
-                const SizedBox(width: 16),
-                _buildHeroStat(Icons.schedule, statNextWater),
-              ],
-            ),
-            const SizedBox(height: 6),
-            _buildHeroStat(Icons.wb_sunny_outlined, statLight),
-            if (config.advice.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                ),
-                child: Row(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.tips_and_updates_outlined, color: Color(0xFFFDE047), size: 13),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        config.advice,
-                        style: GoogleFonts.inter(
-                          fontSize: 10.5,
-                          color: Colors.white.withValues(alpha: 0.95),
-                          fontStyle: FontStyle.italic,
-                          height: 1.25,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                    // Badge thời tiết thực tế mờ kính (tự đổi biểu tượng trăng/nắng theo ngày/đêm)
+                    Builder(
+                      builder: (context) {
+                        IconData weatherIcon;
+                        if (!weather.isDay) {
+                          if (weather.weatherCode >= 51) {
+                            weatherIcon = Icons.water_drop_rounded;
+                          } else if (weather.weatherCode == 3) {
+                            weatherIcon = Icons.cloud_rounded;
+                          } else {
+                            weatherIcon = Icons.bedtime_rounded;
+                          }
+                        } else {
+                          if (weather.weatherCode >= 51) {
+                            weatherIcon = Icons.water_drop_rounded;
+                          } else if (weather.weatherCode == 3) {
+                            weatherIcon = Icons.cloud_rounded;
+                          } else {
+                            weatherIcon = Icons.wb_sunny_rounded;
+                          }
+                        }
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF364534).withValues(alpha: 0.72),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                weatherIcon,
+                                color: const Color(0xFFFDE047),
+                                size: 13,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                weatherText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Tiêu đề chính
+                    Text(
+                      mainTitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        height: 1.25,
                       ),
                     ),
+                    const SizedBox(height: 14),
+
+                    // Đường gạch mờ
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Các chỉ số sinh thái thực tế
+                    Row(
+                      children: [
+                        _buildHeroStat(Icons.water_drop_outlined, statHumidity),
+                        const SizedBox(width: 16),
+                        _buildHeroStat(Icons.schedule, statNextWater),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _buildHeroStat(Icons.wb_sunny_outlined, statLight),
+                    if (config.advice.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.tips_and_updates_outlined, color: Color(0xFFFDE047), size: 13),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                config.advice,
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontStyle: FontStyle.italic,
+                                  height: 1.25,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
-    );
+            );
+          },
+        );
       },
     );
   }

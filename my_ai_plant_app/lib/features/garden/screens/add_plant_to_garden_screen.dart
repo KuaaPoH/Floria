@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/gemini_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../providers/garden_provider.dart';
 import '../models/user_garden.dart';
@@ -430,12 +431,15 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
       text: _aiHintNotesCtrl.text.trim(),
     );
 
-    String reminderTime = "07:00";
+    // Giờ nhắc mặc định lấy theo khung giờ chuẩn trong màn hình "Nhắc tưới"
+    final String morningTime = NotificationService.cachedMorningTime;
+    final String eveningTime = NotificationService.cachedEveningTime;
+    String reminderTime = morningTime;
     final List<Map<String, String>> presetTimes = [
-      {"label": "07:00 (Sáng sớm)", "time": "07:00"},
-      {"label": "09:30", "time": "09:30"},
-      {"label": "17:30 (Chiều mát)", "time": "17:30"},
-      {"label": "20:00 (Tối)", "time": "20:00"},
+      {"label": "$morningTime (Sáng)", "time": morningTime},
+      if (morningTime != "09:30" && eveningTime != "09:30") {"label": "09:30", "time": "09:30"},
+      if (eveningTime != morningTime) {"label": "$eveningTime (Chiều)", "time": eveningTime},
+      if (morningTime != "20:00" && eveningTime != "20:00") {"label": "20:00 (Tối)", "time": "20:00"},
     ];
 
     showModalBottomSheet(

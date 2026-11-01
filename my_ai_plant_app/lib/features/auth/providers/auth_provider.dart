@@ -49,6 +49,10 @@ class AuthProvider extends ChangeNotifier {
   bool get isPremium => _isPremium;
   bool get hasCustomAvatar => _customPhotoUrl != null && _customPhotoUrl!.trim().isNotEmpty;
 
+  /// Tài khoản có đăng nhập bằng Email/Mật khẩu không (tài khoản Google thuần sẽ trả về false)
+  bool get canChangePassword =>
+      _auth.currentUser?.providerData.any((p) => p.providerId == 'password') ?? false;
+
   ShippingAddress? get defaultAddress {
     if (_addresses.isEmpty) return null;
     try {
@@ -69,18 +73,35 @@ class AuthProvider extends ChangeNotifier {
 
   /// Đường dẫn ảnh đại diện có hiệu lực:
   /// 1. Ưu tiên ảnh đại diện tùy chỉnh (customPhotoUrl) được tải lên trong ứng dụng
-  /// 2. Nếu không có, dùng ảnh đại diện Google (googlePhotoUrl / user.photoURL)
+  /// 2. Nếu không có, dùng ảnh đại diện Google (googlePhotoUrl / providerData / user.photoURL)
   /// 3. Nếu không có cả 2, trả về null để giao diện dùng chữ cái đầu hoặc avatar mặc định
   String? get effectivePhotoUrl {
-    if (_customPhotoUrl != null && _customPhotoUrl!.trim().isNotEmpty) {
+    if (_customPhotoUrl != null &&
+        _customPhotoUrl!.trim().isNotEmpty &&
+        _customPhotoUrl != 'None' &&
+        _customPhotoUrl != 'null') {
       return _customPhotoUrl;
     }
-    if (_googlePhotoUrl != null && _googlePhotoUrl!.trim().isNotEmpty) {
+    if (_googlePhotoUrl != null &&
+        _googlePhotoUrl!.trim().isNotEmpty &&
+        _googlePhotoUrl != 'None' &&
+        _googlePhotoUrl != 'null') {
       return _googlePhotoUrl;
     }
-    if (_auth.currentUser?.photoURL != null && _auth.currentUser!.photoURL!.trim().isNotEmpty) {
-      return _auth.currentUser!.photoURL;
-    }
+    // Tìm trong providerData (ví dụ tài khoản liên kết Google)
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        for (final p in user.providerData) {
+          if (p.photoURL != null && p.photoURL!.trim().isNotEmpty) {
+            return p.photoURL;
+          }
+        }
+        if (user.photoURL != null && user.photoURL!.trim().isNotEmpty) {
+          return user.photoURL;
+        }
+      }
+    } catch (_) {}
     return null;
   }
 
@@ -92,7 +113,18 @@ class AuthProvider extends ChangeNotifier {
         _userId = user.uid;
         _userName = user.displayName ?? "Nông Nghiệp Thông Minh";
         _userEmail = user.email;
-        _googlePhotoUrl = user.photoURL;
+
+        // Trích xuất photoURL: ưu tiên user.photoURL, nếu null thì tìm trong providerData (Google)
+        String? extractedPhoto = user.photoURL;
+        if (extractedPhoto == null || extractedPhoto.isEmpty) {
+          for (final p in user.providerData) {
+            if (p.photoURL != null && p.photoURL!.isNotEmpty) {
+              extractedPhoto = p.photoURL;
+              break;
+            }
+          }
+        }
+        _googlePhotoUrl = extractedPhoto;
         _subscribeToUserProfile(user.uid, user);
       } else {
         _userDocSubscription?.cancel();
@@ -119,6 +151,15 @@ class AuthProvider extends ChangeNotifier {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         _customPhotoUrl = data['customPhotoUrl'] as String?;
+        if (data['googlePhotoUrl'] != null && (data['googlePhotoUrl'] as String).trim().isNotEmpty) {
+          _googlePhotoUrl = data['googlePhotoUrl'] as String;
+        } else if (_googlePhotoUrl != null && _googlePhotoUrl!.isNotEmpty) {
+          // Lưu ngược lại Firestore nếu document chưa có googlePhotoUrl
+          _firestore.collection('Users').doc(uid).set({
+            'googlePhotoUrl': _googlePhotoUrl,
+          }, SetOptions(merge: true));
+        }
+
         if (data['displayName'] != null && (data['displayName'] as String).trim().isNotEmpty) {
           _userName = data['displayName'] as String;
         } else {
@@ -504,6 +545,22 @@ class AuthProvider extends ChangeNotifier {
       }
 
       if (cred.user != null) {
+        String? gPhoto = cred.user!.photoURL;
+        if (gPhoto == null || gPhoto.isEmpty) {
+          for (final p in cred.user!.providerData) {
+            if (p.photoURL != null && p.photoURL!.isNotEmpty) {
+              gPhoto = p.photoURL;
+              break;
+            }
+          }
+        }
+        if (gPhoto != null && gPhoto.isNotEmpty) {
+          _googlePhotoUrl = gPhoto;
+          await _firestore.collection('Users').doc(cred.user!.uid).set({
+            'googlePhotoUrl': gPhoto,
+            'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
+          }, SetOptions(merge: true));
+        }
         await _syncWithBackend(cred.user!);
       }
       return null; // Đăng nhập thành công
@@ -558,6 +615,15 @@ class AuthProvider extends ChangeNotifier {
         googleProvider.setCustomParameters({'prompt': 'select_account'});
         UserCredential cred = await _auth.signInWithPopup(googleProvider);
         if (cred.user != null) {
+          if (cred.user!.photoURL != null && cred.user!.photoURL!.isNotEmpty) {
+            _googlePhotoUrl = cred.user!.photoURL;
+            await _firestore.collection('Users').doc(cred.user!.uid).set({
+              'googlePhotoUrl': cred.user!.photoURL,
+              'email': cred.user!.email,
+              'displayName': cred.user!.displayName,
+              'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
+            }, SetOptions(merge: true));
+          }
           await _syncWithBackend(cred.user!);
         }
         return true;
@@ -575,6 +641,15 @@ class AuthProvider extends ChangeNotifier {
 
         UserCredential cred = await _auth.signInWithCredential(credential);
         if (cred.user != null) {
+          if (cred.user!.photoURL != null && cred.user!.photoURL!.isNotEmpty) {
+            _googlePhotoUrl = cred.user!.photoURL;
+            await _firestore.collection('Users').doc(cred.user!.uid).set({
+              'googlePhotoUrl': cred.user!.photoURL,
+              'email': cred.user!.email,
+              'displayName': cred.user!.displayName,
+              'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
+            }, SetOptions(merge: true));
+          }
           await _syncWithBackend(cred.user!);
         }
         return true;
