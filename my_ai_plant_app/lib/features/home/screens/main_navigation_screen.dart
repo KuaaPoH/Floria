@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/l10n/app_tr.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/services/notification_service.dart';
 import '../../garden/providers/garden_provider.dart';
 import 'home_screen.dart';
@@ -80,8 +82,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6), // surface color
+      backgroundColor: c.background, // surface color
       extendBody: false, // Tắt để không cho nội dung cuộn luồn ra sau thanh Nav Menu
       body: SizedBox.expand(
         child: IndexedStack(
@@ -95,16 +98,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           decoration: BoxDecoration(
-            color: const Color(0xFFFBF9F6), // Solid color, no glass effect to prevent content bleeding
+            color: c.surface, // Solid color, no glass effect to prevent content bleeding
             borderRadius: BorderRadius.circular(36), // Bo tron
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF364534).withValues(alpha: 0.12),
+                color: (c.isDark ? Colors.black : const Color(0xFF364534)).withValues(alpha: c.isDark ? 0.35 : 0.12),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),
               BoxShadow(
-                color: const Color(0xFFE4E2DF),
+                color: c.border,
                 spreadRadius: 1, // Vien mong
               )
             ],
@@ -138,7 +141,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     height: 48,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFEEEA), // Màu nền khi active
+                        color: c.surfaceTint, // Màu nền khi active
                         borderRadius: BorderRadius.circular(24),
                       ),
                     ),
@@ -147,11 +150,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildNavButton(Icons.home_outlined, Icons.home, "Trang chủ", 0, activeWidth, inactiveWidth),
-                      _buildNavButton(Icons.eco_outlined, Icons.eco, "Khu vườn", 1, activeWidth, inactiveWidth),
-                      _buildNavButton(Icons.camera_alt_outlined, Icons.camera_alt, "Camera", 2, activeWidth, inactiveWidth),
-                      _buildNavButton(Icons.shopping_bag_outlined, Icons.shopping_bag, "Cửa hàng", 3, activeWidth, inactiveWidth),
-                      _buildNavButton(Icons.person_outline, Icons.person, "Cá nhân", 4, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.home_outlined, Icons.home, context.tr("Trang chủ", "Home"), 0, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.eco_outlined, Icons.eco, context.tr("Khu vườn", "Garden"), 1, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.camera_alt_outlined, Icons.camera_alt, context.tr("Camera", "Scan"), 2, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.shopping_bag_outlined, Icons.shopping_bag, context.tr("Cửa hàng", "Shop"), 3, activeWidth, inactiveWidth),
+                      _buildNavButton(Icons.person_outline, Icons.person, context.tr("Cá nhân", "Profile"), 4, activeWidth, inactiveWidth),
                     ],
                   ),
                 ],
@@ -165,6 +168,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   Widget _buildNavButton(IconData normalIcon, IconData activeIcon, String label, int index, double activeWidth, double inactiveWidth) {
     final bool isActive = _currentIndex == index;
+    final c = context.colors;
     return GestureDetector(
       onTap: () => _onTabTapped(index),
       behavior: HitTestBehavior.opaque,
@@ -185,7 +189,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 child: Icon(
                   isActive ? activeIcon : normalIcon,
                   key: ValueKey<bool>(isActive),
-                  color: isActive ? const Color(0xFF364534) : const Color(0xFF747871),
+                  color: isActive ? (c.isDark ? c.primaryText : const Color(0xFF364534)) : c.textMuted,
                   size: isActive ? 22 : 24,
                 ),
               ),
@@ -206,7 +210,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF364534),
+                          color: c.isDark ? c.primaryText : const Color(0xFF364534),
                         ),
                       ),
                     ),

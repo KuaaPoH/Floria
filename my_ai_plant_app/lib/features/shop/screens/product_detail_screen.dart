@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../models/shop_product.dart';
 import '../providers/shop_provider.dart';
@@ -26,18 +28,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final p = widget.product;
     final shopProvider = Provider.of<ShopProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F5),
+      backgroundColor: c.background,
       body: CustomScrollView(
         slivers: [
           // Sliver AppBar với hình ảnh Hero lớn
           SliverAppBar(
             expandedHeight: 340,
             pinned: true,
-            backgroundColor: const Color(0xFF364534),
+            backgroundColor: c.isDark ? c.surface : const Color(0xFF364534),
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
@@ -126,7 +129,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4F9D69),
+                          color: c.primary,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
@@ -164,7 +167,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE5F4EA),
+                          color: c.surfaceTint,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -173,7 +176,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1,
-                            color: const Color(0xFF2E6F40),
+                            color: c.primary,
                           ),
                         ),
                       ),
@@ -186,14 +189,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1F2A21),
+                              color: c.textPrimary,
                             ),
                           ),
                           Text(
-                            " (${p.soldCount} đã bán)",
+                            " (${p.soldCount} ${context.tr('đã bán', 'sold')})",
                             style: GoogleFonts.inter(
                               fontSize: 13,
-                              color: const Color(0xFF747871),
+                              color: c.textMuted,
                             ),
                           ),
                         ],
@@ -208,7 +211,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF191C19),
+                      color: c.textPrimary,
                       height: 1.3,
                     ),
                   ),
@@ -224,7 +227,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF2E6F40),
+                          color: c.primary,
                         ),
                       ),
                       if (p.formattedOriginalPrice != null) ...[
@@ -234,7 +237,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF8C9388),
+                            color: c.textMuted,
                             decoration: TextDecoration.lineThrough,
                           ),
                         ),
@@ -242,21 +245,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Divider(color: Color(0xFFE0E5DD)),
+                  Divider(color: c.border),
                   const SizedBox(height: 16),
 
                   // Chỉ định điều trị bệnh cây (Chỉ có ở sản phẩm trị bệnh)
                   if (p.indications.isNotEmpty) ...[
                     Row(
                       children: [
-                        const Icon(Icons.healing_rounded, color: Color(0xFF2E6F40), size: 22),
+                        Icon(Icons.healing_rounded, color: c.primary, size: 22),
                         const SizedBox(width: 8),
                         Text(
-                          "Chỉ định điều trị",
+                          context.tr("Chỉ định điều trị", "Treatment Indications"),
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF191C19),
+                            color: c.textPrimary,
                           ),
                         ),
                       ],
@@ -269,21 +272,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
+                            color: c.surfaceTint,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFA5D6A7)),
+                            border: Border.all(color: c.primary.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.check_circle_rounded, color: Color(0xFF2E7D32), size: 14),
+                              Icon(Icons.check_circle_rounded, color: c.primary, size: 14),
                               const SizedBox(width: 6),
                               Text(
                                 ind,
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1B5E20),
+                                  color: c.primary,
                                 ),
                               ),
                             ],
@@ -296,11 +299,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                   // Mô tả chi tiết
                   Text(
-                    "Công dụng & Đặc tính",
+                    context.tr("Công dụng & Đặc tính", "Uses & Characteristics"),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF191C19),
+                      color: c.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -308,7 +311,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     p.description,
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: const Color(0xFF434940),
+                      color: c.textSecondary,
                       height: 1.6,
                     ),
                   ),
@@ -318,23 +321,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F8F3),
+                      color: c.surfaceMuted,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFC8E6C9)),
+                      border: Border.all(color: c.border),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.menu_book_rounded, color: Color(0xFF2E6F40), size: 20),
+                            Icon(Icons.menu_book_rounded, color: c.primary, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              "Hướng dẫn pha & Sử dụng",
+                              context.tr("Hướng dẫn pha & Sử dụng", "Mixing & Usage Guide"),
                               style: GoogleFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1F2A21),
+                                color: c.textPrimary,
                               ),
                             ),
                           ],
@@ -344,7 +347,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           p.usageGuide,
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: const Color(0xFF2E4532),
+                            color: c.textSecondary,
                             height: 1.5,
                           ),
                         ),
@@ -367,10 +370,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       bottomSheet: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: c.shadow,
               blurRadius: 16,
               offset: const Offset(0, -4),
             ),
@@ -383,15 +386,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Container(
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F0),
+                  color: c.surfaceMuted,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE0E5DD)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.remove_rounded, size: 18, color: Color(0xFF2E6F40)),
+                      icon: Icon(Icons.remove_rounded, size: 18, color: c.primary),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -407,12 +410,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1F2A21),
+                          color: c.textPrimary,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF2E6F40)),
+                      icon: Icon(Icons.add_rounded, size: 18, color: c.primary),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -426,7 +429,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
               // 2. Nút nhỏ: Thêm vào giỏ hàng (kèm hiệu ứng bay vào giỏ)
               Tooltip(
-                message: 'Thêm vào giỏ hàng',
+                message: context.tr('Thêm vào giỏ hàng', 'Add to cart'),
                 child: InkWell(
                   key: _addButtonKey,
                   onTap: () {
@@ -457,17 +460,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: _justAdded ? const Color(0xFF2E6F40) : const Color(0xFFE5F4EA),
+                      color: _justAdded ? c.primary : c.surfaceTint,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: _justAdded ? const Color(0xFF2E6F40) : const Color(0xFFA5D6A7),
+                        color: _justAdded ? c.primary : c.primary.withValues(alpha: 0.3),
                         width: 1.2,
                       ),
                     ),
                     child: Center(
                       child: Icon(
                         _justAdded ? Icons.check_rounded : Icons.add_shopping_cart_rounded,
-                        color: _justAdded ? Colors.white : const Color(0xFF2E6F40),
+                        color: _justAdded ? Colors.white : c.primary,
                         size: 22,
                       ),
                     ),
@@ -490,7 +493,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     },
                     icon: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 20),
                     label: Text(
-                      "Mua ngay",
+                      context.tr("Mua ngay", "Buy Now"),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -498,7 +501,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E6F40),
+                      backgroundColor: c.primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -515,6 +518,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildCustomerReviewsSection(BuildContext context, ShopProduct product) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -523,14 +527,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.rate_review_outlined, color: Color(0xFF2E6F40), size: 22),
+                Icon(Icons.rate_review_outlined, color: c.primary, size: 22),
                 const SizedBox(width: 8),
                 Text(
-                  "Đánh giá từ khách hàng",
+                  context.tr("Đánh giá từ khách hàng", "Customer Reviews"),
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF191C19),
+                    color: c.textPrimary,
                   ),
                 ),
               ],
@@ -545,10 +549,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: CircularProgressIndicator(color: Color(0xFF2E6F40)),
+                  padding: const EdgeInsets.all(20),
+                  child: CircularProgressIndicator(color: c.primary),
                 ),
               );
             }
@@ -568,27 +572,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE0E5DD)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.reviews_outlined, size: 36, color: Color(0xFF8C9388)),
+                    Icon(Icons.reviews_outlined, size: 36, color: c.textMuted),
                     const SizedBox(height: 8),
                     Text(
-                      'Chưa có đánh giá nào',
+                      context.tr('Chưa có đánh giá nào', 'No reviews yet'),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF191C19),
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét về sản phẩm này nhé!',
+                      context.tr(
+                        'Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét về sản phẩm này nhé!',
+                        'Be the first to experience and leave a review for this product!',
+                      ),
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF747871)),
+                      style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                     ),
                   ],
                 ),
@@ -610,9 +617,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: c.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE0E5DD)),
+                    border: Border.all(color: c.border),
                   ),
                   child: Row(
                     children: [
@@ -623,7 +630,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF191C19),
+                              color: c.textPrimary,
                             ),
                           ),
                           Row(
@@ -633,30 +640,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${sortedDocs.length} đánh giá',
-                            style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF747871)),
+                            '${sortedDocs.length} ${context.tr('đánh giá', 'reviews')}',
+                            style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
                           ),
                         ],
                       ),
                       const SizedBox(width: 20),
-                      Container(width: 1, height: 60, color: const Color(0xFFE0E5DD)),
+                      Container(width: 1, height: 60, color: c.border),
                       const SizedBox(width: 20),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Đánh giá thực tế từ khách hàng Floria',
+                              context.tr('Đánh giá thực tế từ khách hàng Floria', 'Real reviews from Floria customers'),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF191C19),
+                                color: c.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Hình ảnh thực tế & phản hồi sau khi nhận hàng và chăm cây.',
-                              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF5A6657)),
+                              context.tr(
+                                'Hình ảnh thực tế & phản hồi sau khi nhận hàng và chăm cây.',
+                                'Real photos & feedback after delivery and plant care.',
+                              ),
+                              style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary),
                             ),
                           ],
                         ),
@@ -682,14 +692,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
                     final dateStr = createdAt != null
                         ? '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}'
-                        : 'Vừa xong';
+                        : context.tr('Vừa xong', 'Just now');
 
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: c.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE0E5DD)),
+                        border: Border.all(color: c.border),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,12 +708,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 18,
-                                backgroundColor: const Color(0xFFE5F4EA),
-                                backgroundImage: userAvatar.isNotEmpty ? NetworkImage(userAvatar) : null,
-                                child: userAvatar.isEmpty
+                                backgroundColor: c.surfaceTint,
+                                backgroundImage: (userAvatar.isNotEmpty && !userAvatar.startsWith('preset:'))
+                                    ? NetworkImage(userAvatar)
+                                    : null,
+                                child: (userAvatar.isEmpty || userAvatar.startsWith('preset:'))
                                     ? Text(
                                         userName.isNotEmpty ? userName[0].toUpperCase() : 'F',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF2E6F40)),
+                                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.primary),
                                       )
                                     : null,
                               ),
@@ -717,13 +729,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF191C19),
+                                        color: c.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       dateStr,
-                                      style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF8C9388)),
+                                      style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
                                     ),
                                   ],
                                 ),
@@ -745,7 +757,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               comment,
                               style: GoogleFonts.inter(
                                 fontSize: 13,
-                                color: const Color(0xFF2E382C),
+                                color: c.textSecondary,
                                 height: 1.45,
                               ),
                             ),

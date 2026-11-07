@@ -7,9 +7,10 @@ class AppTheme {
   static const Color primaryDarkGreen = Color(0xFF0B6638);
   static const Color accentGreen = Color(0xFFE8F5E9);
   
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1E1E1E);
-  static const Color darkCard = Color(0xFF2C2C2C);
+  // Dark mode tông xanh rêu đêm (đồng bộ với AppColors.dark)
+  static const Color darkBackground = Color(0xFF0F1511);
+  static const Color darkSurface = Color(0xFF19211B);
+  static const Color darkCard = Color(0xFF19211B);
 
   static const Color lightBackground = Color(0xFFF5F7F5);
   static const Color lightSurface = Colors.white;
@@ -53,11 +54,17 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: primaryGreen,
       colorScheme: const ColorScheme.dark(
-        primary: primaryGreen,
-        secondary: primaryDarkGreen,
+        primary: Color(0xFF7FCB95),
+        onPrimary: Color(0xFF0F1511),
+        secondary: Color(0xFF3E8055),
         surface: darkSurface,
+        onSurface: Color(0xFFE6ECE6),
       ),
       scaffoldBackgroundColor: darkBackground,
+      dividerColor: const Color(0xFF2E3A31),
+      dialogTheme: const DialogThemeData(backgroundColor: darkSurface),
+      bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkSurface),
+      snackBarTheme: const SnackBarThemeData(contentTextStyle: TextStyle(color: Colors.white)),
       textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
       cardTheme: CardThemeData(
         color: darkCard,

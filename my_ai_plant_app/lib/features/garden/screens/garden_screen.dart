@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/l10n/app_tr.dart';
+import '../../../core/theme/app_colors.dart';
 import 'plant_detail_screen.dart';
 import 'create_garden_screen.dart';
 import 'add_plant_to_garden_screen.dart';
@@ -9,7 +11,6 @@ import '../../../core/widgets/shimmer_loading.dart';
 import '../providers/garden_provider.dart';
 import '../models/garden_plant.dart';
 import '../models/user_garden.dart';
-import '../../scan/screens/scan_screen.dart';
 import '../../../core/services/notification_service.dart';
 
 class GardenScreen extends StatefulWidget {
@@ -34,12 +35,13 @@ class _GardenScreenState extends State<GardenScreen> {
   Widget build(BuildContext context) {
     return Consumer<GardenProvider>(
       builder: (context, gardenProvider, child) {
+        final c = context.colors;
         final allPlants = gardenProvider.plants;
         final zones = gardenProvider.availableZones;
         if (_activeZoneIndex >= zones.length) {
           _activeZoneIndex = 0;
         }
-        final currentZone = zones.isNotEmpty ? zones[_activeZoneIndex] : "Tất cả";
+        final currentZone = zones.isNotEmpty ? zones[_activeZoneIndex] : context.tr("Tất cả", "All");
 
         List<GardenPlant> filteredPlants = gardenProvider.getPlantsByZone(currentZone);
         if (_searchQuery.trim().isNotEmpty) {
@@ -53,22 +55,22 @@ class _GardenScreenState extends State<GardenScreen> {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFBF9F6), // surface
+          backgroundColor: c.background,
           body: SafeArea(
             child: gardenProvider.isLoading && allPlants.isEmpty && !gardenProvider.hasGarden
-                ? _buildGardenSkeleton()
+                ? _buildGardenSkeleton(context)
                 : SingleChildScrollView(
                     padding: const EdgeInsets.only(top: 16, bottom: 24, left: 20, right: 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'BỘ SƯU TẬP CỦA BẠN',
+                          context.tr('BỘ SƯU TẬP CỦA BẠN', 'YOUR COLLECTION'),
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 2,
-                            color: const Color(0xFF6A756B),
+                            color: c.textMuted,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -76,26 +78,26 @@ class _GardenScreenState extends State<GardenScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Quản lý khu vườn',
+                              context.tr('Quản lý khu vườn', 'Garden Management'),
                               style: GoogleFonts.inter(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1B1C1A),
+                                color: c.textPrimary,
                                 letterSpacing: -1,
                               ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF364534).withOpacity(0.08),
+                                color: c.isDark ? c.surfaceTint : const Color(0xFF364534).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
-                                "${allPlants.length} Cây",
+                                "${allPlants.length} ${context.tr('Cây', 'Plants')}",
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF364534),
+                                  color: c.primaryText,
                                 ),
                               ),
                             ),
@@ -106,12 +108,12 @@ class _GardenScreenState extends State<GardenScreen> {
                         Container(
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: c.surface,
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: const Color(0xFFE4E2DF)),
+                            border: Border.all(color: c.border),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF364534).withOpacity(0.03),
+                                color: c.shadow.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               )
@@ -124,14 +126,14 @@ class _GardenScreenState extends State<GardenScreen> {
                                 _searchQuery = val;
                               });
                             },
-                            style: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF1B1C1A)),
+                            style: GoogleFonts.inter(fontSize: 15, color: c.textPrimary),
                             decoration: InputDecoration(
-                              hintText: 'Tìm kiếm cây, góc vườn...',
-                              hintStyle: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF747871)),
-                              prefixIcon: const Icon(Icons.search, color: Color(0xFF747871), size: 22),
+                              hintText: context.tr('Tìm kiếm cây, góc vườn...', 'Search plants, zones...'),
+                              hintStyle: GoogleFonts.inter(fontSize: 15, color: c.textMuted),
+                              prefixIcon: Icon(Icons.search, color: c.textMuted, size: 22),
                               suffixIcon: _searchQuery.isNotEmpty
                                   ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 18, color: Color(0xFF747871)),
+                                      icon: Icon(Icons.clear, size: 18, color: c.textMuted),
                                       onPressed: () {
                                         _searchCtrl.clear();
                                         setState(() {
@@ -156,7 +158,7 @@ class _GardenScreenState extends State<GardenScreen> {
                         // 3. Nếu đã có khu vườn thì mới hiển thị bộ lọc khu vực & danh sách cây
                         if (gardenProvider.hasGarden) ...[
                           const SizedBox(height: 32),
-                          _buildZoneFilters(zones),
+                          _buildZoneFilters(context, zones),
                           const SizedBox(height: 16),
                           _buildPlantGrid(context, allPlants, filteredPlants, currentZone),
                         ],
@@ -170,6 +172,7 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
   Widget _buildAttentionSection(BuildContext context, GardenProvider gardenProvider) {
+    final c = context.colors;
     final attentionList = gardenProvider.attentionPlants;
     if (attentionList.isEmpty) {
       return const SizedBox.shrink();
@@ -182,21 +185,21 @@ class _GardenScreenState extends State<GardenScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Cần chú ý',
+              context.tr('Cần chú ý', 'Needs Attention'),
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B1C1A),
+                color: c.textPrimary,
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFE06C00).withOpacity(0.12),
+                color: const Color(0xFFE06C00).withValues(alpha: c.isDark ? 0.25 : 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                "${attentionList.length} cây cần tưới",
+                "${attentionList.length} ${context.tr('cây cần tưới', 'need water')}",
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -208,161 +211,162 @@ class _GardenScreenState extends State<GardenScreen> {
         ),
         const SizedBox(height: 12),
         Column(
-            children: attentionList.map((plant) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE4E2DF)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF364534).withOpacity(0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CustomImage(
-                      imageUrl: plant.imageUrl ?? plant.wikiData['imageUrl'] ?? 'https://picsum.photos/seed/plant1/400/400',
-                      width: 72,
-                      height: 72,
-                      borderRadius: BorderRadius.circular(8),
+          children: attentionList.map((plant) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: c.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: c.shadow.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+                  CustomImage(
+                    imageUrl: plant.imageUrl ?? plant.wikiData['imageUrl'] ?? 'https://picsum.photos/seed/plant1/400/400',
+                    width: 72,
+                    height: 72,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          plant.zone.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: c.textMuted,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          plant.nickname,
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: c.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.water_drop, size: 14, color: Color(0xFFE06C00)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                "${context.tr('Đã đến hạn tưới', 'Watering due')} (${plant.waterFrequencyDays} ${context.tr('ngày/lần', 'days/time')})",
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFFE06C00),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            plant.zone.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF747871),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            plant.nickname,
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1B1C1A),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.water_drop, size: 14, color: Color(0xFFE06C00)),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  'Đã đến hạn tưới (${plant.waterFrequencyDays} ngày/lần)',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: const Color(0xFFE06C00),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: c.isDark ? c.primaryText : const Color(0xFF364534),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.check, color: c.isDark ? Colors.black : Colors.white, size: 20),
+                      tooltip: context.tr("Đã tưới nước", "Watered"),
+                      onPressed: () async {
+                        await gardenProvider.waterPlant(plant.id);
+                        NotificationService.silenceForToday(plant.id, 'water');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: const Color(0xFF1E3A24),
+                              elevation: 8,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              content: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.water_drop_rounded, color: Color(0xFF38BDF8), size: 20),
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF364534),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.check, color: Colors.white, size: 20),
-                        tooltip: "Đã tưới nước",
-                        onPressed: () async {
-                          await gardenProvider.waterPlant(plant.id);
-                          NotificationService.silenceForToday(plant.id, 'water');
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: const Color(0xFF1E3A24),
-                                elevation: 8,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                content: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.15),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.water_drop_rounded, color: Color(0xFF38BDF8), size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "Đã tưới nước cho '${plant.nickname}'! 💧",
-                                            style: GoogleFonts.inter(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 13.5,
-                                            ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "${context.tr('Đã tưới nước cho', 'Watered')} '${plant.nickname}'! 💧",
+                                          style: GoogleFonts.inter(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13.5,
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            "Lần tưới tiếp theo: sau ${plant.waterFrequencyDays} ngày.",
-                                            style: GoogleFonts.inter(
-                                              color: const Color(0xFFB4F4C2),
-                                              fontSize: 11.5,
-                                            ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          "${context.tr('Lần tưới tiếp theo: sau', 'Next watering in')} ${plant.waterFrequencyDays} ${context.tr('ngày.', 'days.')}",
+                                          style: GoogleFonts.inter(
+                                            color: const Color(0xFFB4F4C2),
+                                            fontSize: 11.5,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                duration: const Duration(seconds: 3),
+                                  ),
+                                ],
                               ),
-                            );
-                          }
-                        },
-                      ),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      },
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
 
   Widget _buildMyGardensSection(BuildContext context, GardenProvider gardenProvider, int plantCount) {
+    final c = context.colors;
     if (!gardenProvider.hasGarden) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Khu vườn của tôi',
+            context.tr('Khu vườn của tôi', 'My Garden'),
             style: GoogleFonts.inter(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1B1C1A),
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -370,12 +374,12 @@ class _GardenScreenState extends State<GardenScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFE4E2DF)),
+              border: Border.all(color: c.border),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF364534).withOpacity(0.04),
+                  color: c.shadow.withValues(alpha: 0.04),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -387,27 +391,30 @@ class _GardenScreenState extends State<GardenScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF364534).withOpacity(0.08),
+                    color: c.surfaceTint,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.yard_outlined, size: 36, color: Color(0xFF364534)),
+                  child: Icon(Icons.yard_outlined, size: 36, color: c.primaryText),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Bạn chưa có khu vườn nào",
+                  context.tr("Bạn chưa có khu vườn nào", "You have no gardens yet"),
                   style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Hãy tạo khu vườn đầu tiên để thiết lập môi trường, ánh sáng và bắt đầu phân loại không gian chăm sóc cây cảnh nhé!",
+                  context.tr(
+                    "Hãy tạo khu vườn đầu tiên để thiết lập môi trường, ánh sáng và bắt đầu phân loại không gian chăm sóc cây cảnh nhé!",
+                    "Create your first garden to configure lighting and start organizing plant care spaces!",
+                  ),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: const Color(0xFF747871),
+                    color: c.textMuted,
                     height: 1.45,
                   ),
                 ),
@@ -421,11 +428,11 @@ class _GardenScreenState extends State<GardenScreen> {
                   },
                   icon: const Icon(Icons.add_circle_outline, size: 18),
                   label: Text(
-                    "Tạo khu vườn ngay",
+                    context.tr("Tạo khu vườn ngay", "Create garden now"),
                     style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF364534),
+                    backgroundColor: const Color(0xFF2E6F40),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -449,11 +456,11 @@ class _GardenScreenState extends State<GardenScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Khu vườn của tôi',
+              context.tr('Khu vườn của tôi', 'My Garden'),
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B1C1A),
+                color: c.textPrimary,
               ),
             ),
             GestureDetector(
@@ -464,11 +471,11 @@ class _GardenScreenState extends State<GardenScreen> {
                 );
               },
               child: Text(
-                '+ Thêm vườn',
+                context.tr('+ Thêm vườn', '+ Add garden'),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF364534),
+                  color: c.primaryText,
                 ),
               ),
             ),
@@ -489,7 +496,7 @@ class _GardenScreenState extends State<GardenScreen> {
                   padding: const EdgeInsets.only(right: 14),
                   child: GestureDetector(
                     onTap: () => gardenProvider.selectGarden(g),
-                    child: _buildUserGardenCard(isActive, g, "$gCount cây"),
+                    child: _buildUserGardenCard(context, isActive, g, "$gCount ${context.tr('cây', 'plants')}"),
                   ),
                 );
               }),
@@ -501,7 +508,8 @@ class _GardenScreenState extends State<GardenScreen> {
     );
   }
 
-  Widget _buildUserGardenCard(bool isActive, UserGarden garden, String plantCountText) {
+  Widget _buildUserGardenCard(BuildContext context, bool isActive, UserGarden garden, String plantCountText) {
+    final c = context.colors;
     IconData envIcon;
     switch (garden.environment) {
       case 'Ngoài trời':
@@ -521,20 +529,20 @@ class _GardenScreenState extends State<GardenScreen> {
       width: 175,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF364534) : Colors.white,
+        color: isActive ? (c.isDark ? c.surfaceTint : const Color(0xFF364534)) : c.surface,
         borderRadius: BorderRadius.circular(20),
-        border: isActive ? null : Border.all(color: const Color(0xFFE4E2DF)),
+        border: isActive ? Border.all(color: c.primaryText, width: 1.5) : Border.all(color: c.border),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: const Color(0xFF364534).withOpacity(0.18),
+                  color: const Color(0xFF364534).withValues(alpha: 0.18),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 )
               ]
             : [
                 BoxShadow(
-                  color: const Color(0xFF364534).withOpacity(0.03),
+                  color: c.shadow.withValues(alpha: 0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 )
@@ -549,8 +557,8 @@ class _GardenScreenState extends State<GardenScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? Colors.white.withOpacity(0.15)
-                      : const Color(0xFF364534).withOpacity(0.08),
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : (c.isDark ? c.surfaceMuted : const Color(0xFF364534).withValues(alpha: 0.08)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -559,7 +567,7 @@ class _GardenScreenState extends State<GardenScreen> {
                     Icon(
                       envIcon,
                       size: 13,
-                      color: isActive ? Colors.white : const Color(0xFF364534),
+                      color: isActive ? Colors.white : c.primaryText,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -567,7 +575,7 @@ class _GardenScreenState extends State<GardenScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: isActive ? Colors.white : const Color(0xFF364534),
+                        color: isActive ? Colors.white : c.primaryText,
                       ),
                     ),
                   ],
@@ -581,7 +589,7 @@ class _GardenScreenState extends State<GardenScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isActive ? Colors.white : const Color(0xFF1B1C1A),
+              color: isActive ? Colors.white : c.textPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -592,7 +600,7 @@ class _GardenScreenState extends State<GardenScreen> {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: isActive ? Colors.white.withOpacity(0.75) : const Color(0xFF747871),
+              color: isActive ? Colors.white.withValues(alpha: 0.75) : c.textMuted,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -603,7 +611,7 @@ class _GardenScreenState extends State<GardenScreen> {
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isActive ? Colors.white.withOpacity(0.9) : const Color(0xFF364534),
+              color: isActive ? Colors.white.withValues(alpha: 0.9) : c.primaryText,
             ),
           ),
         ],
@@ -612,6 +620,7 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
   Widget _buildAddGardenCard(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -626,7 +635,7 @@ class _GardenScreenState extends State<GardenScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFFC4C8BF),
+            color: c.border,
             width: 1.5,
           ),
           color: Colors.transparent,
@@ -637,20 +646,20 @@ class _GardenScreenState extends State<GardenScreen> {
             Container(
               width: 36,
               height: 36,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE4E2DF),
+              decoration: BoxDecoration(
+                color: c.surfaceTint,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add_business_outlined, size: 20, color: Color(0xFF444842)),
+              child: Icon(Icons.add_business_outlined, size: 20, color: c.primaryText),
             ),
             const SizedBox(height: 10),
             Text(
-              'Thêm khu vườn',
+              context.tr('Thêm khu vườn', 'Add garden'),
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF444842),
+                color: c.textSecondary,
               ),
             ),
           ],
@@ -659,7 +668,8 @@ class _GardenScreenState extends State<GardenScreen> {
     );
   }
 
-  Widget _buildZoneFilters(List<String> zones) {
+  Widget _buildZoneFilters(BuildContext context, List<String> zones) {
+    final c = context.colors;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.none,
@@ -674,13 +684,13 @@ class _GardenScreenState extends State<GardenScreen> {
                 height: 32,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: isActive ? const Color(0xFF364534) : Colors.white,
+                  color: isActive ? (c.isDark ? c.primaryText : const Color(0xFF364534)) : c.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: isActive ? null : Border.all(color: const Color(0xFFE4E2DF)),
+                  border: isActive ? null : Border.all(color: c.border),
                   boxShadow: isActive
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF364534).withOpacity(0.15),
+                            color: const Color(0xFF364534).withValues(alpha: 0.15),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           )
@@ -693,7 +703,7 @@ class _GardenScreenState extends State<GardenScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    color: isActive ? Colors.white : const Color(0xFF444842),
+                    color: isActive ? (c.isDark ? Colors.black : Colors.white) : c.textSecondary,
                   ),
                 ),
               ),
@@ -710,14 +720,15 @@ class _GardenScreenState extends State<GardenScreen> {
     List<GardenPlant> filteredPlants,
     String currentZone,
   ) {
+    final c = context.colors;
     if (allPlants.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE4E2DF)),
+          border: Border.all(color: c.border),
         ),
         child: Column(
           children: [
@@ -725,27 +736,30 @@ class _GardenScreenState extends State<GardenScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFF364534).withOpacity(0.08),
+                color: c.surfaceTint,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.yard_outlined, size: 36, color: Color(0xFF364534)),
+              child: Icon(Icons.yard_outlined, size: 36, color: c.primaryText),
             ),
             const SizedBox(height: 16),
             Text(
-              "Khu vườn của bạn chưa có cây nào",
+              context.tr("Khu vườn của bạn chưa có cây nào", "Your garden has no plants yet"),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1B1C1A),
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              "Hãy chụp ảnh nhận diện cây cảnh cùng Trợ lý Floria và bấm 'Lưu vào vườn' để bắt đầu quản lý lịch tưới nhé!",
+              context.tr(
+                "Hãy chụp ảnh nhận diện cây cảnh cùng Trợ lý Floria và bấm 'Lưu vào vườn' để bắt đầu quản lý lịch tưới nhé!",
+                "Identify plants with Floria and tap 'Save to garden' to start managing your watering schedule!",
+              ),
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: const Color(0xFF747871),
+                color: c.textMuted,
                 height: 1.4,
               ),
             ),
@@ -758,9 +772,9 @@ class _GardenScreenState extends State<GardenScreen> {
                 );
               },
               icon: const Icon(Icons.add_a_photo_outlined, size: 18),
-              label: Text("Thêm cây đầu tiên ngay", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              label: Text(context.tr("Thêm cây đầu tiên ngay", "Add first plant now"), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF364534),
+                backgroundColor: const Color(0xFF2E6F40),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -776,17 +790,17 @@ class _GardenScreenState extends State<GardenScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE4E2DF)),
+          border: Border.all(color: c.border),
         ),
         child: Column(
           children: [
-            const Icon(Icons.search_off, size: 40, color: Color(0xFF747871)),
+            Icon(Icons.search_off, size: 40, color: c.textMuted),
             const SizedBox(height: 8),
             Text(
-              "Không tìm thấy cây nào phù hợp trong '$currentZone'",
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF747871)),
+              "${context.tr('Không tìm thấy cây nào phù hợp trong', 'No matching plants found in')} '$currentZone'",
+              style: GoogleFonts.inter(fontSize: 14, color: c.textMuted),
             ),
           ],
         ),
@@ -815,6 +829,7 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
   Widget _buildAddPlantCard(BuildContext context, String currentZone) {
+    final c = context.colors;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -824,10 +839,10 @@ class _GardenScreenState extends State<GardenScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFD4E8CE).withOpacity(0.3), // secondary-container / 30
+          color: c.surfaceTint.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFF364534).withOpacity(0.2),
+            color: c.primaryText.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -837,19 +852,19 @@ class _GardenScreenState extends State<GardenScreen> {
             Container(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
-                color: Color(0xFF364534),
+              decoration: BoxDecoration(
+                color: c.isDark ? c.primaryText : const Color(0xFF364534),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add, size: 24, color: Colors.white),
+              child: Icon(Icons.add, size: 24, color: c.isDark ? Colors.black : Colors.white),
             ),
             const SizedBox(height: 12),
             Text(
-              'Thêm cây',
+              context.tr('Thêm cây', 'Add plant'),
               style: GoogleFonts.inter(
                 fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF364534),
+                fontWeight: FontWeight.w600,
+                color: c.textPrimary,
               ),
             ),
           ],
@@ -859,6 +874,7 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
   Widget _buildPlantCard(BuildContext context, GardenPlant plant) {
+    final c = context.colors;
     final statusText = plant.effectiveStatusText;
     Color statusColor;
     if (statusText.startsWith('Bị') || statusText == 'Cần điều trị') {
@@ -872,6 +888,24 @@ class _GardenScreenState extends State<GardenScreen> {
     } else {
       statusColor = const Color(0xFF15803D);
     }
+
+    String displayStatus = statusText;
+    if (statusText == 'Khỏe mạnh') {
+      displayStatus = context.tr('Khỏe mạnh', 'Healthy');
+    } else if (statusText == 'Cần tưới nước') {
+      displayStatus = context.tr('Cần tưới nước', 'Needs water');
+    } else if (statusText == 'Cần bón phân') {
+      displayStatus = context.tr('Cần bón phân', 'Needs feed');
+    } else if (statusText == 'Cần kiểm tra') {
+      displayStatus = context.tr('Cần kiểm tra', 'Needs check');
+    } else if (statusText == 'Cần chú ý') {
+      displayStatus = context.tr('Cần chú ý', 'Attention');
+    } else if (statusText == 'Cần điều trị') {
+      displayStatus = context.tr('Cần điều trị', 'Treatment');
+    } else if (statusText == 'Đang phục hồi') {
+      displayStatus = context.tr('Đang phục hồi', 'Recovering');
+    }
+
     final imgUrl = plant.imageUrl ?? plant.wikiData['imageUrl'] ?? 'https://picsum.photos/seed/plant2/400/400';
 
     return GestureDetector(
@@ -883,12 +917,12 @@ class _GardenScreenState extends State<GardenScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE4E2DF)),
+          border: Border.all(color: c.border),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF364534).withOpacity(0.03),
+              color: c.shadow.withValues(alpha: 0.03),
               blurRadius: 12,
               offset: const Offset(0, 4),
             )
@@ -912,9 +946,9 @@ class _GardenScreenState extends State<GardenScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.92),
+                        color: c.isDark ? c.surface.withValues(alpha: 0.92) : Colors.white.withValues(alpha: 0.92),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white),
+                        border: Border.all(color: c.border),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -929,11 +963,11 @@ class _GardenScreenState extends State<GardenScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            statusText,
+                            displayStatus,
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1B1C1A),
+                              color: c.textPrimary,
                             ),
                           ),
                         ],
@@ -953,7 +987,7 @@ class _GardenScreenState extends State<GardenScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF747871),
+                      color: c.textMuted,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -963,7 +997,7 @@ class _GardenScreenState extends State<GardenScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1B1C1A),
+                      color: c.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -977,7 +1011,8 @@ class _GardenScreenState extends State<GardenScreen> {
     );
   }
 
-  Widget _buildGardenSkeleton() {
+  Widget _buildGardenSkeleton(BuildContext context) {
+    final c = context.colors;
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 16, bottom: 24, left: 20, right: 20),
       child: Column(
@@ -1001,9 +1036,9 @@ class _GardenScreenState extends State<GardenScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE0E5DD)),
+              border: Border.all(color: c.border),
             ),
             child: Row(
               children: [
@@ -1060,9 +1095,9 @@ class _GardenScreenState extends State<GardenScreen> {
             itemBuilder: (context, index) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE0E5DD)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

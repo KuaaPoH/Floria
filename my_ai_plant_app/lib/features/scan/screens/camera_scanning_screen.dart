@@ -7,6 +7,7 @@ import '../providers/scan_provider.dart';
 import 'dart:ui';
 import 'dart:math' as math;
 import 'diagnosis_report_screen.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class CameraScanningScreen extends StatefulWidget {
   final String selectedModel;
@@ -281,7 +282,7 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          'Đưa lá bệnh vào giữa khung hình',
+                          context.tr('Đưa lá bệnh vào giữa khung hình', 'Position the diseased leaf in frame'),
                           style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white),
                         ),
                       ),
@@ -340,7 +341,7 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                'Nhận diện cây',
+                                context.tr('Nhận diện cây', 'Plant ID'),
                                 style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.7)),
                               ),
                             ),
@@ -354,7 +355,7 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
                                 ],
                               ),
                               child: Text(
-                                'Chẩn đoán bệnh',
+                                context.tr('Chẩn đoán bệnh', 'Diagnosis'),
                                 style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white),
                               ),
                             ),

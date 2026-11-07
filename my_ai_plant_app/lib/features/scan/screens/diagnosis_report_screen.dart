@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,9 +12,10 @@ import 'dart:async';
 import '../../garden/providers/garden_provider.dart';
 import '../../garden/models/garden_plant.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
-import '../../shop/screens/shop_screen.dart';
 import '../models/disease_info.dart';
 import '../services/disease_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class DiagnosisReportScreen extends StatefulWidget {
   final bool isDiseaseScan;
@@ -33,7 +33,6 @@ class DiagnosisReportScreen extends StatefulWidget {
 
 class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   int _selectedResultIndex = 0;
-  bool _isSwitching = false;
   Future<Map<String, dynamic>?>? _plantDataFuture;
   String? _currentDocId;
   OverlayEntry? _topNotificationEntry;
@@ -93,18 +92,6 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
 
     return null;
   }
-
-  // Design Tokens (Verdant Care Template)
-  static const Color primary = Color(0xFF6d7f69);
-  static const Color primaryStrong = Color(0xFF4d5d4a);
-  static const Color primarySoft = Color(0xFFe5eae1);
-  static const Color bg = Color(0xFFf1f0ea);
-  static const Color surfaceSolid = Color(0xFFfbfaf6);
-  static const Color text = Color(0xFF1f251f);
-  static const Color textMuted = Color(0xFF6d736a);
-  static const Color stateInfo = Color(0xFF7b8b87);
-  static const Color stateWarning = Color(0xFFb08f63);
-  static const Color stateError = Color(0xFFa26e69);
 
   @override
   Widget build(BuildContext context) {
@@ -166,21 +153,23 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
       }
     }
 
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: c.background,
       body: Stack(
         children: [
           // Ambient Background Gradient
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFFf7f6f1),
-                    bg,
-                    Color(0xFFeceae3),
+                    c.background,
+                    c.surface,
+                    c.background,
                   ],
                 ),
               ),
@@ -214,7 +203,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        "Lỗi kết nối máy chủ",
+                                        context.tr("Lỗi kết nối máy chủ", "Server Connection Error"),
                                         style: GoogleFonts.inter(
                                           color: Colors.red.shade900,
                                           fontWeight: FontWeight.bold,
@@ -233,13 +222,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                 ElevatedButton.icon(
                                   onPressed: () => Navigator.pop(context),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF364534),
+                                    backgroundColor: c.primary,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   ),
                                   icon: const Icon(Icons.arrow_back, size: 16),
-                                  label: const Text("Quay lại kiểm tra"),
+                                  label: Text(context.tr("Quay lại kiểm tra", "Back")),
                                 ),
                               ],
                             ),
@@ -259,7 +248,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    message.isNotEmpty ? message : "Hệ thống phát hiện ảnh không phải thực vật hoặc quá mờ.",
+                                    message.isNotEmpty ? message : context.tr("Hệ thống phát hiện ảnh không phải thực vật hoặc quá mờ.", "System detected image is not a plant or is too blurry."),
                                     style: GoogleFonts.inter(color: Colors.red.shade800, fontWeight: FontWeight.w600, fontSize: 13),
                                   ),
                                 ),
@@ -281,6 +270,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildContentBlock(ScanProvider scanProvider, String mainTitle, double confidence) {
+    final c = context.colors;
     List<dynamic> top3 = [];
     if (scanProvider.scanResult != null) {
       if (scanProvider.scanResult!['top_predictions'] != null) {
@@ -332,35 +322,35 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.85),
+                color: c.surface,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
                   const Icon(Icons.cloud_off_rounded, size: 44, color: Colors.red),
                   const SizedBox(height: 12),
                   Text(
-                    "Lỗi phân tích bệnh lá",
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text),
+                    context.tr("Lỗi phân tích bệnh lá", "Leaf Diagnosis Error"),
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     scanProvider.errorMessage!,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(fontSize: 13, color: textMuted),
+                    style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryStrong,
+                      backgroundColor: c.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                     icon: const Icon(Icons.arrow_back, size: 18),
-                    label: Text("Quay lại", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    label: Text(context.tr("Quay lại", "Back"), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
@@ -392,12 +382,12 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
+              color: c.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: primary.withOpacity(0.12)),
+              border: Border.all(color: c.primary.withValues(alpha: 0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: c.shadow,
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -408,28 +398,34 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 Icon(
                   scanProvider.errorMessage != null ? Icons.wifi_off_rounded : Icons.spa_outlined,
                   size: 44,
-                  color: textMuted,
+                  color: c.textMuted,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   scanProvider.errorMessage != null
-                      ? "Không thể nhận kết quả từ máy chủ"
-                      : "Không thể nhận diện rõ loại cây này",
+                      ? context.tr("Không thể nhận kết quả từ máy chủ", "Could not get results from server")
+                      : context.tr("Không thể nhận diện rõ loại cây này", "Could not identify this plant"),
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: text,
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   scanProvider.errorMessage != null
-                      ? "Vui lòng kiểm tra kết nối tới Backend Spring Boot trên cổng 8080."
-                      : "Hãy chụp ảnh lại gần hơn, đầy đủ ánh sáng và lấy nét trực diện vào lá cây.",
+                      ? context.tr(
+                          "Vui lòng kiểm tra kết nối tới Backend Spring Boot trên cổng 8080.",
+                          "Please check connection to Backend Spring Boot on port 8080.",
+                        )
+                      : context.tr(
+                          "Hãy chụp ảnh lại gần hơn, đầy đủ ánh sáng và lấy nét trực diện vào lá cây.",
+                          "Please retake photo closer, with good lighting and focused on the leaf.",
+                        ),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: textMuted,
+                    color: c.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -437,13 +433,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 ElevatedButton.icon(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryStrong,
+                    backgroundColor: c.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                  label: Text("Chụp lại ảnh khác", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text(context.tr("Chụp lại ảnh khác", "Retake another photo"), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -514,6 +510,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildHeader(BuildContext context, double confidence, bool isLoading) {
+    final c = context.colors;
      return Padding(
        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
        child: Row(
@@ -522,7 +519,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
            Row(
              children: [
                IconButton(
-                 icon: const Icon(Icons.arrow_back_ios_new, color: text, size: 20),
+                 icon: Icon(Icons.arrow_back_ios_new, color: c.textPrimary, size: 20),
                  onPressed: () {
                    Provider.of<ScanProvider>(context, listen: false).reset();
                    Navigator.pop(context);
@@ -532,16 +529,18 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.isDiseaseScan ? "CHẨN ĐOÁN BỆNH" : "KẾT QUẢ NHẬN DIỆN",
-                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: textMuted),
+                      widget.isDiseaseScan
+                          ? context.tr("CHẨN ĐOÁN BỆNH", "DISEASE DIAGNOSIS")
+                          : context.tr("KẾT QUẢ NHẬN DIỆN", "IDENTIFICATION RESULT"),
+                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: c.textMuted),
                     ),
                    Text(
-                     "Kết quả quét",
-                     style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: text, letterSpacing: -0.5),
+                     context.tr("Kết quả quét", "Scan Results"),
+                     style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: c.textPrimary, letterSpacing: -0.5),
                    ),
                    Text(
                      isLoading ? "--%" : "${confidence.toInt()}%",
-                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: widget.isDiseaseScan ? stateError : primaryStrong),
+                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: widget.isDiseaseScan ? const Color(0xFFDC2626) : c.primary),
                    ),
                  ],
                ),
@@ -553,6 +552,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildHeroCard(ScanProvider provider, String title, Map<String, dynamic>? data, double confidence) {
+    final c = context.colors;
     String displayName = title;
     if (widget.isDiseaseScan && provider.scanResult != null && provider.scanResult!['prediction_vi'] != null) {
       displayName = provider.scanResult!['prediction_vi'].toString();
@@ -563,10 +563,10 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
       if (_selectedResultIndex < t3.length && t3[_selectedResultIndex] is Map && t3[_selectedResultIndex]['name_vi'] != null) {
         displayName = t3[_selectedResultIndex]['name_vi'].toString();
       } else if (provider.isLoading || data == null) {
-        displayName = "Đang tra cứu...";
+        displayName = context.tr("Đang tra cứu...", "Looking up...");
       }
     } else if (provider.isLoading || data == null) {
-      displayName = "Đang tra cứu...";
+      displayName = context.tr("Đang tra cứu...", "Looking up...");
     }
 
     final bool isHealthy = widget.isDiseaseScan &&
@@ -576,16 +576,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withOpacity(0.8),
-            stateInfo.withOpacity(0.15),
-          ],
-        ),
-        border: Border.all(color: primary.withOpacity(0.15)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 24, offset: const Offset(0, 8))],
+        color: c.surface,
+        border: Border.all(color: c.border),
+        boxShadow: [BoxShadow(color: c.shadow, blurRadius: 24, offset: const Offset(0, 8))],
       ),
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -597,7 +590,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             height: 154,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              color: Colors.grey.shade200,
+              color: c.surfaceMuted,
             ),
             child: Stack(
               fit: StackFit.expand,
@@ -621,7 +614,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                         color: Colors.black.withOpacity(0.35),
                         alignment: Alignment.center,
                         child: Text(
-                          "Ảnh vừa quét",
+                          context.tr("Ảnh vừa quét", "Scanned photo"),
                           style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ),
@@ -641,8 +634,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: widget.isDiseaseScan 
-                        ? (isHealthy ? primaryStrong.withOpacity(0.15) : stateError.withOpacity(0.15))
-                        : stateInfo.withOpacity(0.15),
+                        ? (isHealthy ? c.primary.withOpacity(0.15) : const Color(0xFFDC2626).withOpacity(0.15))
+                        : c.surfaceTint,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -653,23 +646,23 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                             ? (isHealthy ? Icons.verified_rounded : Icons.coronavirus)
                             : Icons.auto_awesome,
                         color: widget.isDiseaseScan
-                            ? (isHealthy ? primaryStrong : stateError)
-                            : primaryStrong,
+                            ? (isHealthy ? c.primary : const Color(0xFFDC2626))
+                            : c.primary,
                         size: 14,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         provider.isLoading 
-                          ? "Đang xử lý..." 
+                          ? context.tr("Đang xử lý...", "Processing...") 
                           : widget.isDiseaseScan 
-                            ? (provider.scanResult?['severity_vi']?.toString() ?? (isHealthy ? "Khỏe mạnh" : "Cảnh báo bệnh"))
-                            : (_selectedResultIndex == 0 ? "Khớp tốt nhất" : (_selectedResultIndex == 1 ? "Gần giống" : "Ít khả năng")),
+                            ? (provider.scanResult?['severity_vi']?.toString() ?? (isHealthy ? context.tr("Khỏe mạnh", "Healthy") : context.tr("Cảnh báo bệnh", "Disease Warning")))
+                            : (_selectedResultIndex == 0 ? context.tr("Khớp tốt nhất", "Best match") : (_selectedResultIndex == 1 ? context.tr("Gần giống", "Similar") : context.tr("Ít khả năng", "Low match"))),
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: widget.isDiseaseScan
-                              ? (isHealthy ? primaryStrong : stateError)
-                              : primaryStrong,
+                              ? (isHealthy ? c.primary : const Color(0xFFDC2626))
+                              : c.primary,
                         ),
                       ),
                     ],
@@ -678,7 +671,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 const SizedBox(height: 8),
                 Text(
                   displayName,
-                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: text, height: 1.15, letterSpacing: -0.5),
+                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: c.textPrimary, height: 1.15, letterSpacing: -0.5),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -689,28 +682,28 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   children: [
                     if (widget.isDiseaseScan) ...[
                       if (widget.currentPlant != null)
-                        _buildTag(widget.currentPlant!.nameVi, color: primarySoft, textColor: primaryStrong),
+                        _buildTag(widget.currentPlant!.nameVi, color: c.surfaceTint, textColor: c.primary),
                       _buildTag(
-                        provider.scanResult?['severity_vi']?.toString() ?? (isHealthy ? "An toàn" : "Cần xử lý"),
-                        color: isHealthy ? primarySoft : stateError.withOpacity(0.15),
-                        textColor: isHealthy ? primaryStrong : stateError,
+                        provider.scanResult?['severity_vi']?.toString() ?? (isHealthy ? context.tr("An toàn", "Safe") : context.tr("Cần xử lý", "Needs Care")),
+                        color: isHealthy ? c.surfaceTint : const Color(0xFFDC2626).withOpacity(0.15),
+                        textColor: isHealthy ? c.primary : const Color(0xFFDC2626),
                       ),
                     ],
                     if (!widget.isDiseaseScan && data != null && data['placements'] != null)
                       ...((data['placements'] as List<dynamic>).map((e) => _buildTag(e.toString()))),
                     if (!widget.isDiseaseScan && data == null)
-                      _buildTag(provider.isLoading ? "Đang tra cứu..." : "Cây cảnh"),
+                      _buildTag(provider.isLoading ? context.tr("Đang tra cứu...", "Looking up...") : context.tr("Cây cảnh", "Plant")),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
                   widget.isDiseaseScan 
                     ? (provider.scanResult?['cause']?.toString() ?? 
-                       (isHealthy ? "Cây không có dấu hiệu nhiễm bệnh." : "Cây có dấu hiệu nhiễm mầm bệnh. Cần xử lý sớm để tránh lây lan."))
+                       (isHealthy ? context.tr("Cây không có dấu hiệu nhiễm bệnh.", "Plant has no signs of infection.") : context.tr("Cây có dấu hiệu nhiễm mầm bệnh. Cần xử lý sớm để tránh lây lan.", "Plant shows signs of infection. Early treatment recommended.")))
                     : (data != null && data['short_desc'] != null 
                         ? data['short_desc'] 
                         : ""),
-                  style: GoogleFonts.inter(fontSize: 12, color: textMuted, height: 1.4),
+                  style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary, height: 1.4),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -723,13 +716,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildTag(String text, {Color? color, Color? textColor}) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withOpacity(0.7),
+        color: color ?? c.surfaceMuted,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(text, style: GoogleFonts.inter(fontSize: 11, color: textColor ?? textMuted)),
+      child: Text(text, style: GoogleFonts.inter(fontSize: 11, color: textColor ?? c.textSecondary)),
     );
   }
 
@@ -794,6 +788,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildResultStack(ScanProvider scanProvider, [Map<String, dynamic>? currentPlantData]) {
+    final c = context.colors;
     List<dynamic> top3 = [];
     if (scanProvider.scanResult != null) {
       if (scanProvider.scanResult!['top_predictions'] != null) {
@@ -825,7 +820,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
         }
         return cleanTitle;
       }
-      return index == 1 ? "Gần giống" : "Ít khả năng";
+      return index == 1 ? context.tr("Gần giống", "Similar") : context.tr("Ít khả năng", "Low match");
     }
 
     String getScore(int index) {
@@ -851,13 +846,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.4)],
-        ),
-        border: Border.all(color: Colors.white.withOpacity(0.8)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
+        color: c.surface,
+        border: Border.all(color: c.border),
+        boxShadow: [BoxShadow(color: c.shadow, blurRadius: 20)],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -867,8 +858,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: stateWarning.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-              child: Text("Cảnh báo: AI không nhận diện được cây hợp lệ trong ảnh.", style: GoogleFonts.inter(color: stateWarning, fontWeight: FontWeight.bold)),
+              decoration: BoxDecoration(color: const Color(0xFFB08F63).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+              child: Text(context.tr("Cảnh báo: AI không nhận diện được cây hợp lệ trong ảnh.", "Warning: AI could not detect a valid plant in photo."), style: GoogleFonts.inter(color: const Color(0xFFB08F63), fontWeight: FontWeight.bold)),
             ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -876,17 +867,17 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isPerfectMatch ? "1 KẾT QUẢ" : "$matchCount KẾT QUẢ", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-                  Text("Độ tương đồng", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
+                  Text(isPerfectMatch ? "1 ${context.tr('KẾT QUẢ', 'RESULT')}" : "$matchCount ${context.tr('KẾT QUẢ', 'RESULTS')}", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: c.textMuted)),
+                  Text(context.tr("Độ tương đồng", "Similarity Score"), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
+                  color: c.surfaceTint,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text("Khớp nhất", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: primaryStrong)),
+                child: Text(context.tr("Khớp nhất", "Top match"), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: c.primary)),
               ),
             ],
           ),
@@ -895,20 +886,20 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             _buildResultRow(
               index: 0,
               title: "1. ${getTitle(0)}", 
-              desc: "Khớp cao nhất với đặc điểm nhận diện.", 
+              desc: context.tr("Khớp cao nhất với đặc điểm nhận diện.", "Highest match with detected traits."), 
               score: getScore(0), 
-              bgColor: primary.withOpacity(0.16),
-              scoreColor: primaryStrong
+              bgColor: c.surfaceMuted,
+              scoreColor: c.primary
             ),
           if (!isPerfectMatch && top3.length > 1 && getScore(1) != "0%") ...[
             const SizedBox(height: 12),
             _buildResultRow(
               index: 1,
               title: "2. ${getTitle(1)}", 
-              desc: "Hình thái gần giống nhưng chi tiết khác.", 
+              desc: context.tr("Hình thái gần giống nhưng chi tiết khác.", "Similar morphology but differs in details."), 
               score: getScore(1), 
-              bgColor: stateInfo.withOpacity(0.12),
-              scoreColor: stateInfo
+              bgColor: c.surfaceMuted,
+              scoreColor: c.textSecondary
             ),
           ],
           if (!isPerfectMatch && top3.length > 2 && getScore(2) != "0%") ...[
@@ -916,10 +907,10 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             _buildResultRow(
               index: 2,
               title: "3. ${getTitle(2)}", 
-              desc: "Có sắc độ tương tự nhưng sai biệt lớn.", 
+              desc: context.tr("Có sắc độ tương tự nhưng sai biệt lớn.", "Similar tones but significant differences."), 
               score: getScore(2), 
-              bgColor: textMuted.withOpacity(0.1),
-              scoreColor: textMuted
+              bgColor: c.surfaceMuted,
+              scoreColor: c.textMuted
             ),
           ],
         ],
@@ -928,27 +919,21 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildResultRow({required int index, required String title, required String desc, required String score, required Color bgColor, required Color scoreColor}) {
+    final c = context.colors;
     bool isSelected = _selectedResultIndex == index;
     return GestureDetector(
       onTap: () async {
         if (_selectedResultIndex == index) return;
         setState(() {
-          _isSwitching = true;
           _selectedResultIndex = index;
         });
-        await Future.delayed(const Duration(milliseconds: 350));
-        if (mounted) {
-          setState(() {
-            _isSwitching = false;
-          });
-        }
       },
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? bgColor.withOpacity(0.4) : bgColor,
+          color: isSelected ? c.surfaceTint : bgColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? primary : Colors.white.withOpacity(0.72), width: isSelected ? 2 : 1),
+          border: Border.all(color: isSelected ? c.primary : c.border, width: isSelected ? 2 : 1),
         ),
         child: Row(
         children: [
@@ -956,9 +941,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: text), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: c.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text(desc, style: GoogleFonts.inter(fontSize: 12, color: textMuted)),
+                Text(desc, style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary)),
               ],
             ),
           ),
@@ -977,19 +962,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-
-
   Widget _buildInfoCard(String mainTitle, Map<String, dynamic>? data) {
+    final c = context.colors;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [stateInfo.withOpacity(0.12), Colors.white.withOpacity(0.92)],
-        ),
-        border: Border.all(color: stateInfo.withOpacity(0.16)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
+        color: c.surface,
+        border: Border.all(color: c.border),
+        boxShadow: [BoxShadow(color: c.shadow, blurRadius: 20)],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1001,17 +981,17 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("HỒ SƠ CÂY", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-                  Text("Thông tin cơ bản", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
+                  Text(context.tr("HỒ SƠ CÂY", "PLANT PROFILE"), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: c.textMuted)),
+                  Text(context.tr("Thông tin cơ bản", "Basic Info"), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: primary.withOpacity(0.14),
+                  color: c.surfaceTint,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(data != null ? (data['plant_type'] ?? "Thực vật") : "Dễ chăm", style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: primaryStrong)),
+                child: Text(data != null ? (data['plant_type'] ?? context.tr("Thực vật", "Flora")) : context.tr("Dễ chăm", "Easy care"), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: c.primary)),
               ),
             ],
           ),
@@ -1020,9 +1000,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _buildInfoCell("Tên tiếng Việt", data?['name_vi'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildInfoCell(context.tr("Tên tiếng Việt", "Vietnamese Name"), data?['name_vi'] ?? context.tr("Đang cập nhật...", "Updating..."))),
                 const SizedBox(width: 12),
-                Expanded(child: _buildInfoCell("Tên quốc tế", data?['scientific_name'] ?? mainTitle)),
+                Expanded(child: _buildInfoCell(context.tr("Tên quốc tế", "Scientific Name"), data?['scientific_name'] ?? mainTitle)),
               ],
             ),
           ),
@@ -1031,20 +1011,21 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _buildInfoCell("Họ thực vật", data?['family'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildInfoCell(context.tr("Họ thực vật", "Family"), data?['family'] ?? context.tr("Đang cập nhật...", "Updating..."))),
                 const SizedBox(width: 12),
-                Expanded(child: _buildInfoCell("Nguồn gốc", data?['origin'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildInfoCell(context.tr("Nguồn gốc", "Origin"), data?['origin'] ?? context.tr("Đang cập nhật...", "Updating..."))),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          _buildInfoCell("Độ khó chăm", data?['difficulty'] ?? "Đang cập nhật..."),
+          _buildInfoCell(context.tr("Độ khó chăm", "Care Level"), data?['difficulty'] ?? context.tr("Đang cập nhật...", "Updating...")),
         ],
       ),
     );
   }
 
   Widget _buildDiseasePathologyCard(ScanProvider scanProvider) {
+    final c = context.colors;
     final result = scanProvider.scanResult;
     final String prediction = result?['prediction']?.toString() ?? "Healthy";
     final String predictionVi = result?['prediction_vi']?.toString() ?? "Lá khỏe mạnh";
@@ -1057,41 +1038,34 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
         final String severity = disease?.severity ??
             result?['severity_vi']?.toString() ??
             result?['severity']?.toString() ??
-            (isHealthy ? "Khỏe mạnh" : "Cảnh báo");
+            (isHealthy ? context.tr("Khỏe mạnh", "Healthy") : context.tr("Cảnh báo", "Warning"));
 
         final Color badgeColor = isHealthy
-            ? primaryStrong
+            ? c.primary
             : (severity.contains("Nguy hiểm")
-                ? stateError
-                : (severity.contains("Trung bình") || severity.contains("Cảnh báo") ? stateWarning : primaryStrong));
+                ? const Color(0xFFDC2626)
+                : (severity.contains("Trung bình") || severity.contains("Cảnh báo") ? const Color(0xFFB08F63) : c.primary));
 
         final String pathogen = disease?.pathogen ??
             result?['pathogen']?.toString() ??
             result?['cause']?.toString() ??
-            (isHealthy ? "Tự nhiên, không phát hiện vi nấm hay vi khuẩn gây hại." : "Đang cập nhật tác nhân...");
+            (isHealthy ? context.tr("Tự nhiên, không phát hiện vi nấm hay vi khuẩn gây hại.", "Natural, no harmful fungus or bacteria detected.") : context.tr("Đang cập nhật tác nhân...", "Updating pathogen..."));
         final String mechanism = disease?.mechanism ??
             result?['mechanism']?.toString() ??
-            (isHealthy ? "Mô biểu bì nguyên vẹn, các lục lạp quang hợp bình thường." : "Mầm bệnh tấn công làm suy giảm diệp lục lá.");
+            (isHealthy ? context.tr("Mô biểu bì nguyên vẹn, các lục lạp quang hợp bình thường.", "Intact epidermis, normal chloroplast photosynthesis.") : context.tr("Mầm bệnh tấn công làm suy giảm diệp lục lá.", "Pathogen attacks reducing leaf chlorophyll."));
         final String favorableConditions = disease?.favorableConditions ??
             result?['favorable_conditions']?.toString() ??
-            (isHealthy ? "Ánh sáng tán xạ, thông thoáng, chu kỳ ẩm ổn định." : "Ẩm độ cao, kém thông thoáng, đọng nước trên mặt lá.");
+            (isHealthy ? context.tr("Ánh sáng tán xạ, thông thoáng, chu kỳ ẩm ổn định.", "Scattered light, good ventilation, stable moisture.") : context.tr("Ẩm độ cao, kém thông thoáng, đọng nước trên mặt lá.", "High humidity, poor ventilation, standing water on leaves."));
         final String prevention = disease?.prevention ??
             result?['prevention']?.toString() ??
-            (isHealthy ? "Tiếp tục duy trì chế độ chăm sóc và vị trí hiện tại." : "Giữ thông thoáng, cách ly và hạn chế tưới ướt sũng lá.");
+            (isHealthy ? context.tr("Tiếp tục duy trì chế độ chăm sóc và vị trí hiện tại.", "Continue regular care and current placement.") : context.tr("Giữ thông thoáng, cách ly và hạn chế tưới ướt sũng lá.", "Ensure ventilation, isolate and avoid soaking leaves."));
 
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(26),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                isHealthy ? primarySoft : badgeColor.withOpacity(0.08),
-                Colors.white.withOpacity(0.94),
-              ],
-            ),
-            border: Border.all(color: badgeColor.withOpacity(0.18)),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
+            color: c.surface,
+            border: Border.all(color: c.border),
+            boxShadow: [BoxShadow(color: c.shadow, blurRadius: 20)],
           ),
           padding: const EdgeInsets.all(18),
           child: Column(
@@ -1105,13 +1079,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "HỒ SƠ BỆNH HỌC & CƠ CHẾ",
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted),
+                          context.tr("HỒ SƠ BỆNH HỌC & CƠ CHẾ", "PATHOLOGY & MECHANISM"),
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: c.textMuted),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           predictionVi,
-                          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold, color: text),
+                          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold, color: c.textPrimary),
                         ),
                       ],
                     ),
@@ -1134,20 +1108,20 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: _buildInfoCell("Tình trạng", isHealthy ? "Lá bình thường" : "Nhiễm bệnh")),
+                    Expanded(child: _buildInfoCell(context.tr("Tình trạng", "Status"), isHealthy ? context.tr("Lá bình thường", "Normal Leaf") : context.tr("Nhiễm bệnh", "Infected"))),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildInfoCell("Mức độ nguy hại", severity)),
+                    Expanded(child: _buildInfoCell(context.tr("Mức độ nguy hại", "Severity"), severity)),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              _buildInfoCell("Tác nhân gây bệnh (Pathogen)", pathogen),
+              _buildInfoCell(context.tr("Tác nhân gây bệnh (Pathogen)", "Pathogen"), pathogen),
               const SizedBox(height: 12),
-              _buildInfoCell("Cơ chế gây hại biểu mô lá", mechanism),
+              _buildInfoCell(context.tr("Cơ chế gây hại biểu mô lá", "Leaf Damage Mechanism"), mechanism),
               const SizedBox(height: 12),
-              _buildInfoCell("Môi trường bùng phát bệnh", favorableConditions),
+              _buildInfoCell(context.tr("Môi trường bùng phát bệnh", "Favorable Conditions"), favorableConditions),
               const SizedBox(height: 12),
-              _buildInfoCell("Phòng ngừa canh tác & Cách ly", prevention),
+              _buildInfoCell(context.tr("Phòng ngừa canh tác & Cách ly", "Prevention & Quarantine"), prevention),
             ],
           ),
         );
@@ -1156,16 +1130,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
   }
 
   Widget _buildCareCard(Map<String, dynamic>? data) {
+    final c = context.colors;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [stateWarning.withOpacity(0.12), Colors.white.withOpacity(0.94)],
-        ),
-        border: Border.all(color: stateWarning.withOpacity(0.18)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
+        color: c.surface,
+        border: Border.all(color: c.border),
+        boxShadow: [BoxShadow(color: c.shadow, blurRadius: 20)],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1174,8 +1145,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("ĐỀ XUẤT CHĂM CÂY", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: textMuted)),
-              Text("Môi trường phù hợp", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: text)),
+              Text(context.tr("ĐỀ XUẤT CHĂM CÂY", "CARE SUGGESTIONS"), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: c.textMuted)),
+              Text(context.tr("Môi trường phù hợp", "Suitable Environment"), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary)),
             ],
           ),
           const SizedBox(height: 16),
@@ -1183,9 +1154,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _buildCareTile("Ánh sáng", data?['light'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildCareTile(context.tr("Ánh sáng", "Light"), data?['light'] ?? context.tr("Đang cập nhật...", "Updating..."))),
                 const SizedBox(width: 12),
-                Expanded(child: _buildCareTile("Tưới nước", data?['water_frequency'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildCareTile(context.tr("Tưới nước", "Water"), data?['water_frequency'] ?? context.tr("Đang cập nhật...", "Updating..."))),
               ],
             ),
           ),
@@ -1194,9 +1165,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _buildCareTile("Độ ẩm", data?['humidity'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildCareTile(context.tr("Độ ẩm", "Humidity"), data?['humidity'] ?? context.tr("Đang cập nhật...", "Updating..."))),
                 const SizedBox(width: 12),
-                Expanded(child: _buildCareTile("Nhiệt độ", data?['temperature'] ?? "Đang cập nhật...")),
+                Expanded(child: _buildCareTile(context.tr("Nhiệt độ", "Temperature"), data?['temperature'] ?? context.tr("Đang cập nhật...", "Updating..."))),
               ],
             ),
           ),
@@ -1205,46 +1176,48 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     );
   }
 
-
   Widget _buildInfoCell(String label, String value) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.68),
+        color: c.surfaceMuted,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.74)),
+        border: Border.all(color: c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: GoogleFonts.inter(fontSize: 11, letterSpacing: 0.8, color: textMuted)),
+          Text(label.toUpperCase(), style: GoogleFonts.inter(fontSize: 11, letterSpacing: 0.8, color: c.textMuted)),
           const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: text, height: 1.4)),
+          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: c.textPrimary, height: 1.4)),
         ],
       ),
     );
   }
 
   Widget _buildCareTile(String kicker, String main) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.72),
+        color: c.surfaceMuted,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.76)),
+        border: Border.all(color: c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(kicker.toUpperCase(), style: GoogleFonts.inter(fontSize: 11, letterSpacing: 0.8, color: textMuted)),
+          Text(kicker.toUpperCase(), style: GoogleFonts.inter(fontSize: 11, letterSpacing: 0.8, color: c.textMuted)),
           const SizedBox(height: 8),
-          Text(main, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: primaryStrong)),
+          Text(main, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: c.primary)),
         ],
       ),
     );
   }
 
   Widget _buildActionPills(BuildContext context, ScanProvider scanProvider, String docId, Map<String, dynamic>? data) {
+    final c = context.colors;
     if (widget.isDiseaseScan) {
       final result = scanProvider.scanResult;
       final String predictionVi = result?['prediction_vi']?.toString() ?? "Bệnh lá";
@@ -1295,7 +1268,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             behavior: SnackBarBehavior.floating,
-                            backgroundColor: success ? const Color(0xFF1E3A24) : const Color(0xFF7F1D1D),
+                            backgroundColor: success ? c.primary : const Color(0xFF7F1D1D),
                             elevation: 8,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1317,8 +1290,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                 Expanded(
                                   child: Text(
                                     success
-                                        ? "Đã cập nhật tình trạng [$newStatus] & lưu vào nhật ký cây!"
-                                        : "Chưa thể cập nhật bệnh án vào cây.",
+                                        ? "${context.tr("Đã cập nhật tình trạng", "Updated status")} [$newStatus] ${context.tr("& lưu vào nhật ký cây!", "& saved to plant diary!")}"
+                                        : context.tr("Chưa thể cập nhật bệnh án vào cây.", "Could not update plant medical record."),
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
@@ -1333,16 +1306,16 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isHealthy ? primaryStrong : stateError,
+                      backgroundColor: isHealthy ? c.primary : const Color(0xFFDC2626),
                       foregroundColor: Colors.white,
                       elevation: 6,
-                      shadowColor: (isHealthy ? primaryStrong : stateError).withOpacity(0.4),
+                      shadowColor: (isHealthy ? c.primary : const Color(0xFFDC2626)).withOpacity(0.4),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                     icon: const Icon(Icons.healing, size: 18),
                     label: Text(
-                      "Cập nhật bệnh án",
+                      context.tr("Cập nhật bệnh án", "Update Record"),
                       style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1365,7 +1338,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2C392B),
+                    backgroundColor: c.primary,
                     foregroundColor: const Color(0xFFFFD700),
                     elevation: 4,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1373,7 +1346,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   ),
                   icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
                   label: Text(
-                    "Hỏi Trợ lý Floria",
+                    context.tr("Hỏi Trợ lý Floria", "Ask Floria AI"),
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -1390,13 +1363,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     Navigator.pop(context);
                   },
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.76),
-                    foregroundColor: text,
-                    side: BorderSide(color: primary.withOpacity(0.12)),
+                    backgroundColor: c.surface,
+                    foregroundColor: c.textPrimary,
+                    side: BorderSide(color: c.border),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
-                  child: Text("Chụp lại lá", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                  child: Text(context.tr("Chụp lại lá", "Retake Leaf"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1407,13 +1380,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     Navigator.pop(context);
                   },
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.76),
-                    foregroundColor: text,
-                    side: BorderSide(color: primary.withOpacity(0.12)),
+                    backgroundColor: c.surface,
+                    foregroundColor: c.textPrimary,
+                    side: BorderSide(color: c.border),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
-                  child: Text("Quay lại cây", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                  child: Text(context.tr("Quay lại cây", "Back to Plant"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1430,14 +1403,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               child: ElevatedButton(
                 onPressed: () => _showAddToGardenModal(context, scanProvider, docId, data),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryStrong,
+                  backgroundColor: c.primary,
                   foregroundColor: Colors.white,
                   elevation: 8,
-                  shadowColor: primary.withOpacity(0.4),
+                  shadowColor: c.primary.withOpacity(0.4),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                child: Text("Lưu vào vườn", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                child: Text(context.tr("Lưu vào vườn", "Save to Garden"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(width: 12),
@@ -1457,13 +1430,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: stateInfo.withOpacity(0.14),
-                  foregroundColor: primaryStrong,
+                  backgroundColor: c.surfaceTint,
+                  foregroundColor: c.primary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                child: Text("Chi tiết", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                child: Text(context.tr("Chi tiết", "Details"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1487,7 +1460,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2C392B),
+              backgroundColor: c.primary,
               foregroundColor: const Color(0xFFFFD700),
               elevation: 4,
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1495,7 +1468,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             ),
             icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
             label: Text(
-              "Hỏi Trợ lý Floria về cây này",
+              context.tr("Hỏi Trợ lý Floria về cây này", "Ask Floria AI about this plant"),
               style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
@@ -1510,13 +1483,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.76),
-                  foregroundColor: text,
-                  side: BorderSide(color: primary.withOpacity(0.12)),
+                  backgroundColor: c.surface,
+                  foregroundColor: c.textPrimary,
+                  side: BorderSide(color: c.border),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                child: Text("Quét lại", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                child: Text(context.tr("Quét lại", "Scan Again"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(width: 12),
@@ -1531,13 +1504,13 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.76),
-                  foregroundColor: text,
-                  side: BorderSide(color: primary.withOpacity(0.12)),
+                  backgroundColor: c.surface,
+                  foregroundColor: c.textPrimary,
+                  side: BorderSide(color: c.border),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
-                child: Text("Trang chủ", style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                child: Text(context.tr("Trang chủ", "Home"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1552,6 +1525,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     String docId,
     Map<String, dynamic>? data,
   ) {
+    final c = context.colors;
     final nameVi = data?['name_vi'] ?? docId;
     final scientificName = data?['scientific_name'] ?? docId;
     final plantType = data?['plant_type'] ?? 'Cây cảnh';
@@ -1588,9 +1562,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                 right: 20,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFBF9F6),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -1602,7 +1576,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.4),
+                          color: c.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1613,10 +1587,10 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF364534).withOpacity(0.1),
+                            color: c.surfaceTint,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.eco, color: Color(0xFF364534), size: 24),
+                          child: Icon(Icons.eco, color: c.primary, size: 24),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1624,18 +1598,18 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Thêm vào Khu Vườn của bạn",
+                                context.tr("Thêm vào Khu Vườn của bạn", "Add to Your Garden"),
                                 style: GoogleFonts.inter(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1B1C1A),
+                                  color: c.textPrimary,
                                 ),
                               ),
                               Text(
                                 nameVi,
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: const Color(0xFF6A756B),
+                                  color: c.textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1646,11 +1620,11 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      "Biệt danh của cây",
+                      context.tr("Biệt danh của cây", "Plant Nickname"),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1659,36 +1633,37 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
-                      cursorColor: const Color(0xFF364534),
+                      cursorColor: c.primary,
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white,
-                        hintText: "Đặt tên đáng yêu cho cây...",
-                        prefixIcon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF6A756B)),
+                        fillColor: c.surfaceMuted,
+                        hintText: context.tr("Đặt tên đáng yêu cho cây...", "Give a lovely nickname..."),
+                        hintStyle: GoogleFonts.inter(color: c.textMuted),
+                        prefixIcon: Icon(Icons.edit_outlined, size: 20, color: c.textMuted),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFFE4E2DF)),
+                          borderSide: BorderSide(color: c.border),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFFE4E2DF)),
+                          borderSide: BorderSide(color: c.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFF364534), width: 1.5),
+                          borderSide: BorderSide(color: c.primary, width: 1.5),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      "Vị trí đặt cây (Khu vực)",
+                      context.tr("Vị trí đặt cây (Khu vực)", "Location (Zone)"),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1697,8 +1672,18 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                       runSpacing: 8,
                       children: zones.map((z) {
                         final isSel = selectedZone == z;
+                        String displayZ = z;
+                        if (context.isEnglish) {
+                          switch (z) {
+                            case 'Phòng khách': displayZ = 'Living Room'; break;
+                            case 'Ban công': displayZ = 'Balcony'; break;
+                            case 'Bàn làm việc': displayZ = 'Desk'; break;
+                            case 'Sân thượng': displayZ = 'Rooftop'; break;
+                            case 'Phòng ngủ': displayZ = 'Bedroom'; break;
+                          }
+                        }
                         return ChoiceChip(
-                          label: Text(z),
+                          label: Text(displayZ),
                           selected: isSel,
                           onSelected: (val) {
                             if (val) setModalState(() => selectedZone = z);
@@ -1706,14 +1691,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                           labelStyle: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
-                            color: isSel ? Colors.white : const Color(0xFF444842),
+                            color: isSel ? Colors.white : c.textSecondary,
                           ),
-                          selectedColor: const Color(0xFF364534),
-                          backgroundColor: Colors.white,
+                          selectedColor: c.primary,
+                          backgroundColor: c.surfaceMuted,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                             side: BorderSide(
-                              color: isSel ? Colors.transparent : const Color(0xFFE4E2DF),
+                              color: isSel ? Colors.transparent : c.border,
                             ),
                           ),
                         );
@@ -1723,19 +1708,19 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF364534).withOpacity(0.06),
+                        color: c.surfaceTint,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.water_drop, color: Color(0xFF364534), size: 20),
+                          Icon(Icons.water_drop, color: c.primary, size: 20),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              "Lịch nhắc tưới: Mỗi $freqDays ngày một lần ($waterFreqStr)",
+                              "${context.tr('Lịch nhắc tưới: Mỗi', 'Water reminder: Every')} $freqDays ${context.tr('ngày một lần', 'days')} ($waterFreqStr)",
                               style: GoogleFonts.inter(
                                 fontSize: 13,
-                                color: const Color(0xFF364534),
+                                color: c.primary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1777,7 +1762,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(gardenProvider.errorMessage ?? "Có lỗi khi lưu vào vườn"),
+                                  content: Text(gardenProvider.errorMessage ?? context.tr("Có lỗi khi lưu vào vườn", "Error saving to garden")),
                                   backgroundColor: Colors.red.shade700,
                                 ),
                               );
@@ -1785,14 +1770,14 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF364534),
+                          backgroundColor: c.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           elevation: 4,
                         ),
                         child: Text(
-                          "Xác nhận thêm vào vườn",
+                          context.tr("Xác nhận thêm vào vườn", "Confirm Add to Garden"),
                           style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1953,7 +1938,7 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Đã lưu vào Khu Vườn! 🌱",
+                          context.tr("Đã lưu vào Khu Vườn! 🌱", "Saved to Garden! 🌱"),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -1962,7 +1947,7 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "Cây '${widget.plantName}' đã sẵn sàng theo dõi.",
+                          "${context.tr('Cây', 'Plant')} '${widget.plantName}' ${context.tr('đã sẵn sàng theo dõi.', 'is ready for tracking.')}",
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -1990,7 +1975,7 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                       elevation: 2,
                     ),
                     child: Text(
-                      "ĐẾN VƯỜN",
+                      context.tr("ĐẾN VƯỜN", "TO GARDEN"),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,

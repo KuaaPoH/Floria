@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/models/user_checkout_models.dart';
 import '../../profile/screens/address_payment_screen.dart';
 import '../providers/shop_provider.dart';
 import 'order_history_screen.dart';
+import 'vnpay_payment_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -101,6 +104,7 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final shopProvider = Provider.of<ShopProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final items = shopProvider.cartItems;
@@ -125,27 +129,27 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F5),
+      backgroundColor: c.background,
       appBar: AppBar(
         title: Text(
-          "Giỏ hàng & Thanh toán (${shopProvider.cartCount})",
+          "${context.tr('Giỏ hàng & Thanh toán', 'Cart & Checkout')} (${shopProvider.cartCount})",
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF191C19),
+            color: c.textPrimary,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF191C19), size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: c.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.receipt_long_outlined, color: Color(0xFF2E6F40)),
-            tooltip: "Lịch sử đơn hàng",
+            icon: Icon(Icons.receipt_long_outlined, color: c.primary),
+            tooltip: context.tr("Lịch sử đơn hàng", "Order History"),
             onPressed: () {
               Navigator.push(
                 context,
@@ -156,25 +160,25 @@ class _CartScreenState extends State<CartScreen> {
           if (items.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFBA1A1A)),
-              tooltip: "Xóa toàn bộ giỏ hàng",
+              tooltip: context.tr("Xóa toàn bộ giỏ hàng", "Clear Cart"),
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    backgroundColor: Colors.white,
+                    backgroundColor: c.surface,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     title: Text(
-                      "Xác nhận xóa",
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1F2A21)),
+                      context.tr("Xác nhận xóa", "Confirm Clear"),
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: c.textPrimary),
                     ),
                     content: Text(
-                      "Bạn có chắc chắn muốn dọn sạch giỏ hàng không?",
-                      style: GoogleFonts.inter(color: const Color(0xFF4A554C)),
+                      context.tr("Bạn có chắc chắn muốn dọn sạch giỏ hàng không?", "Are you sure you want to clear your cart?"),
+                      style: GoogleFonts.inter(color: c.textSecondary),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: Text("Hủy", style: GoogleFonts.inter(color: const Color(0xFF6A756B))),
+                        child: Text(context.tr("Hủy", "Cancel"), style: GoogleFonts.inter(color: c.textMuted)),
                       ),
                       TextButton(
                         onPressed: () {
@@ -182,7 +186,7 @@ class _CartScreenState extends State<CartScreen> {
                           Navigator.pop(ctx);
                         },
                         child: Text(
-                          "Xóa sạch",
+                          context.tr("Xóa sạch", "Clear"),
                           style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -201,46 +205,46 @@ class _CartScreenState extends State<CartScreen> {
                   Container(
                     width: 90,
                     height: 90,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE5F4EA),
+                    decoration: BoxDecoration(
+                      color: c.isDark ? const Color(0xFF1E2D22) : const Color(0xFFE5F4EA),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.shopping_basket_outlined,
-                      color: Color(0xFF3E8055),
+                      color: c.primary,
                       size: 44,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Giỏ hàng của bạn đang trống",
+                    context.tr("Giỏ hàng của bạn đang trống", "Your cart is empty"),
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1F2A21),
+                      color: c.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Hãy khám phá các loại thuốc sinh học và vật tư chăm sóc cây nhé!",
+                    context.tr("Hãy khám phá các loại thuốc sinh học và vật tư chăm sóc cây nhé!", "Explore bio-solutions and plant care supplies!"),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: const Color(0xFF747871),
+                      color: c.textMuted,
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF364534),
+                      backgroundColor: c.primary,
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: Text(
-                      "Khám phá cửa hàng ngay",
+                      context.tr("Khám phá cửa hàng ngay", "Explore Shop Now"),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -260,12 +264,12 @@ class _CartScreenState extends State<CartScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.15)),
+                      border: Border.all(color: c.border),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: c.shadow,
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -279,15 +283,15 @@ class _CartScreenState extends State<CartScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.location_on_rounded, color: Color(0xFF3E8055), size: 18),
+                                Icon(Icons.location_on_rounded, color: c.primary, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "ĐỊA CHỈ NHẬN HÀNG",
+                                  context.tr("ĐỊA CHỈ NHẬN HÀNG", "SHIPPING ADDRESS"),
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.8,
-                                    color: const Color(0xFF3E8055),
+                                    color: c.primary,
                                   ),
                                 ),
                               ],
@@ -297,20 +301,20 @@ class _CartScreenState extends State<CartScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE5F4EA),
+                                  color: c.surfaceTint,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.edit_outlined, size: 13, color: Color(0xFF3E8055)),
+                                    Icon(Icons.edit_outlined, size: 13, color: c.primary),
                                     const SizedBox(width: 4),
                                     Text(
-                                      "Chỉnh sửa",
+                                      context.tr("Chỉnh sửa", "Edit"),
                                       style: GoogleFonts.inter(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF3E8055),
+                                        color: c.primary,
                                       ),
                                     ),
                                   ],
@@ -327,7 +331,7 @@ class _CartScreenState extends State<CartScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF8EB),
+                                color: c.warningBg,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.35)),
                               ),
@@ -337,7 +341,10 @@ class _CartScreenState extends State<CartScreen> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      "Bạn chưa có địa chỉ nhận hàng. Chạm vào đây để thêm địa chỉ!",
+                                      context.tr(
+                                        "Bạn chưa có địa chỉ nhận hàng. Chạm vào đây để thêm địa chỉ!",
+                                        "No shipping address yet. Tap here to add one!",
+                                      ),
                                       style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
@@ -359,12 +366,12 @@ class _CartScreenState extends State<CartScreen> {
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFFF2F9F4) : const Color(0xFFF8FAF8),
+                                  color: isSelected
+                                      ? (c.isDark ? const Color(0xFF1B2A1E) : const Color(0xFFF2F9F4))
+                                      : c.surfaceMuted,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFF3E8055)
-                                        : const Color(0xFF4F9D69).withValues(alpha: 0.15),
+                                    color: isSelected ? c.primary : c.border,
                                     width: isSelected ? 1.5 : 1,
                                   ),
                                 ),
@@ -373,7 +380,7 @@ class _CartScreenState extends State<CartScreen> {
                                   children: [
                                     Icon(
                                       isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                      color: const Color(0xFF3E8055),
+                                      color: c.primary,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 10),
@@ -389,7 +396,7 @@ class _CartScreenState extends State<CartScreen> {
                                                   style: GoogleFonts.inter(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w700,
-                                                    color: const Color(0xFF1F2A21),
+                                                    color: c.textPrimary,
                                                   ),
                                                 ),
                                               ),
@@ -399,14 +406,14 @@ class _CartScreenState extends State<CartScreen> {
                                                 style: GoogleFonts.inter(
                                                   fontSize: 13,
                                                   fontWeight: FontWeight.w500,
-                                                  color: const Color(0xFF6A756B),
+                                                  color: c.textSecondary,
                                                 ),
                                               ),
                                               const SizedBox(width: 8),
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFE5F4EA),
+                                                  color: c.surfaceTint,
                                                   borderRadius: BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
@@ -414,7 +421,7 @@ class _CartScreenState extends State<CartScreen> {
                                                   style: GoogleFonts.inter(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.w600,
-                                                    color: const Color(0xFF3E8055),
+                                                    color: c.primary,
                                                   ),
                                                 ),
                                               ),
@@ -425,7 +432,7 @@ class _CartScreenState extends State<CartScreen> {
                                             addr.address,
                                             style: GoogleFonts.inter(
                                               fontSize: 12.5,
-                                              color: const Color(0xFF4A554C),
+                                              color: c.textSecondary,
                                               height: 1.35,
                                             ),
                                           ),
@@ -447,12 +454,12 @@ class _CartScreenState extends State<CartScreen> {
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 8),
                     child: Text(
-                      "SẢN PHẨM CHỌN MUA (${items.length})",
+                      "${context.tr('SẢN PHẨM CHỌN MUA', 'SELECTED ITEMS')} (${items.length})",
                       style: GoogleFonts.inter(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        color: const Color(0xFF6A756B),
+                        color: c.textMuted,
                       ),
                     ),
                   ),
@@ -462,11 +469,12 @@ class _CartScreenState extends State<CartScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: c.surface,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: c.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: c.shadow,
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -495,7 +503,7 @@ class _CartScreenState extends State<CartScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF191C19),
+                                    color: c.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -504,7 +512,7 @@ class _CartScreenState extends State<CartScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF2E6F40),
+                                    color: c.primary,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -513,7 +521,7 @@ class _CartScreenState extends State<CartScreen> {
                                   children: [
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F0),
+                                        color: c.surfaceMuted,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -521,9 +529,9 @@ class _CartScreenState extends State<CartScreen> {
                                           InkWell(
                                             onTap: () => shopProvider.decreaseQuantity(p.id),
                                             borderRadius: BorderRadius.circular(8),
-                                            child: const Padding(
-                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              child: Icon(Icons.remove, size: 16, color: Color(0xFF1F2A21)),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              child: Icon(Icons.remove, size: 16, color: c.textPrimary),
                                             ),
                                           ),
                                           Padding(
@@ -533,16 +541,16 @@ class _CartScreenState extends State<CartScreen> {
                                               style: GoogleFonts.inter(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF1F2A21),
+                                                color: c.textPrimary,
                                               ),
                                             ),
                                           ),
                                           InkWell(
                                             onTap: () => shopProvider.addToCart(p, quantity: 1),
                                             borderRadius: BorderRadius.circular(8),
-                                            child: const Padding(
-                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              child: Icon(Icons.add, size: 16, color: Color(0xFF1F2A21)),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              child: Icon(Icons.add, size: 16, color: c.textPrimary),
                                             ),
                                           ),
                                         ],
@@ -568,12 +576,12 @@ class _CartScreenState extends State<CartScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.15)),
+                      border: Border.all(color: c.border),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: c.shadow,
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -587,15 +595,15 @@ class _CartScreenState extends State<CartScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.payment_rounded, color: Color(0xFF3E8055), size: 18),
+                                Icon(Icons.payment_rounded, color: c.primary, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "PHƯƠNG THỨC THANH TOÁN",
+                                  context.tr("PHƯƠNG THỨC THANH TOÁN", "PAYMENT METHOD"),
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.8,
-                                    color: const Color(0xFF3E8055),
+                                    color: c.primary,
                                   ),
                                 ),
                               ],
@@ -605,20 +613,20 @@ class _CartScreenState extends State<CartScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE5F4EA),
+                                  color: c.surfaceTint,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.edit_outlined, size: 13, color: Color(0xFF3E8055)),
+                                    Icon(Icons.edit_outlined, size: 13, color: c.primary),
                                     const SizedBox(width: 4),
                                     Text(
-                                      "Quản lý thẻ",
+                                      context.tr("Quản lý thẻ", "Manage Cards"),
                                       style: GoogleFonts.inter(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF3E8055),
+                                        color: c.primary,
                                       ),
                                     ),
                                   ],
@@ -638,12 +646,12 @@ class _CartScreenState extends State<CartScreen> {
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFF2F9F4) : const Color(0xFFF8FAF8),
+                                color: isSelected
+                                    ? (c.isDark ? const Color(0xFF1B2A1E) : const Color(0xFFF2F9F4))
+                                    : c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF3E8055)
-                                      : const Color(0xFF4F9D69).withValues(alpha: 0.15),
+                                  color: isSelected ? c.primary : c.border,
                                   width: isSelected ? 1.5 : 1,
                                 ),
                               ),
@@ -651,7 +659,7 @@ class _CartScreenState extends State<CartScreen> {
                                 children: [
                                   Icon(
                                     isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                    color: const Color(0xFF3E8055),
+                                    color: c.primary,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 10),
@@ -668,20 +676,41 @@ class _CartScreenState extends State<CartScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          card.bankName.replaceAll('(VNPay Sandbox)', '').trim(),
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF1F2A21),
-                                          ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              card.bankName.replaceAll('(VNPay Sandbox)', '').trim(),
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: c.textPrimary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEAF2FF),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: const Color(0xFF005BAA).withValues(alpha: 0.2)),
+                                              ),
+                                              child: Text(
+                                                "VNPay Sandbox",
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(0xFF005BAA),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           "${card.maskedCardNumber} • ${card.cardHolder}",
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: const Color(0xFF6A756B),
+                                            color: c.textSecondary,
                                           ),
                                         ),
                                       ],
@@ -700,13 +729,11 @@ class _CartScreenState extends State<CartScreen> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: _selectedPaymentOption == 'cod'
-                                  ? const Color(0xFFF2F9F4)
-                                  : const Color(0xFFF8FAF8),
+                                  ? (c.isDark ? const Color(0xFF1B2A1E) : const Color(0xFFF2F9F4))
+                                  : c.surfaceMuted,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: _selectedPaymentOption == 'cod'
-                                    ? const Color(0xFF3E8055)
-                                    : const Color(0xFF4F9D69).withValues(alpha: 0.15),
+                                color: _selectedPaymentOption == 'cod' ? c.primary : c.border,
                                 width: _selectedPaymentOption == 'cod' ? 1.5 : 1,
                               ),
                             ),
@@ -716,17 +743,17 @@ class _CartScreenState extends State<CartScreen> {
                                   _selectedPaymentOption == 'cod'
                                       ? Icons.radio_button_checked
                                       : Icons.radio_button_off,
-                                  color: const Color(0xFF3E8055),
+                                  color: c.primary,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 10),
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE5F4EA),
+                                    color: c.surfaceTint,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Icon(Icons.payments_outlined, color: Color(0xFF3E8055), size: 20),
+                                  child: Icon(Icons.payments_outlined, color: c.primary, size: 20),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -734,19 +761,19 @@ class _CartScreenState extends State<CartScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "Thanh toán khi nhận hàng (COD)",
+                                        context.tr("Thanh toán khi nhận hàng (COD)", "Cash on Delivery (COD)"),
                                         style: GoogleFonts.inter(
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF1F2A21),
+                                          color: c.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        "Kiểm tra vật tư và thanh toán tiền mặt khi nhận hàng",
+                                        context.tr("Kiểm tra vật tư và thanh toán tiền mặt khi nhận hàng", "Inspect items and pay cash upon delivery"),
                                         style: GoogleFonts.inter(
                                           fontSize: 12,
-                                          color: const Color(0xFF6A756B),
+                                          color: c.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -770,10 +797,10 @@ class _CartScreenState extends State<CartScreen> {
           : Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: c.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: c.shadow,
                     blurRadius: 16,
                     offset: const Offset(0, -4),
                   ),
@@ -787,10 +814,10 @@ class _CartScreenState extends State<CartScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Tổng thanh toán",
+                          context.tr("Tổng thanh toán", "Total Payment"),
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: const Color(0xFF747871),
+                            color: c.textMuted,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -799,7 +826,7 @@ class _CartScreenState extends State<CartScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF2E6F40),
+                            color: c.primary,
                           ),
                         ),
                       ],
@@ -812,24 +839,52 @@ class _CartScreenState extends State<CartScreen> {
                             : () async {
                                 if (activeAddress == null) {
                                   _showModernToast(
-                                    "Vui lòng thêm địa chỉ nhận hàng trước khi đặt mua!",
+                                    context.tr(
+                                      "Vui lòng thêm địa chỉ nhận hàng trước khi đặt mua!",
+                                      "Please add a shipping address before ordering!",
+                                    ),
                                     isError: true,
                                   );
                                   _openAddressAndPaymentScreen();
                                   return;
                                 }
 
+                                final failOrderMsg = context.tr("Không thể tạo đơn hàng. Vui lòng thử lại!", "Could not create order. Please try again!");
+                                final isVnpay = _selectedPaymentOption != 'cod' && savedCards.isNotEmpty;
                                 String paymentMethod = 'cod';
                                 String paymentLabel = "Thanh toán khi nhận hàng (COD)";
-                                if (_selectedPaymentOption != 'cod' && savedCards.isNotEmpty) {
-                                  paymentMethod = 'card';
+
+                                if (isVnpay) {
                                   final card = savedCards.firstWhere(
                                     (c) => c.id == _selectedPaymentOption,
                                     orElse: () => savedCards.first,
                                   );
+                                  paymentMethod = 'vnpay';
                                   paymentLabel =
-                                      "${card.bankName.replaceAll('(VNPay Sandbox)', '').trim()} (${card.maskedCardNumber})";
+                                      "VNPay Sandbox (${card.bankName.replaceAll('(VNPay Sandbox)', '').trim()})";
+
+                                  // Mở Cổng thanh toán trực tuyến VNPay Sandbox
+                                  final now = DateTime.now();
+                                  final tempCode = "FLR${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.millisecondsSinceEpoch.toString().substring(8)}";
+                                  final bool? paymentSuccess = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => VnpayPaymentScreen(
+                                        orderId: tempCode,
+                                        amount: shopProvider.cartTotalAmount.toDouble(),
+                                        formattedAmount: shopProvider.formattedCartTotal,
+                                        orderInfo: "Thanh toan don $tempCode",
+                                      ),
+                                    ),
+                                  );
+
+                                  if (paymentSuccess != true) {
+                                    // Người dùng đã hủy giao dịch hoặc thanh toán không thành công
+                                    return;
+                                  }
                                 }
+
+                                if (!mounted) return;
 
                                 setState(() => _isPlacingOrder = true);
                                 try {
@@ -842,7 +897,10 @@ class _CartScreenState extends State<CartScreen> {
                                   setState(() => _isPlacingOrder = false);
 
                                   if (createdOrder == null) {
-                                    _showModernToast("Không thể tạo đơn hàng. Vui lòng thử lại!", isError: true);
+                                    _showModernToast(
+                                      failOrderMsg,
+                                      isError: true,
+                                    );
                                     return;
                                   }
 
@@ -851,7 +909,7 @@ class _CartScreenState extends State<CartScreen> {
                                     context: context,
                                     barrierDismissible: false,
                                     builder: (ctx) => AlertDialog(
-                                      backgroundColor: Colors.white,
+                                      backgroundColor: c.surface,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                       contentPadding: const EdgeInsets.all(24),
                                       content: Column(
@@ -860,77 +918,103 @@ class _CartScreenState extends State<CartScreen> {
                                           Container(
                                             width: 70,
                                             height: 70,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFE5F4EA),
+                                            decoration: BoxDecoration(
+                                              color: c.surfaceTint,
                                               shape: BoxShape.circle,
                                             ),
-                                            child: const Icon(
+                                            child: Icon(
                                               Icons.check_circle_rounded,
-                                              color: Color(0xFF2E6F40),
+                                              color: c.primary,
                                               size: 40,
                                             ),
                                           ),
                                           const SizedBox(height: 16),
                                           Text(
-                                            "Đặt hàng thành công!",
+                                            context.tr("Đặt hàng thành công!", "Order Placed Successfully!"),
                                             style: GoogleFonts.inter(
                                               fontSize: 18,
                                               fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF191C19),
+                                              color: c.textPrimary,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            "Mã đơn: #${createdOrder.orderCode}",
+                                            "${context.tr('Mã đơn', 'Order Code')}: #${createdOrder.orderCode}",
                                             style: GoogleFonts.inter(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF2E6F40),
+                                              color: c.primary,
                                             ),
                                           ),
+                                          if (createdOrder.paymentMethod == 'vnpay') ...[
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEAF2FF),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: const Color(0xFF005BAA).withValues(alpha: 0.25)),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF005BAA)),
+                                                  const SizedBox(width: 5),
+                                                  Text(
+                                                    "ĐÃ THANH TOÁN QUA VNPAY SANDBOX",
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 10.5,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: const Color(0xFF005BAA),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                           const SizedBox(height: 12),
                                           Container(
                                             width: double.infinity,
                                             padding: const EdgeInsets.all(12),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF5F7F3),
+                                              color: c.surfaceMuted,
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  "Người nhận: ${createdOrder.recipientName} (${createdOrder.recipientPhone})",
+                                                  "${context.tr('Người nhận', 'Recipient')}: ${createdOrder.recipientName} (${createdOrder.recipientPhone})",
                                                   style: GoogleFonts.inter(
                                                     fontSize: 12.5,
                                                     fontWeight: FontWeight.w600,
-                                                    color: const Color(0xFF1F2A21),
+                                                    color: c.textPrimary,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  "Giao đến: ${createdOrder.shippingAddress}",
+                                                  "${context.tr('Giao đến', 'Ship to')}: ${createdOrder.shippingAddress}",
                                                   style: GoogleFonts.inter(
                                                     fontSize: 12,
-                                                    color: const Color(0xFF4A554C),
+                                                    color: c.textSecondary,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  "Thanh toán: ${createdOrder.paymentLabel}",
+                                                  "${context.tr('Thanh toán', 'Payment')}: ${createdOrder.paymentLabel}",
                                                   style: GoogleFonts.inter(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w600,
-                                                    color: const Color(0xFF2E6F40),
+                                                    color: c.primary,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  "Tổng cộng: ${createdOrder.formattedTotal} (${createdOrder.totalItemsCount} sản phẩm)",
+                                                  "${context.tr('Tổng cộng', 'Total')}: ${createdOrder.formattedTotal} (${createdOrder.totalItemsCount} ${context.tr('sản phẩm', 'items')})",
                                                   style: GoogleFonts.inter(
                                                     fontSize: 12.5,
                                                     fontWeight: FontWeight.w700,
-                                                    color: const Color(0xFF1F2A21),
+                                                    color: c.textPrimary,
                                                   ),
                                                 ),
                                               ],
@@ -946,15 +1030,15 @@ class _CartScreenState extends State<CartScreen> {
                                                     Navigator.pop(context);
                                                   },
                                                   style: OutlinedButton.styleFrom(
-                                                    foregroundColor: const Color(0xFF364534),
-                                                    side: const BorderSide(color: Color(0xFF364534)),
+                                                    foregroundColor: c.primary,
+                                                    side: BorderSide(color: c.primary),
                                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                                     shape: RoundedRectangleBorder(
                                                       borderRadius: BorderRadius.circular(10),
                                                     ),
                                                   ),
                                                   child: Text(
-                                                    "Đóng",
+                                                    context.tr("Đóng", "Close"),
                                                     style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                                                   ),
                                                 ),
@@ -972,14 +1056,14 @@ class _CartScreenState extends State<CartScreen> {
                                                     );
                                                   },
                                                   style: ElevatedButton.styleFrom(
-                                                    backgroundColor: const Color(0xFF364534),
+                                                    backgroundColor: c.primary,
                                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                                     shape: RoundedRectangleBorder(
                                                       borderRadius: BorderRadius.circular(10),
                                                     ),
                                                   ),
                                                   child: Text(
-                                                    "Xem đơn hàng",
+                                                    context.tr("Xem đơn hàng", "View Order"),
                                                     style: GoogleFonts.inter(
                                                       color: Colors.white,
                                                       fontWeight: FontWeight.w600,
@@ -1001,7 +1085,7 @@ class _CartScreenState extends State<CartScreen> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF364534),
+                          backgroundColor: c.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -1018,7 +1102,7 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               )
                             : Text(
-                                "Đặt hàng ngay",
+                                context.tr("Đặt hàng ngay", "Place Order Now"),
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,

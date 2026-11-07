@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/app_settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/scan/providers/scan_provider.dart';
 import 'features/garden/providers/garden_provider.dart';
@@ -24,9 +26,14 @@ void main() async {
     debugPrint('Firebase init error: $e');
   }
 
+  // Đọc sẵn cài đặt Giao diện tối & Ngôn ngữ để không bị nháy khi mở app
+  final appSettings = AppSettingsProvider();
+  await appSettings.load();
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: appSettings),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ScanProvider()),
         ChangeNotifierProvider(create: (_) => GardenProvider()),
@@ -44,12 +51,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<AppSettingsProvider>();
     return MaterialApp(
       title: 'AI Plant Disease Scanner',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Tu dong chuyen Light/Dark mode theo he thong
+      themeMode: settings.themeMode, // Người dùng chọn trong Cài đặt > Giao diện tối
+      locale: settings.locale, // Ngôn ngữ giao diện Hub (vi / en)
+      supportedLocales: const [Locale('vi'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       builder: (context, child) {
         // Khoá cứng tỷ lệ chữ ở mức 1.0, không bị phóng to theo cài đặt hệ thống
         final mediaQueryData = MediaQuery.of(context);

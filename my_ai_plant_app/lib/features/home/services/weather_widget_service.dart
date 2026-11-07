@@ -58,7 +58,7 @@ class WeatherWidgetService {
       badgeText: "Biên tập cho sáng nay",
       mainTitle: "Chăm vừa đủ, để góc\nxanh luôn đẹp",
       advice: "Tưới gốc vào sáng sớm giúp rễ hấp thụ tối đa mà không lo đọng nước nấm mốc.",
-      heroImageUrl: "https://i.ibb.co/jZRfHvS4/93b8d9ffa9c5.jpg",
+      heroImageUrl: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989990/photo-1614594975525-e45190c55d0b.jpg",
     ),
     WeatherWidgetConfig(
       id: "midday",
@@ -67,7 +67,7 @@ class WeatherWidgetService {
       badgeText: "Khung giờ trưa",
       mainTitle: "Tránh nắng trực tiếp,\ngiữ ẩm cho rễ",
       advice: "Tránh tưới xối lên mặt lá giữa trưa nắng để ngăn ngừa hiện tượng thấu kính cháy lá.",
-      heroImageUrl: "https://i.ibb.co/gZDbqPT9/4944f95d57e2.jpg",
+      heroImageUrl: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989991/photo-1545241047-6083a3684587.jpg",
     ),
     WeatherWidgetConfig(
       id: "afternoon",
@@ -76,7 +76,7 @@ class WeatherWidgetService {
       badgeText: "Khung giờ chiều mát",
       mainTitle: "Thời điểm vàng để\ntưới nước và bón lá",
       advice: "Không khí dịu mát thích hợp để kiểm tra độ ẩm đất và phun phân bón vi lượng qua lá.",
-      heroImageUrl: "https://i.ibb.co/TxyZTh3x/6ba34f5fae98.jpg",
+      heroImageUrl: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989991/photo-1509423350716-97f9360b4e09.jpg",
     ),
     WeatherWidgetConfig(
       id: "night",
@@ -85,7 +85,7 @@ class WeatherWidgetService {
       badgeText: "Góc xanh buổi tối",
       mainTitle: "Không gian nghỉ ngơi,\ncây nhả oxy trong lành",
       advice: "Cây bước vào giai đoạn hô hấp ban đêm, hạn chế tưới đọng lá để phòng ngừa nấm bệnh.",
-      heroImageUrl: "https://i.ibb.co/Kcd7vQ0y/d0da7c64e5ac.jpg",
+      heroImageUrl: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989993/photo-1512428813834-c702c7702b78.jpg",
     ),
   ];
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 import '../providers/garden_provider.dart';
 
 class CreateGardenScreen extends StatefulWidget {
@@ -99,7 +101,7 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "Đã tạo khu vườn '${_nameController.text.trim()}' thành công!",
+                  "${context.tr("Đã tạo khu vườn", "Created garden")} '${_nameController.text.trim()}' ${context.tr("thành công!", "successfully!")}",
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
                 ),
               ),
@@ -116,7 +118,7 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            gardenProvider.errorMessage ?? "Có lỗi khi tạo khu vườn.",
+            gardenProvider.errorMessage ?? context.tr("Có lỗi khi tạo khu vườn.", "Error creating garden."),
             style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
           ),
           backgroundColor: Colors.red.shade700,
@@ -128,21 +130,23 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6),
+      backgroundColor: c.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF9F6),
+        backgroundColor: c.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF1B1C1A), size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: c.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Tạo khu vườn mới',
+          context.tr('Tạo khu vườn mới', 'Create new garden'),
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1B1C1A),
+            color: c.textPrimary,
           ),
         ),
         centerTitle: true,
@@ -160,9 +164,9 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF364534).withOpacity(0.06),
+                    color: c.surfaceTint,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF364534).withOpacity(0.12)),
+                    border: Border.all(color: c.border),
                   ),
                   child: Row(
                     children: [
@@ -170,7 +174,7 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF364534),
+                          color: c.primary,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(Icons.yard_outlined, color: Colors.white, size: 28),
@@ -181,19 +185,22 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Không gian thực vật riêng",
+                              context.tr("Không gian thực vật riêng", "Personal plant sanctuary"),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1B1C1A),
+                                color: c.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Thiết lập môi trường & điều kiện ánh sáng chuẩn xác giúp AI chăm sóc cây tối ưu.",
+                              context.tr(
+                                "Thiết lập môi trường & điều kiện ánh sáng chuẩn xác giúp AI chăm sóc cây tối ưu.",
+                                "Setting up the environment & light conditions accurately helps AI optimize care.",
+                              ),
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: const Color(0xFF747871),
+                                color: c.textMuted,
                                 height: 1.35,
                               ),
                             ),
@@ -207,11 +214,11 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
 
                 // 1. Tên khu vườn
                 Text(
-                  '1. Tên khu vườn của bạn',
+                  context.tr('1. Tên khu vườn của bạn', '1. Your garden name'),
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -219,29 +226,29 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                   controller: _nameController,
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Vui lòng nhập tên khu vườn của bạn';
+                      return context.tr('Vui lòng nhập tên khu vườn của bạn', 'Please enter your garden name');
                     }
                     return null;
                   },
-                  style: GoogleFonts.inter(fontSize: 15, color: const Color(0xFF1B1C1A)),
+                  style: GoogleFonts.inter(fontSize: 15, color: c.textPrimary),
                   decoration: InputDecoration(
-                    hintText: 'VD: Vườn Ban Công, Góc Phòng Khách, Vườn Sen Đá...',
-                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF747871)),
+                    hintText: context.tr('VD: Vườn Ban Công, Góc Phòng Khách, Vườn Sen Đá...', 'e.g., Balcony Garden, Living Room Corner, Succulent Garden...'),
+                    hintStyle: GoogleFonts.inter(fontSize: 14, color: c.textMuted),
                     filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.local_florist_outlined, color: Color(0xFF364534), size: 22),
+                    fillColor: c.surfaceMuted,
+                    prefixIcon: Icon(Icons.local_florist_outlined, color: c.textSecondary, size: 22),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE4E2DF)),
+                      borderSide: BorderSide(color: c.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE4E2DF)),
+                      borderSide: BorderSide(color: c.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFF364534), width: 1.5),
+                      borderSide: BorderSide(color: c.primary, width: 1.5),
                     ),
                   ),
                 ),
@@ -249,11 +256,11 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
 
                 // 2. Môi trường
                 Text(
-                  '2. Môi trường trồng cây',
+                  context.tr('2. Môi trường trồng cây', '2. Growing environment'),
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -270,6 +277,25 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                   itemBuilder: (context, index) {
                     final item = _environments[index];
                     final isSelected = _selectedEnvironment == item['name'];
+
+                    String trEnvName = item['name'] as String;
+                    String trEnvDesc = item['desc'] as String;
+                    if (context.isEnglish) {
+                      if (trEnvName == 'Trong nhà') {
+                        trEnvName = 'Indoors';
+                        trEnvDesc = 'Enclosed space, stable temp';
+                      } else if (trEnvName == 'Ngoài trời') {
+                        trEnvName = 'Outdoors';
+                        trEnvDesc = 'Balcony, yard, airy';
+                      } else if (trEnvName == 'Văn phòng') {
+                        trEnvName = 'Office';
+                        trEnvDesc = 'Air-conditioned, LED light';
+                      } else if (trEnvName == 'Nhà kính') {
+                        trEnvName = 'Greenhouse';
+                        trEnvDesc = 'High humidity, microclimate';
+                      }
+                    }
+
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -279,16 +305,16 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF364534).withOpacity(0.08) : Colors.white,
+                          color: isSelected ? c.surfaceTint : c.surfaceMuted,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF364534) : const Color(0xFFE4E2DF),
+                            color: isSelected ? c.primary : c.border,
                             width: isSelected ? 2 : 1,
                           ),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF364534).withOpacity(0.08),
+                                    color: c.primary.withValues(alpha: 0.15),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   )
@@ -304,16 +330,16 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                                 Icon(
                                   item['icon'] as IconData,
                                   size: 20,
-                                  color: isSelected ? const Color(0xFF364534) : const Color(0xFF747871),
+                                  color: isSelected ? c.primaryText : c.textMuted,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    item['name'] as String,
+                                    trEnvName,
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                      color: isSelected ? const Color(0xFF364534) : const Color(0xFF1B1C1A),
+                                      color: isSelected ? c.primaryText : c.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -321,10 +347,10 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              item['desc'] as String,
+                              trEnvDesc,
                               style: GoogleFonts.inter(
                                 fontSize: 11,
-                                color: const Color(0xFF747871),
+                                color: c.textMuted,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -339,17 +365,36 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
 
                 // 3. Điều kiện ánh sáng
                 Text(
-                  '3. Điều kiện ánh sáng',
+                  context.tr('3. Điều kiện ánh sáng', '3. Light condition'),
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Column(
                   children: _lightConditions.map((item) {
                     final isSelected = _selectedLightCondition == item['name'];
+
+                    String trLightName = item['name'] as String;
+                    String trLightDesc = item['desc'] as String;
+                    if (context.isEnglish) {
+                      if (trLightName == 'Sáng trực tiếp') {
+                        trLightName = 'Direct sunlight';
+                        trLightDesc = 'Direct light > 5 hrs/day';
+                      } else if (trLightName == 'Sáng gián tiếp') {
+                        trLightName = 'Indirect light';
+                        trLightDesc = 'Diffused light through window, shaded balcony';
+                      } else if (trLightName == 'Ánh sáng trung bình') {
+                        trLightName = 'Moderate light';
+                        trLightDesc = 'Partial shade, moderate illumination';
+                      } else if (trLightName == 'Ánh sáng yếu') {
+                        trLightName = 'Low light';
+                        trLightDesc = 'Deep corner, mostly artificial light';
+                      }
+                    }
+
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -360,10 +405,10 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF364534).withOpacity(0.08) : Colors.white,
+                          color: isSelected ? c.surfaceTint : c.surfaceMuted,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF364534) : const Color(0xFFE4E2DF),
+                            color: isSelected ? c.primary : c.border,
                             width: isSelected ? 2 : 1,
                           ),
                         ),
@@ -374,14 +419,14 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                               height: 36,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFF364534)
-                                    : const Color(0xFF364534).withOpacity(0.08),
+                                    ? c.primary
+                                    : c.surfaceTint,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 item['icon'] as IconData,
                                 size: 20,
-                                color: isSelected ? Colors.white : const Color(0xFF364534),
+                                color: isSelected ? Colors.white : c.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -390,28 +435,28 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    item['name'] as String,
+                                    trLightName,
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                      color: isSelected ? const Color(0xFF364534) : const Color(0xFF1B1C1A),
+                                      color: isSelected ? c.primaryText : c.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    item['desc'] as String,
+                                    trLightDesc,
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
-                                      color: const Color(0xFF747871),
+                                      color: c.textMuted,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             if (isSelected)
-                              const Icon(Icons.check_circle, color: Color(0xFF364534), size: 22)
+                              Icon(Icons.check_circle, color: c.primary, size: 22)
                             else
-                              const Icon(Icons.radio_button_unchecked, color: Color(0xFFC4C8BF), size: 22),
+                              Icon(Icons.radio_button_unchecked, color: c.textMuted, size: 22),
                           ],
                         ),
                       ),
@@ -427,7 +472,7 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _handleCreateGarden,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF364534),
+                      backgroundColor: c.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
@@ -446,7 +491,7 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                               const Icon(Icons.add_circle_outline, size: 20),
                               const SizedBox(width: 8),
                               Text(
-                                'Tạo khu vườn',
+                                context.tr('Tạo khu vườn', 'Create garden'),
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,

@@ -72,9 +72,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Đường dẫn ảnh đại diện có hiệu lực:
-  /// 1. Ưu tiên ảnh đại diện tùy chỉnh (customPhotoUrl) được tải lên trong ứng dụng
-  /// 2. Nếu không có, dùng ảnh đại diện Google (googlePhotoUrl / providerData / user.photoURL)
-  /// 3. Nếu không có cả 2, trả về null để giao diện dùng chữ cái đầu hoặc avatar mặc định
+  /// Quản lý độc lập theo hồ sơ ứng dụng Floria (ảnh chụp/thư viện hoặc preset thực vật)
   String? get effectivePhotoUrl {
     if (_customPhotoUrl != null &&
         _customPhotoUrl!.trim().isNotEmpty &&
@@ -82,26 +80,6 @@ class AuthProvider extends ChangeNotifier {
         _customPhotoUrl != 'null') {
       return _customPhotoUrl;
     }
-    if (_googlePhotoUrl != null &&
-        _googlePhotoUrl!.trim().isNotEmpty &&
-        _googlePhotoUrl != 'None' &&
-        _googlePhotoUrl != 'null') {
-      return _googlePhotoUrl;
-    }
-    // Tìm trong providerData (ví dụ tài khoản liên kết Google)
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        for (final p in user.providerData) {
-          if (p.photoURL != null && p.photoURL!.trim().isNotEmpty) {
-            return p.photoURL;
-          }
-        }
-        if (user.photoURL != null && user.photoURL!.trim().isNotEmpty) {
-          return user.photoURL;
-        }
-      }
-    } catch (_) {}
     return null;
   }
 
@@ -151,13 +129,18 @@ class AuthProvider extends ChangeNotifier {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         _customPhotoUrl = data['customPhotoUrl'] as String?;
-        if (data['googlePhotoUrl'] != null && (data['googlePhotoUrl'] as String).trim().isNotEmpty) {
+        if (data['googlePhotoUrl'] != null &&
+            (data['googlePhotoUrl'] as String).trim().isNotEmpty &&
+            data['googlePhotoUrl'] != 'null') {
           _googlePhotoUrl = data['googlePhotoUrl'] as String;
-        } else if (_googlePhotoUrl != null && _googlePhotoUrl!.isNotEmpty) {
+        } else if (_googlePhotoUrl != null && _googlePhotoUrl!.isNotEmpty && _googlePhotoUrl != 'null') {
           // Lưu ngược lại Firestore nếu document chưa có googlePhotoUrl
           _firestore.collection('Users').doc(uid).set({
             'googlePhotoUrl': _googlePhotoUrl,
           }, SetOptions(merge: true));
+        } else {
+          // Tự động tìm nạp lại ảnh Google nếu trống
+          syncGoogleAvatarIfNeeded();
         }
 
         if (data['displayName'] != null && (data['displayName'] as String).trim().isNotEmpty) {
@@ -273,7 +256,28 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Xóa ảnh tùy chỉnh, quay lại hiển thị ảnh Google mặc định
+  /// Chọn một Avatar thực vật có sẵn của Floria
+  Future<bool> selectPresetAvatar(String presetId) async {
+    final uid = _userId ?? _auth.currentUser?.uid;
+    if (uid == null) return false;
+
+    final val = 'preset:$presetId';
+    _customPhotoUrl = val;
+    notifyListeners();
+
+    try {
+      await _firestore.collection('Users').doc(uid).set({
+        'customPhotoUrl': val,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      return true;
+    } catch (e) {
+      debugPrint("❌ Lỗi chọn preset avatar: $e");
+      return false;
+    }
+  }
+
+  /// Xóa ảnh tùy chỉnh, quay lại hiển thị avatar Floria mặc định
   Future<void> resetToDefaultAvatar() async {
     final uid = _userId ?? _auth.currentUser?.uid;
     if (uid == null) return;
@@ -287,6 +291,68 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint("❌ Lỗi reset avatar về mặc định: $e");
     }
+  }
+
+  /// Đồng bộ lại ảnh đại diện từ Google nếu bị thiếu
+  Future<bool> syncGoogleAvatarIfNeeded({bool force = false}) async {
+    if (!force &&
+        _googlePhotoUrl != null &&
+        _googlePhotoUrl!.trim().isNotEmpty &&
+        _googlePhotoUrl != 'null' &&
+        _googlePhotoUrl != 'None') {
+      return true;
+    }
+    try {
+      String? photo;
+      // 1. Thử lấy từ _googleSignIn.currentUser
+      if (_googleSignIn.currentUser?.photoUrl != null &&
+          _googleSignIn.currentUser!.photoUrl!.trim().isNotEmpty) {
+        photo = _googleSignIn.currentUser!.photoUrl;
+      }
+
+      // 2. Thử signInSilently nếu trên Mobile và chưa có ảnh
+      if ((photo == null || photo.isEmpty) && !kIsWeb) {
+        try {
+          final account = await _googleSignIn.signInSilently();
+          if (account?.photoUrl != null && account!.photoUrl!.trim().isNotEmpty) {
+            photo = account.photoUrl;
+          }
+        } catch (_) {}
+      }
+
+      // 3. Thử Firebase user và providerData
+      final user = _auth.currentUser;
+      if ((photo == null || photo.isEmpty) && user != null) {
+        if (user.photoURL != null && user.photoURL!.trim().isNotEmpty) {
+          photo = user.photoURL;
+        } else {
+          for (final p in user.providerData) {
+            if (p.photoURL != null && p.photoURL!.trim().isNotEmpty) {
+              photo = p.photoURL;
+              break;
+            }
+          }
+        }
+      }
+
+      if (photo != null && photo.trim().isNotEmpty && photo != 'null') {
+        _googlePhotoUrl = photo.trim();
+        notifyListeners();
+        final uid = _userId ?? _auth.currentUser?.uid;
+        if (uid != null) {
+          await _firestore.collection('Users').doc(uid).set({
+            'googlePhotoUrl': _googlePhotoUrl,
+          }, SetOptions(merge: true));
+          try {
+            await _auth.currentUser?.updatePhotoURL(_googlePhotoUrl);
+          } catch (_) {}
+        }
+        return true;
+      }
+    } catch (e) {
+      debugPrint("⚠️ Lỗi đồng bộ avatar Google: $e");
+    }
+    return false;
   }
 
   /// Cập nhật tên hiển thị, số điện thoại, địa chỉ nhận hàng, phương thức thanh toán và tiểu sử
@@ -615,10 +681,35 @@ class AuthProvider extends ChangeNotifier {
         googleProvider.setCustomParameters({'prompt': 'select_account'});
         UserCredential cred = await _auth.signInWithPopup(googleProvider);
         if (cred.user != null) {
-          if (cred.user!.photoURL != null && cred.user!.photoURL!.isNotEmpty) {
-            _googlePhotoUrl = cred.user!.photoURL;
+          String? photo = cred.user!.photoURL;
+          if (photo == null || photo.isEmpty) {
+            for (final p in cred.user!.providerData) {
+              if (p.photoURL != null && p.photoURL!.isNotEmpty) {
+                photo = p.photoURL;
+                break;
+              }
+            }
+          }
+          if (photo == null || photo.isEmpty) {
+            final profile = cred.additionalUserInfo?.profile;
+            if (profile != null && profile['picture'] != null) {
+              photo = profile['picture'].toString();
+            }
+          }
+
+          if (photo != null && photo.isNotEmpty) {
+            _googlePhotoUrl = photo;
+            try {
+              await cred.user!.updatePhotoURL(photo);
+            } catch (_) {}
             await _firestore.collection('Users').doc(cred.user!.uid).set({
-              'googlePhotoUrl': cred.user!.photoURL,
+              'googlePhotoUrl': photo,
+              'email': cred.user!.email,
+              'displayName': cred.user!.displayName,
+              'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
+            }, SetOptions(merge: true));
+          } else {
+            await _firestore.collection('Users').doc(cred.user!.uid).set({
               'email': cred.user!.email,
               'displayName': cred.user!.displayName,
               'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
@@ -641,12 +732,31 @@ class AuthProvider extends ChangeNotifier {
 
         UserCredential cred = await _auth.signInWithCredential(credential);
         if (cred.user != null) {
-          if (cred.user!.photoURL != null && cred.user!.photoURL!.isNotEmpty) {
-            _googlePhotoUrl = cred.user!.photoURL;
+          String? photo = cred.user!.photoURL ?? googleUser.photoUrl;
+          if (photo == null || photo.isEmpty) {
+            for (final p in cred.user!.providerData) {
+              if (p.photoURL != null && p.photoURL!.isNotEmpty) {
+                photo = p.photoURL;
+                break;
+              }
+            }
+          }
+
+          if (photo != null && photo.isNotEmpty) {
+            _googlePhotoUrl = photo;
+            try {
+              await cred.user!.updatePhotoURL(photo);
+            } catch (_) {}
             await _firestore.collection('Users').doc(cred.user!.uid).set({
-              'googlePhotoUrl': cred.user!.photoURL,
+              'googlePhotoUrl': photo,
               'email': cred.user!.email,
-              'displayName': cred.user!.displayName,
+              'displayName': cred.user!.displayName ?? googleUser.displayName,
+              'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
+            }, SetOptions(merge: true));
+          } else {
+            await _firestore.collection('Users').doc(cred.user!.uid).set({
+              'email': cred.user!.email,
+              'displayName': cred.user!.displayName ?? googleUser.displayName,
               'lastLogin': DateTime.now().millisecondsSinceEpoch.toString(),
             }, SetOptions(merge: true));
           }

@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'camera_scanning_screen.dart';
 import '../../history/screens/history_screen.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -14,10 +16,12 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6),
+      backgroundColor: c.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF9F6).withOpacity(0.8),
+        backgroundColor: c.surface.withValues(alpha: 0.8),
         elevation: 0,
         automaticallyImplyLeading: false,
         flexibleSpace: ClipRect(
@@ -27,19 +31,19 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
         ),
         title: Text(
-          'Hướng dẫn chụp ảnh',
+          context.tr('Hướng dẫn chụp ảnh', 'Photo Guide'),
           style: GoogleFonts.inter(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1B1C1A),
+            color: c.textPrimary,
             letterSpacing: -0.5,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.history_rounded, color: Color(0xFF1B1C1A)),
-            tooltip: 'Lịch sử quét',
+            icon: Icon(Icons.history_rounded, color: c.textPrimary),
+            tooltip: context.tr('Lịch sử quét', 'Scan History'),
             onPressed: () {
               Navigator.push(
                 context,
@@ -70,11 +74,11 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF364534), // primary
+                    color: c.primary,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF364534).withOpacity(0.15),
+                        color: c.primary.withValues(alpha: 0.25),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -86,7 +90,7 @@ class _ScanScreenState extends State<ScanScreen> {
                       const Icon(Icons.photo_camera, color: Colors.white),
                       const SizedBox(width: 8),
                       Text(
-                        "Mở camera ngay",
+                        context.tr("Mở camera ngay", "Open Camera Now"),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -106,25 +110,27 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Widget _buildGuideSection() {
+    final c = context.colors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Để AI nhận diện tốt nhất',
-            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A)),
+            context.tr('Để AI nhận diện tốt nhất', 'For Best AI Recognition'),
+            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: c.textPrimary),
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFE4E2DF)),
+              border: Border.all(color: c.border),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: c.shadow,
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -138,9 +144,12 @@ class _ScanScreenState extends State<ScanScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Color(0xFF364534), size: 18),
+                        Icon(Icons.check_circle, color: c.primary, size: 18),
                         const SizedBox(width: 8),
-                        Text('Nên', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF364534))),
+                        Text(
+                          context.tr('Nên', 'Dos'),
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: c.primary),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -149,19 +158,31 @@ class _ScanScreenState extends State<ScanScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Ánh sáng tốt', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A))),
-                          Text('Đảm bảo đủ sáng tự nhiên.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF444842))),
+                          Text(
+                            context.tr('Ánh sáng tốt', 'Good Lighting'),
+                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: c.textPrimary),
+                          ),
+                          Text(
+                            context.tr('Đảm bảo đủ sáng tự nhiên.', 'Ensure adequate natural light.'),
+                            style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary),
+                          ),
                           const SizedBox(height: 12),
-                          Text('Đưa lá vào trung tâm', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A))),
-                          Text('Chụp rõ một lá bệnh duy nhất.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF444842))),
+                          Text(
+                            context.tr('Đưa lá vào trung tâm', 'Center the Leaf'),
+                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: c.textPrimary),
+                          ),
+                          Text(
+                            context.tr('Chụp rõ một lá bệnh duy nhất.', 'Focus clearly on a single diseased leaf.'),
+                            style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Divider(color: Color(0xFFE4E2DF), height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Divider(color: c.border, height: 1),
                 ),
                 // KHÔNG NÊN
                 Column(
@@ -169,9 +190,12 @@ class _ScanScreenState extends State<ScanScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.cancel, color: Color(0xFF444842), size: 18),
+                        Icon(Icons.cancel, color: c.textMuted, size: 18),
                         const SizedBox(width: 8),
-                        Text('Không nên', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF444842))),
+                        Text(
+                          context.tr('Không nên', 'Don\'ts'),
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: c.textMuted),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -180,11 +204,23 @@ class _ScanScreenState extends State<ScanScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Chụp trong bóng râm', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A))),
-                          Text('Tránh các vùng tối che khuất chi tiết.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF444842))),
+                          Text(
+                            context.tr('Chụp trong bóng râm', 'Shooting in Shadows'),
+                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: c.textPrimary),
+                          ),
+                          Text(
+                            context.tr('Tránh các vùng tối che khuất chi tiết.', 'Avoid dark areas obscuring details.'),
+                            style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary),
+                          ),
                           const SizedBox(height: 12),
-                          Text('Hình ảnh mờ nhòe', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A))),
-                          Text('Giữ chắc tay để AI nhận diện chính xác.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF444842))),
+                          Text(
+                            context.tr('Hình ảnh mờ nhòe', 'Blurry Images'),
+                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: c.textPrimary),
+                          ),
+                          Text(
+                            context.tr('Giữ chắc tay để AI nhận diện chính xác.', 'Hold steady for accurate AI diagnosis.'),
+                            style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary),
+                          ),
                         ],
                       ),
                     ),

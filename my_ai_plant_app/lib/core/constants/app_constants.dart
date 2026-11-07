@@ -12,7 +12,13 @@ class AppConstants {
     }
   }
 
-  // ImgBB Cloud Storage API Key
+  // Cloudinary Cloud Storage (Chính chủ, vĩnh viễn, 25GB miễn phí)
+  static const String cloudinaryCloudName = 'vbiltn75';
+  static const String cloudinaryUploadPreset = 'ml_default';
+  static String get cloudinaryUploadUrl =>
+      'https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload';
+
+  // ImgBB Cloud Storage (Legacy fallback)
   static const String imgbbApiKey = 'fd14b90942ffdd9837b7f62d6ca8dc65';
   static const String imgbbUploadUrl = 'https://api.imgbb.com/1/upload';
 

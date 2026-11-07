@@ -6,13 +6,13 @@ import 'storage_service.dart';
 class MigrationService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Chạy toàn bộ quá trình di chuyển ảnh Unsplash & Base64 sang ImgBB Cloud
+  /// Chạy toàn bộ quá trình di chuyển ảnh sang Cloudinary Cloud vĩnh viễn
   static Future<Map<String, int>> runFullMigration({Function(String)? onProgress}) async {
     int migratedShop = 0;
     int migratedPlants = 0;
     int migratedDiaries = 0;
 
-    onProgress?.call("Bắt đầu di chuyển hình ảnh sang ImgBB Cloud vĩnh viễn...");
+    onProgress?.call("Bắt đầu di chuyển hình ảnh sang Cloudinary Cloud vĩnh viễn...");
 
     // 1. Di chuyển ảnh sản phẩm Cửa hàng
     try {
@@ -22,13 +22,13 @@ class MigrationService {
         final imgUrl = data['imageUrl'] as String?;
         if (imgUrl != null &&
             imgUrl.isNotEmpty &&
-            !imgUrl.contains('ibb.co')) {
+            !imgUrl.contains('cloudinary.com')) {
           onProgress?.call("Đang chuyển đổi sản phẩm: ${data['name'] ?? doc.id}...");
           final newUrl = await StorageService.migrateExternalUrlToStorage(
             externalUrl: imgUrl,
             targetPath: 'shop_products/${doc.id}.jpg',
           );
-          if (newUrl != null && newUrl != imgUrl && newUrl.contains('ibb.co')) {
+          if (newUrl != null && newUrl != imgUrl && newUrl.contains('cloudinary.com')) {
             await doc.reference.update({'imageUrl': newUrl});
             migratedShop++;
           }
@@ -46,19 +46,19 @@ class MigrationService {
         final plantImg = plantData['imageUrl'] as String?;
         if (plantImg != null &&
             plantImg.isNotEmpty &&
-            !plantImg.contains('ibb.co')) {
+            !plantImg.contains('cloudinary.com')) {
           onProgress?.call("Đang chuyển đổi cây: ${plantData['nickname'] ?? plantDoc.id}...");
           final newUrl = await StorageService.migrateExternalUrlToStorage(
             externalUrl: plantImg,
             targetPath: 'garden_plants/${plantDoc.id}.jpg',
           );
-          if (newUrl != null && newUrl != plantImg && newUrl.contains('ibb.co')) {
+          if (newUrl != null && newUrl != plantImg && newUrl.contains('cloudinary.com')) {
             await plantDoc.reference.update({'imageUrl': newUrl});
             migratedPlants++;
           }
         }
 
-        // 3. Di chuyển ảnh trong Nhật ký (từ chuỗi Base64 sang ImgBB Cloud)
+        // 3. Di chuyển ảnh trong Nhật ký (từ chuỗi Base64 hoặc link cũ sang Cloudinary Cloud)
         try {
           final diarySnapshot = await plantDoc.reference.collection('DiaryNotes').get();
           for (final diaryDoc in diarySnapshot.docs) {
@@ -76,12 +76,12 @@ class MigrationService {
             for (int i = 0; i < currentImages.length; i++) {
               final imgStr = currentImages[i];
               if (imgStr.startsWith('data:image') || imgStr.length > 500) {
-                // Là ảnh Base64 -> chuyển thành bytes và upload lên ImgBB
+                // Là ảnh Base64 -> chuyển thành bytes và upload lên Cloudinary
                 try {
                   final base64Content = imgStr.contains(',') ? imgStr.split(',').last : imgStr;
                   final bytes = base64Decode(base64Content);
-                  final storageUrl = await StorageService.uploadToImgbb(bytes);
-                  if (storageUrl != null && storageUrl.contains('ibb.co')) {
+                  final storageUrl = await StorageService.uploadToCloud(bytes);
+                  if (storageUrl != null && storageUrl.contains('cloudinary.com')) {
                     newStorageUrls.add(storageUrl);
                     hasChange = true;
                   } else {
@@ -91,15 +91,14 @@ class MigrationService {
                   debugPrint("Lỗi giải mã base64 nhật ký: $err");
                   newStorageUrls.add(imgStr);
                 }
-              } else if (imgStr.contains('unsplash.com') ||
-                  (!imgStr.contains('ibb.co') && imgStr.startsWith('http'))) {
-                // Là link Unsplash bên ngoài -> tải về và lưu vào ImgBB
+              } else if (!imgStr.contains('cloudinary.com') && imgStr.startsWith('http')) {
+                // Là link Unsplash/ImgBB bên ngoài -> tải về và lưu vào Cloudinary
                 final storageUrl = await StorageService.migrateExternalUrlToStorage(
                   externalUrl: imgStr,
                   targetPath: 'diary_migrated/${plantDoc.id}/${diaryDoc.id}_$i.jpg',
                 );
                 newStorageUrls.add(storageUrl ?? imgStr);
-                if (storageUrl != null && storageUrl != imgStr && storageUrl.contains('ibb.co')) {
+                if (storageUrl != null && storageUrl != imgStr && storageUrl.contains('cloudinary.com')) {
                   hasChange = true;
                 }
               } else {

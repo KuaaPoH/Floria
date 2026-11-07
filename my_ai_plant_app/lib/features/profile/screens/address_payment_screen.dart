@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/user_checkout_models.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class _AdminUnit {
   final String id;
@@ -90,6 +92,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
 
   void _showModernToast(String message, {bool isError = false}) {
     if (!mounted) return;
+    final c = context.colors;
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
     messenger.showSnackBar(
@@ -105,17 +108,17 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isError ? const Color(0xFF2D1618) : const Color(0xFF1E2D22),
+                color: isError ? c.errorBg : c.surfaceMuted,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isError
                       ? const Color(0xFFFF6B6B).withValues(alpha: 0.35)
-                      : const Color(0xFF66BB6A).withValues(alpha: 0.35),
+                      : c.border,
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
+                    color: c.shadow,
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -129,7 +132,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     decoration: BoxDecoration(
                       color: isError
                           ? const Color(0xFFFF6B6B).withValues(alpha: 0.18)
-                          : const Color(0xFF4CAF50).withValues(alpha: 0.2),
+                          : c.primary.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -145,7 +148,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: c.textPrimary,
                         height: 1.3,
                       ),
                     ),
@@ -257,8 +260,9 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
             });
           }
 
+          final c = context.colors;
           return AlertDialog(
-            backgroundColor: Colors.white,
+            backgroundColor: c.surface,
             insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Row(
@@ -266,19 +270,21 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5F4EA),
+                    color: c.surfaceTint,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.add_location_alt_outlined, color: Color(0xFF3E8055), size: 20),
+                  child: Icon(Icons.add_location_alt_outlined, color: c.primary, size: 20),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    existing == null ? "Thêm địa chỉ nhận hàng" : "Cập nhật địa chỉ",
+                    existing == null
+                        ? context.tr("Thêm địa chỉ nhận hàng", "Add Delivery Address")
+                        : context.tr("Cập nhật địa chỉ", "Update Address"),
                     style: GoogleFonts.inter(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1F2A21),
+                      color: c.textPrimary,
                     ),
                   ),
                 ),
@@ -294,37 +300,43 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     // 1. Họ tên & SĐT
                     TextField(
                       controller: nameCtrl,
-                      style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
-                      decoration: _inputDecoration("Họ và tên người nhận", Icons.person_outline_rounded),
+                      style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
+                      decoration: _inputDecoration(
+                        context,
+                        context.tr("Họ và tên người nhận", "Recipient Name"),
+                        Icons.person_outline_rounded,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: phoneCtrl,
                       keyboardType: TextInputType.phone,
-                      style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                      style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                       decoration: _inputDecoration(
-                        "Số điện thoại",
+                        context,
+                        context.tr("Số điện thoại", "Phone Number"),
                         Icons.phone_outlined,
-                        hint: "VD: 0912 345 678",
+                        hint: context.tr("VD: 0912 345 678", "E.g. 0912 345 678"),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // 2. Địa chỉ hành chính mới (34 Tỉnh/Thành phố -> Phường/Xã)
                     Text(
-                      "ĐỊA CHỈ",
+                      context.tr("ĐỊA CHỈ", "ADDRESS"),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
-                        color: const Color(0xFF3E8055),
+                        color: c.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
 
                     // Dropdown Tỉnh / Thành phố (34 Tỉnh/Thành mới)
                     _buildAdminDropdown(
-                      label: "Tỉnh / Thành phố",
+                      context: context,
+                      label: context.tr("Tỉnh / Thành phố", "Province / City"),
                       icon: Icons.location_city_rounded,
                       isLoading: isLoadingProvinces,
                       value: selectedProvince,
@@ -354,7 +366,8 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
 
                     // Dropdown Phường / Xã / Đặc khu trực thuộc Tỉnh/Thành phố
                     _buildAdminDropdown(
-                      label: "Phường / Xã / Đặc khu",
+                      context: context,
+                      label: context.tr("Phường / Xã / Đặc khu", "Ward / Commune"),
                       icon: Icons.signpost_outlined,
                       isLoading: isLoadingWards,
                       value: selectedWard,
@@ -386,11 +399,12 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     // Số nhà, tên đường cụ thể
                     TextField(
                       controller: streetCtrl,
-                      style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                      style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                       decoration: _inputDecoration(
-                        "Số nhà, tên đường, tòa nhà",
+                        context,
+                        context.tr("Số nhà, tên đường, tòa nhà", "Street address, building"),
                         Icons.home_outlined,
-                        hint: "VD: Số 18 Ngõ 45 Đường Nguyễn Trãi",
+                        hint: context.tr("VD: Số 18 Ngõ 45 Đường Nguyễn Trãi", "E.g. No. 18, Alley 45..."),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -401,22 +415,22 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.map_outlined, size: 16, color: Color(0xFF3E8055)),
+                            Icon(Icons.map_outlined, size: 16, color: c.primary),
                             const SizedBox(width: 6),
                             Text(
-                              "GHIM VỊ TRÍ TRÊN BẢN ĐỒ",
+                              context.tr("GHIM VỊ TRÍ TRÊN BẢN ĐỒ", "PIN LOCATION ON MAP"),
                               style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.8,
-                                color: const Color(0xFF3E8055),
+                                color: c.primary,
                               ),
                             ),
                           ],
                         ),
                         Text(
-                          "Chạm hoặc kéo để đặt ghim",
-                          style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6A756B)),
+                          context.tr("Chạm hoặc kéo để đặt ghim", "Tap or drag to place pin"),
+                          style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
                         ),
                       ],
                     ),
@@ -442,38 +456,45 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
 
                     // 4. Loại địa chỉ & Mặc định
                     Text(
-                      "Loại địa chỉ",
+                      context.tr("Loại địa chỉ", "Address Type"),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6A756B),
+                        color: c.textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: ["Nhà riêng", "Khu vườn", "Văn phòng"].map((label) {
-                        final isSelected = selectedLabel == label;
+                      children: [
+                        {"vi": "Nhà riêng", "en": "Home"},
+                        {"vi": "Khu vườn", "en": "Garden"},
+                        {"vi": "Văn phòng", "en": "Office"},
+                      ].map((type) {
+                        final labelVi = type["vi"]!;
+                        final labelEn = type["en"]!;
+                        final isSelected = selectedLabel == labelVi;
                         return ChoiceChip(
                           label: Text(
-                            label,
+                            context.tr(labelVi, labelEn),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : const Color(0xFF1F2A21),
+                              color: isSelected ? Colors.white : c.textPrimary,
                             ),
                           ),
                           selected: isSelected,
-                          selectedColor: const Color(0xFF3E8055),
-                          backgroundColor: const Color(0xFFF5F7F3),
+                          selectedColor: c.primary,
+                          backgroundColor: c.surfaceMuted,
                           checkmarkColor: Colors.white,
-                          onSelected: (_) => setModalState(() => selectedLabel = label),
+                          onSelected: (_) => setModalState(() => selectedLabel = labelVi),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: 12),
                     _buildCircularCheckOption(
-                      label: "Đặt làm địa chỉ nhận hàng mặc định",
+                      context: context,
+                      label: context.tr("Đặt làm địa chỉ nhận hàng mặc định", "Set as default delivery address"),
                       value: isDefault,
                       onChanged: (val) => setModalState(() => isDefault = val),
                     ),
@@ -484,11 +505,14 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text("Hủy", style: GoogleFonts.inter(color: const Color(0xFF6A756B), fontWeight: FontWeight.w600)),
+                child: Text(
+                  context.tr("Hủy", "Cancel"),
+                  style: GoogleFonts.inter(color: c.textMuted, fontWeight: FontWeight.w600),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3E8055),
+                  backgroundColor: c.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -496,7 +520,10 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                   if (nameCtrl.text.trim().isEmpty ||
                       phoneCtrl.text.trim().isEmpty ||
                       streetCtrl.text.trim().isEmpty) {
-                    _showModernToast("Vui lòng nhập họ tên, SĐT và số nhà/tên đường!", isError: true);
+                    _showModernToast(
+                      context.tr("Vui lòng nhập họ tên, SĐT và số nhà/tên đường!", "Please enter name, phone, and street address!"),
+                      isError: true,
+                    );
                     return;
                   }
 
@@ -520,11 +547,17 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     label: selectedLabel,
                     isDefault: isDefault,
                   );
+                  final successMsg = existing == null
+                      ? context.tr("Đã lưu địa chỉ & vị trí bản đồ!", "Saved address & map location!")
+                      : context.tr("Đã cập nhật địa chỉ!", "Updated address!");
                   await authProvider.saveShippingAddress(addr);
                   if (ctx.mounted) Navigator.pop(ctx);
-                  _showModernToast(existing == null ? "Đã lưu địa chỉ & vị trí bản đồ!" : "Đã cập nhật địa chỉ!");
+                  _showModernToast(successMsg);
                 },
-                child: Text("Lưu địa chỉ", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+                child: Text(
+                  context.tr("Lưu địa chỉ", "Save address"),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
               ),
             ],
           );
@@ -534,6 +567,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
   }
 
   Widget _buildAdminDropdown({
+    required BuildContext context,
     required String label,
     required IconData icon,
     required bool isLoading,
@@ -542,20 +576,21 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
     required ValueChanged<_AdminUnit?> onChanged,
     bool enabled = true,
   }) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: enabled ? const Color(0xFFF5F7F3) : Colors.grey[100],
+        color: enabled ? c.surfaceMuted : (c.isDark ? Colors.grey[850] : Colors.grey[100]),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF4F9D69).withValues(alpha: enabled ? 0.2 : 0.08),
+          color: enabled ? c.border : c.border.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
         children: [
           Icon(
             icon,
-            color: enabled ? const Color(0xFF3E8055) : Colors.grey[400],
+            color: enabled ? c.primary : c.textMuted,
             size: 20,
           ),
           const SizedBox(width: 10),
@@ -565,15 +600,15 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     child: Row(
                       children: [
-                        const SizedBox(
+                        SizedBox(
                           width: 14,
                           height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF3E8055)),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: c.primary),
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          "Đang tải $label...",
-                          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6A756B)),
+                          "${context.tr("Đang tải", "Loading")} $label...",
+                          style: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                         ),
                       ],
                     ),
@@ -582,17 +617,19 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     child: DropdownButton<_AdminUnit>(
                       value: items.contains(value) ? value : null,
                       isExpanded: true,
-                      dropdownColor: Colors.white,
+                      dropdownColor: c.surface,
                       hint: Text(
-                        enabled ? "Chọn $label" : "Vui lòng chọn cấp trên trước",
+                        enabled
+                            ? "${context.tr("Chọn", "Select")} $label"
+                            : context.tr("Vui lòng chọn cấp trên trước", "Please select higher level first"),
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: enabled ? const Color(0xFF6A756B) : Colors.grey[400],
+                          color: enabled ? c.textMuted : c.textMuted.withValues(alpha: 0.5),
                         ),
                       ),
                       icon: Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: enabled ? const Color(0xFF3E8055) : Colors.grey[400],
+                        color: enabled ? c.primary : c.textMuted,
                       ),
                       items: enabled
                           ? items.map((u) {
@@ -602,7 +639,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                                   u.fullName,
                                   style: GoogleFonts.inter(
                                     fontSize: 13.5,
-                                    color: const Color(0xFF1F2A21),
+                                    color: c.textPrimary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -619,6 +656,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
   }
 
   void _showAddCardDialog(AuthProvider authProvider) {
+    final c = context.colors;
     final bankCtrl = TextEditingController();
     final numberCtrl = TextEditingController();
     final holderCtrl = TextEditingController();
@@ -629,26 +667,26 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: c.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5F4EA),
+                  color: c.surfaceTint,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.add_card_rounded, color: Color(0xFF3E8055), size: 20),
+                child: Icon(Icons.add_card_rounded, color: c.primary, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "Thêm thẻ thanh toán",
+                  context.tr("Thêm thẻ thanh toán", "Add Payment Card"),
                   style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1F2A21),
+                    color: c.textPrimary,
                   ),
                 ),
               ),
@@ -672,21 +710,21 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF2FF),
+                        color: c.surfaceTint,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF1565C0).withValues(alpha: 0.25)),
+                        border: Border.all(color: c.border),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.bolt_rounded, color: Color(0xFF1565C0), size: 20),
+                          Icon(Icons.bolt_rounded, color: c.primary, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              "Điền nhanh Thẻ NCB mẫu",
+                              context.tr("Điền nhanh Thẻ NCB mẫu", "Fill Sample NCB Card"),
                               style: GoogleFonts.inter(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF0B3C6D),
+                                color: c.primary,
                               ),
                             ),
                           ),
@@ -697,9 +735,10 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                   const SizedBox(height: 14),
                   TextField(
                     controller: bankCtrl,
-                    style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                    style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                     decoration: _inputDecoration(
-                      "Tên Ngân hàng",
+                      context,
+                      context.tr("Tên Ngân hàng", "Bank Name"),
                       Icons.account_balance_outlined,
                       hint: "VD: Vietcombank, MB Bank, NCB Bank...",
                     ),
@@ -708,9 +747,10 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                   TextField(
                     controller: numberCtrl,
                     keyboardType: TextInputType.number,
-                    style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                    style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                     decoration: _inputDecoration(
-                      "Số thẻ ATM / Ngân hàng",
+                      context,
+                      context.tr("Số thẻ ATM / Ngân hàng", "Card Number"),
                       Icons.credit_card_rounded,
                       hint: "VD: 9704198526191432198",
                     ),
@@ -723,9 +763,10 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                         child: TextField(
                           controller: holderCtrl,
                           textCapitalization: TextCapitalization.characters,
-                          style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                          style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                           decoration: _inputDecoration(
-                            "Tên chủ thẻ (Không dấu)",
+                            context,
+                            context.tr("Tên chủ thẻ (Không dấu)", "Cardholder Name"),
                             Icons.badge_outlined,
                             hint: "NGUYEN VAN A",
                           ),
@@ -736,9 +777,10 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                         flex: 2,
                         child: TextField(
                           controller: dateCtrl,
-                          style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                          style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                           decoration: _inputDecoration(
-                            "Ngày cấp",
+                            context,
+                            context.tr("Ngày cấp", "Issue Date"),
                             Icons.calendar_today_outlined,
                             hint: "07/15",
                           ),
@@ -748,7 +790,8 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildCircularCheckOption(
-                    label: "Đặt làm thẻ thanh toán mặc định",
+                    context: context,
+                    label: context.tr("Đặt làm thẻ thanh toán mặc định", "Set as default payment card"),
                     value: isDefault,
                     onChanged: (val) => setModalState(() => isDefault = val),
                   ),
@@ -759,11 +802,14 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text("Hủy", style: GoogleFonts.inter(color: const Color(0xFF6A756B), fontWeight: FontWeight.w600)),
+              child: Text(
+                context.tr("Hủy", "Cancel"),
+                style: GoogleFonts.inter(color: c.textMuted, fontWeight: FontWeight.w600),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3E8055),
+                backgroundColor: c.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -771,7 +817,13 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                 if (bankCtrl.text.trim().isEmpty ||
                     numberCtrl.text.trim().isEmpty ||
                     holderCtrl.text.trim().isEmpty) {
-                  _showModernToast("Vui lòng nhập đầy đủ tên ngân hàng, số thẻ và chủ thẻ!", isError: true);
+                  _showModernToast(
+                    context.tr(
+                      "Vui lòng nhập đầy đủ tên ngân hàng, số thẻ và chủ thẻ!",
+                      "Please fill in bank name, card number and holder name!",
+                    ),
+                    isError: true,
+                  );
                   return;
                 }
                 final card = SavedPaymentCard(
@@ -782,11 +834,15 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                   issueDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : "07/15",
                   isDefault: isDefault,
                 );
+                final successMsg = context.tr("Đã lưu thẻ ngân hàng thành công!", "Saved bank card successfully!");
                 await authProvider.savePaymentCard(card);
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showModernToast("Đã lưu thẻ ngân hàng thành công!");
+                _showModernToast(successMsg);
               },
-              child: Text("Lưu thẻ", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+              child: Text(
+                context.tr("Lưu thẻ", "Save card"),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -795,10 +851,12 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
   }
 
   Widget _buildCircularCheckOption({
+    required BuildContext context,
     required String label,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final c = context.colors;
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: () => onChanged(!value),
@@ -813,17 +871,15 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: value ? const Color(0xFF3E8055) : const Color(0xFFF5F7F3),
+                color: value ? c.primary : c.surfaceMuted,
                 border: Border.all(
-                  color: value
-                      ? const Color(0xFF3E8055)
-                      : const Color(0xFF4F9D69).withValues(alpha: 0.45),
+                  color: value ? c.primary : c.border,
                   width: 1.6,
                 ),
                 boxShadow: value
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF3E8055).withValues(alpha: 0.25),
+                          color: c.primary.withValues(alpha: 0.25),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -845,7 +901,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 13.5,
                   fontWeight: value ? FontWeight.w600 : FontWeight.w500,
-                  color: value ? const Color(0xFF2E6F40) : const Color(0xFF1F2A21),
+                  color: value ? c.primary : c.textPrimary,
                 ),
               ),
             ),
@@ -855,49 +911,51 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon, {String? hint}) {
+  InputDecoration _inputDecoration(BuildContext context, String label, IconData icon, {String? hint}) {
+    final c = context.colors;
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[400], fontSize: 13),
-      prefixIcon: Icon(icon, color: const Color(0xFF3E8055), size: 20),
-      labelStyle: GoogleFonts.inter(color: const Color(0xFF6A756B), fontSize: 13),
+      hintStyle: GoogleFonts.inter(color: c.textMuted, fontSize: 13),
+      prefixIcon: Icon(icon, color: c.primary, size: 20),
+      labelStyle: GoogleFonts.inter(color: c.textMuted, fontSize: 13),
       filled: true,
-      fillColor: const Color(0xFFF5F7F3),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      fillColor: c.surfaceMuted,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+        borderSide: BorderSide(color: c.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF3E8055), width: 1.5),
+        borderSide: BorderSide(color: c.primary, width: 1.5),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final authProvider = Provider.of<AuthProvider>(context);
     final addresses = authProvider.addresses;
     final cards = authProvider.savedCards;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F3),
+      backgroundColor: c.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1F2A21), size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: c.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Địa chỉ & Thẻ thanh toán",
+          context.tr("Địa chỉ & Thẻ thanh toán", "Addresses & Payment Cards"),
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1F2A21),
+            color: c.textPrimary,
           ),
         ),
       ),
@@ -912,28 +970,28 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, color: Color(0xFF3E8055), size: 20),
+                    Icon(Icons.location_on_outlined, color: c.primary, size: 20),
                     const SizedBox(width: 6),
                     Text(
-                      "SỔ ĐỊA CHỈ NHẬN HÀNG",
+                      context.tr("SỔ ĐỊA CHỈ NHẬN HÀNG", "SAVED DELIVERY ADDRESSES"),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
-                        color: const Color(0xFF3E8055),
+                        color: c.primary,
                       ),
                     ),
                   ],
                 ),
                 TextButton.icon(
                   onPressed: () => _showAddressDialog(authProvider),
-                  icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF3E8055)),
+                  icon: Icon(Icons.add_rounded, size: 18, color: c.primary),
                   label: Text(
-                    "Thêm địa chỉ",
+                    context.tr("Thêm địa chỉ", "Add address"),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF3E8055),
+                      color: c.primary,
                     ),
                   ),
                 ),
@@ -944,45 +1002,45 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.14)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE5F4EA),
+                      decoration: BoxDecoration(
+                        color: c.surfaceTint,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.add_location_alt_outlined, color: Color(0xFF3E8055), size: 28),
+                      child: Icon(Icons.add_location_alt_outlined, color: c.primary, size: 28),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      "Chưa có địa chỉ nhận hàng nào được lưu",
+                      context.tr("Chưa có địa chỉ nhận hàng nào được lưu", "No shipping addresses saved yet"),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1F2A21),
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Chọn Tỉnh/Thành, Quận/Huyện, Phường/Xã và ghim vị trí bản đồ",
+                      context.tr("Chọn Tỉnh/Thành, Quận/Huyện, Phường/Xã và ghim vị trí bản đồ", "Select Province/City, District, Ward and pin map location"),
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6A756B)),
+                      style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary),
                     ),
                     const SizedBox(height: 14),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3E8055),
+                        backgroundColor: c.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => _showAddressDialog(authProvider),
                       icon: const Icon(Icons.add, color: Colors.white, size: 18),
                       label: Text(
-                        "Thêm địa chỉ ngay",
+                        context.tr("Thêm địa chỉ ngay", "Add address now"),
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
                       ),
                     ),
@@ -994,17 +1052,17 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: addr.isDefault
-                            ? const Color(0xFF3E8055)
-                            : const Color(0xFF4F9D69).withValues(alpha: 0.14),
+                            ? c.primary
+                            : c.border,
                         width: addr.isDefault ? 1.5 : 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF17231A).withValues(alpha: 0.04),
+                          color: c.shadow,
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -1018,7 +1076,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF0F4F1),
+                                color: c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -1026,7 +1084,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF3E8055),
+                                  color: c.primary,
                                 ),
                               ),
                             ),
@@ -1035,15 +1093,15 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE5F4EA),
+                                  color: c.surfaceTint,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "Mặc định",
+                                  context.tr("Mặc định", "Default"),
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF2E6F40),
+                                    color: c.primary,
                                   ),
                                 ),
                               ),
@@ -1053,20 +1111,20 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEAF2FF),
+                                  color: c.isDark ? const Color(0xFF1E3A5F) : const Color(0xFFEAF2FF),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.pin_drop_rounded, size: 11, color: Color(0xFF1565C0)),
+                                    Icon(Icons.pin_drop_rounded, size: 11, color: c.isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0)),
                                     const SizedBox(width: 3),
                                     Text(
-                                      "Đã ghim Map",
+                                      context.tr("Đã ghim Map", "Map pinned"),
                                       style: GoogleFonts.inter(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF1565C0),
+                                        color: c.isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0),
                                       ),
                                     ),
                                   ],
@@ -1075,20 +1133,21 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                             ],
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF3E8055)),
-                              tooltip: "Sửa địa chỉ",
+                              icon: Icon(Icons.edit_outlined, size: 18, color: c.primary),
+                              tooltip: context.tr("Sửa địa chỉ", "Edit address"),
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.symmetric(horizontal: 6),
                               onPressed: () => _showAddressDialog(authProvider, existing: addr),
                             ),
                             IconButton(
                               icon: Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red[400]),
-                              tooltip: "Xóa địa chỉ",
+                              tooltip: context.tr("Xóa địa chỉ", "Delete address"),
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.symmetric(horizontal: 6),
                               onPressed: () async {
+                                final msg = context.tr("Đã xóa địa chỉ nhận hàng!", "Delivery address deleted!");
                                 await authProvider.deleteShippingAddress(addr.id);
-                                _showModernToast("Đã xóa địa chỉ nhận hàng!");
+                                _showModernToast(msg);
                               },
                             ),
                           ],
@@ -1101,18 +1160,18 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1F2A21),
+                                color: c.textPrimary,
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Container(width: 1, height: 13, color: Colors.black26),
+                            Container(width: 1, height: 13, color: c.border),
                             const SizedBox(width: 10),
                             Text(
                               addr.phone,
                               style: GoogleFonts.inter(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF6A756B),
+                                color: c.textSecondary,
                               ),
                             ),
                           ],
@@ -1122,7 +1181,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                           addr.address,
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: const Color(0xFF4A554C),
+                            color: c.textSecondary,
                             height: 1.4,
                           ),
                         ),
@@ -1132,22 +1191,23 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                             alignment: Alignment.centerRight,
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFF3E8055)),
+                                side: BorderSide(color: c.primary),
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               onPressed: () async {
+                                final msg = context.tr("Đã đặt làm địa chỉ mặc định!", "Set as default address!");
                                 await authProvider.setDefaultShippingAddress(addr.id);
-                                _showModernToast("Đã đặt làm địa chỉ mặc định!");
+                                _showModernToast(msg);
                               },
                               child: Text(
-                                "Đặt làm mặc định",
+                                context.tr("Đặt làm mặc định", "Set as default"),
                                 style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF3E8055),
+                                  color: c.primary,
                                 ),
                               ),
                             ),
@@ -1165,28 +1225,28 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.credit_card_rounded, color: Color(0xFF3E8055), size: 20),
+                    Icon(Icons.credit_card_rounded, color: c.primary, size: 20),
                     const SizedBox(width: 6),
                     Text(
-                      "THẺ NGÂN HÀNG ĐÃ LƯU",
+                      context.tr("THẺ NGÂN HÀNG ĐÃ LƯU", "SAVED BANK CARDS"),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
-                        color: const Color(0xFF3E8055),
+                        color: c.primary,
                       ),
                     ),
                   ],
                 ),
                 TextButton.icon(
                   onPressed: () => _showAddCardDialog(authProvider),
-                  icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF3E8055)),
+                  icon: Icon(Icons.add_rounded, size: 18, color: c.primary),
                   label: Text(
-                    "Thêm thẻ",
+                    context.tr("Thêm thẻ", "Add card"),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF3E8055),
+                      color: c.primary,
                     ),
                   ),
                 ),
@@ -1197,30 +1257,30 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.14)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Column(
                   children: [
                     Text(
-                      "Chưa có thẻ ngân hàng nào được lưu",
+                      context.tr("Chưa có thẻ ngân hàng nào được lưu", "No bank cards saved yet"),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1F2A21),
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3E8055),
+                        backgroundColor: c.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => _showAddCardDialog(authProvider),
                       icon: const Icon(Icons.add_card_rounded, color: Colors.white, size: 18),
                       label: Text(
-                        "Liên kết thẻ ngân hàng",
+                        context.tr("Liên kết thẻ ngân hàng", "Link bank card"),
                         style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
                       ),
                     ),
@@ -1272,7 +1332,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "Mặc định",
+                                  context.tr("Mặc định", "Default"),
                                   style: GoogleFonts.inter(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
@@ -1283,8 +1343,9 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                             else
                               GestureDetector(
                                 onTap: () async {
+                                  final msg = context.tr("Đã đặt thẻ làm mặc định!", "Set card as default!");
                                   await authProvider.setDefaultPaymentCard(card.id);
-                                  _showModernToast("Đã đặt thẻ làm mặc định!");
+                                  _showModernToast(msg);
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1293,7 +1354,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    "Đặt mặc định",
+                                    context.tr("Đặt mặc định", "Set default"),
                                     style: GoogleFonts.inter(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w500,
@@ -1305,8 +1366,9 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                             const SizedBox(width: 8),
                             GestureDetector(
                               onTap: () async {
+                                final msg = context.tr("Đã xóa thẻ thanh toán!", "Payment card deleted!");
                                 await authProvider.deletePaymentCard(card.id);
-                                _showModernToast("Đã xóa thẻ thanh toán!");
+                                _showModernToast(msg);
                               },
                               child: const Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 18),
                             ),
@@ -1327,7 +1389,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "CHỦ THẺ: ${card.cardHolder}",
+                              context.tr("CHỦ THẺ: ${card.cardHolder}", "CARD HOLDER: ${card.cardHolder}"),
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w500,
@@ -1335,7 +1397,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                               ),
                             ),
                             Text(
-                              "PHÁT HÀNH: ${card.issueDate}",
+                              context.tr("PHÁT HÀNH: ${card.issueDate}", "ISSUED: ${card.issueDate}"),
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w500,
@@ -1352,19 +1414,22 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE5F4EA).withValues(alpha: 0.7),
+                color: c.surfaceTint,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, color: Color(0xFF3E8055), size: 18),
+                  Icon(Icons.info_outline_rounded, color: c.primary, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      "Khi vào Giỏ hàng để đặt mua vật tư, bạn có thể chọn nhanh các địa chỉ & thẻ đã lưu ở trên, hoặc chọn Thanh toán khi nhận hàng (COD).",
+                      context.tr(
+                        "Khi vào Giỏ hàng để đặt mua vật tư, bạn có thể chọn nhanh các địa chỉ & thẻ đã lưu ở trên, hoặc chọn Thanh toán khi nhận hàng (COD).",
+                        "When in the Cart to purchase supplies, you can quickly choose from your saved addresses and cards above, or choose Cash on Delivery (COD).",
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFF2E6F40),
+                        color: c.primary,
                         height: 1.4,
                       ),
                     ),
@@ -1468,6 +1533,7 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
   }
 
   void _openExpandedMapModal() {
+    final c = context.colors;
     double modalLat = _pinLat;
     double modalLng = _pinLng;
     int modalZoom = _zoom < 15 ? 15 : _zoom;
@@ -1476,7 +1542,7 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titlePadding: const EdgeInsets.fromLTRB(18, 16, 12, 8),
@@ -1486,24 +1552,24 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFE5F4EA),
+                color: c.surfaceTint,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.map_rounded, color: Color(0xFF3E8055), size: 20),
+              child: Icon(Icons.map_rounded, color: c.primary, size: 20),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "Ghim vị trí nhận hàng",
+                context.tr("Ghim vị trí nhận hàng", "Pin delivery location"),
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1F2A21),
+                  color: c.textPrimary,
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.close_rounded, color: Color(0xFF6A756B)),
+              icon: Icon(Icons.close_rounded, color: c.textMuted),
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
@@ -1530,13 +1596,13 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "Hủy",
-              style: GoogleFonts.inter(color: const Color(0xFF6A756B), fontWeight: FontWeight.w600),
+              context.tr("Hủy", "Cancel"),
+              style: GoogleFonts.inter(color: c.textSecondary, fontWeight: FontWeight.w600),
             ),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3E8055),
+              backgroundColor: c.primary,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -1559,7 +1625,7 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
             },
             icon: const Icon(Icons.check_rounded, color: Colors.white, size: 18),
             label: Text(
-              "Xác nhận vị trí này",
+              context.tr("Xác nhận vị trí này", "Confirm this location"),
               style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
@@ -1593,12 +1659,13 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
       height: widget.mapHeight,
       decoration: BoxDecoration(
-        color: const Color(0xFFE8EFEA),
+        color: c.isDark ? const Color(0xFF1E2820) : const Color(0xFFE8EFEA),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF3E8055).withValues(alpha: 0.3), width: 1.2),
+        border: Border.all(color: c.primary.withValues(alpha: 0.3), width: 1.2),
       ),
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
@@ -1630,7 +1697,7 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
                   child: Image.network(
                     'https://mt1.google.com/vt/lyrs=m&x=$wrappedTx&y=$ty&z=$_zoom&hl=vi',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(color: const Color(0xFFE8EFEA)),
+                    errorBuilder: (_, _, _) => Container(color: c.isDark ? const Color(0xFF1E2820) : const Color(0xFFE8EFEA)),
                   ),
                 ),
               );
@@ -1729,11 +1796,11 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: c.surface,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
+                            color: c.shadow,
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -1742,14 +1809,14 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.open_in_full_rounded, size: 15, color: Color(0xFF3E8055)),
+                          Icon(Icons.open_in_full_rounded, size: 15, color: c.primary),
                           const SizedBox(width: 5),
                           Text(
-                            "Mở rộng",
+                            context.tr("Mở rộng", "Expand"),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF3E8055),
+                              color: c.primary,
                             ),
                           ),
                         ],
@@ -1797,11 +1864,11 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: c.surface.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
+                          color: c.shadow,
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1819,7 +1886,7 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1F2A21),
+                              color: c.textPrimary,
                             ),
                           ),
                         ),
@@ -1831,15 +1898,15 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE5F4EA),
+                              color: c.surfaceTint,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              "Điền tên đường",
+                              context.tr("Điền tên đường", "Use street name"),
                               style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF2E6F40),
+                                color: c.primary,
                               ),
                             ),
                           ),
@@ -1856,23 +1923,24 @@ class _InteractiveMapPickerState extends State<_InteractiveMapPicker> {
   }
 
   Widget _mapControlBtn(IconData icon, VoidCallback onTap) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: c.shadow,
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(icon, size: 18, color: const Color(0xFF1F2A21)),
+        child: Icon(icon, size: 18, color: c.textPrimary),
       ),
     );
   }

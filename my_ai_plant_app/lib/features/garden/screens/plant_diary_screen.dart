@@ -9,6 +9,8 @@ import '../models/diary_entry.dart';
 import '../models/garden_plant.dart';
 import '../providers/garden_provider.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class _DiaryDraftPhoto {
   final Uint8List bytes;
@@ -47,9 +49,10 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
   Widget build(BuildContext context) {
     final gardenProvider = Provider.of<GardenProvider>(context);
     final plant = widget.plant;
+    final c = context.colors;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6),
+      backgroundColor: c.background,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onHorizontalDragEnd: (details) {
@@ -73,8 +76,8 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                     final filteredEntries = _filterEntries(allEntries);
 
                     if (snapshot.connectionState == ConnectionState.waiting && streamEntries.isEmpty) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF2E6F40)),
+                      return Center(
+                        child: CircularProgressIndicator(color: c.primary),
                       );
                     }
 
@@ -110,10 +113,10 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                     right: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFBF9F6).withValues(alpha: 0.88),
+                    color: c.surface.withValues(alpha: 0.88),
                     border: Border(
                       bottom: BorderSide(
-                        color: const Color(0xFF2E6F40).withValues(alpha: 0.12),
+                        color: c.border,
                       ),
                     ),
                   ),
@@ -131,11 +134,11 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                             child: Column(
                               children: [
                                 Text(
-                                  plant?.nickname ?? "Nhật ký phát triển",
+                                  plant?.nickname ?? context.tr("Nhật ký phát triển", "Growth Diary"),
                                   style: GoogleFonts.inter(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF1B1C1A),
+                                    color: c.textPrimary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -145,10 +148,10 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                 Text(
                                   plant != null
                                       ? "${plant.nameVi} • ${plant.zone}"
-                                      : "Dòng thời gian chăm sóc",
+                                      : context.tr("Dòng thời gian chăm sóc", "Care Timeline"),
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
-                                    color: const Color(0xFF6A756B),
+                                    color: c.textSecondary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -181,7 +184,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1E3A24).withValues(alpha: 0.35),
+                    color: c.primary.withValues(alpha: 0.35),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
@@ -190,7 +193,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _showWriteDiaryModal(context, plant),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A24), // Xanh rêu đậm hoàng gia
+                  backgroundColor: c.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   side: BorderSide(
@@ -208,7 +211,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                   color: Color(0xFFFFD700),
                 ),
                 label: Text(
-                  "Viết nhật ký",
+                  context.tr("Viết nhật ký", "Write Diary"),
                   style: GoogleFonts.inter(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
@@ -223,17 +226,18 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
 
   // --- FILTER TABS (Loại bỏ các icon, chỉ giữ text thanh lịch) ---
   Widget _buildPillFilterRow() {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFECEEE9),
+        color: c.surfaceMuted,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
         children: [
-          _buildFilterChipItem('all', 'Tất cả'),
-          _buildFilterChipItem('user', 'Của tôi'),
-          _buildFilterChipItem('system', 'Hoạt động'),
+          _buildFilterChipItem('all', context.tr('Tất cả', 'All')),
+          _buildFilterChipItem('user', context.tr('Của tôi', 'Mine')),
+          _buildFilterChipItem('system', context.tr('Hoạt động', 'Activity')),
         ],
       ),
     );
@@ -241,6 +245,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
 
   Widget _buildFilterChipItem(String key, String label) {
     final isSelected = _activeFilter == key;
+    final c = context.colors;
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _activeFilter = key),
@@ -248,7 +253,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? c.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             boxShadow: isSelected
                 ? [
@@ -266,7 +271,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
             style: GoogleFonts.inter(
               fontSize: 12.5,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF1E3A24) : const Color(0xFF6A756B),
+              color: isSelected ? c.primary : c.textSecondary,
             ),
           ),
         ),
@@ -315,6 +320,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
 
   // --- TIMELINE ITEM WIDGET ---
   Widget _buildTimelineItem(DiaryEntry entry, bool isLast) {
+    final c = context.colors;
     final iconData = _getEntryIcon(entry);
     final iconColor = _getEntryIconColor(entry);
     final iconBgColor = _getEntryIconBgColor(entry);
@@ -332,7 +338,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
+                  border: Border.all(color: c.surface, width: 3),
                   boxShadow: [
                     BoxShadow(
                       color: iconColor.withValues(alpha: 0.25),
@@ -348,7 +354,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                   child: Container(
                     width: 2,
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    color: const Color(0xFFD6E8CF),
+                    color: c.border,
                   ),
                 ),
             ],
@@ -362,12 +368,12 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE5E9E2)),
+                  border: Border.all(color: c.border),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E3A24).withValues(alpha: 0.04),
+                      color: c.shadow,
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -385,7 +391,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF6A756B),
+                            color: c.textMuted,
                           ),
                         ),
                         Row(
@@ -397,7 +403,9 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                entry.tag,
+                                entry.tag == 'Về vườn'
+                                    ? context.tr('Về vườn', 'Welcome')
+                                    : entry.tag,
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -412,7 +420,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                 onPressed: () => _confirmDeleteEntry(context, entry),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
-                                tooltip: "Xóa trang nhật ký",
+                                tooltip: context.tr("Xóa trang nhật ký", "Delete diary entry"),
                               ),
                             ],
                           ],
@@ -428,7 +436,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1B1C1A),
+                          color: c.textPrimary,
                         ),
                       ),
                     if (entry.title.isNotEmpty) const SizedBox(height: 6),
@@ -476,13 +484,13 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.photo_library_outlined, size: 13, color: Color(0xFF6B7280)),
+                                Icon(Icons.photo_library_outlined, size: 13, color: c.textMuted),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "${entry.imageUrls.length} ảnh",
+                                  "${entry.imageUrls.length} ${context.tr('ảnh', 'photos')}",
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
-                                    color: const Color(0xFF6B7280),
+                                    color: c.textMuted,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -498,7 +506,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                       entry.content,
                       style: GoogleFonts.inter(
                         fontSize: 13.5,
-                        color: const Color(0xFF374151),
+                        color: c.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -658,17 +666,18 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     if (now.year == dt.year && now.month == dt.month && now.day == dt.day) {
-      return "Hôm nay, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+      return "${context.tr('Hôm nay', 'Today')}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
     }
     final yesterday = now.subtract(const Duration(days: 1));
     if (yesterday.year == dt.year && yesterday.month == dt.month && yesterday.day == dt.day) {
-      return "Hôm qua, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+      return "${context.tr('Hôm qua', 'Yesterday')}, ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
     }
     return "${dt.day}/${dt.month}/${dt.year}";
   }
 
   // --- EMPTY STATE ---
   Widget _buildEmptyState() {
+    final c = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -679,35 +688,35 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF5EC),
+                color: c.surfaceTint,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.auto_stories_outlined,
-                color: Color(0xFF2E6F40),
+                color: c.primary,
                 size: 38,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               _activeFilter == 'user'
-                  ? "Chưa có trang nhật ký cá nhân nào"
-                  : "Chưa có ghi chép nhật ký",
+                  ? context.tr("Chưa có trang nhật ký cá nhân nào", "No personal diary entries yet")
+                  : context.tr("Chưa có ghi chép nhật ký", "No diary records yet"),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1B1C1A),
+                color: c.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               _activeFilter == 'user'
-                  ? "Hãy chạm vào nút cây bút quý phái bên dưới để viết những cảm nhận và lưu giữ bức ảnh đầu tiên cho cây nhé!"
-                  : "Mọi hoạt động tưới nước, bón phân hay bài viết mới sẽ xuất hiện tại đây.",
+                  ? context.tr("Hãy chạm vào nút cây bút bên dưới để viết những cảm nhận và lưu giữ bức ảnh đầu tiên cho cây nhé!", "Tap the pen button below to write your thoughts and capture the first photo for your plant!")
+                  : context.tr("Mọi hoạt động tưới nước, bón phân hay bài viết mới sẽ xuất hiện tại đây.", "All watering, fertilizing, and new notes will appear here."),
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: const Color(0xFF6A756B),
+                color: c.textSecondary,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -719,39 +728,42 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
   }
 
   Widget _buildNoPlantPlaceholder() {
+    final c = context.colors;
     return Center(
       child: Text(
-        "Không tìm thấy thông tin cây trồng.",
-        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF6A756B)),
+        context.tr("Không tìm thấy thông tin cây trồng.", "Plant information not found."),
+        style: GoogleFonts.inter(fontSize: 14, color: c.textSecondary),
       ),
     );
   }
 
   Widget _buildCircleButton({required IconData icon, required VoidCallback onTap}) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFFE0E5DD)),
+          border: Border.all(color: c.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: c.shadow,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(icon, color: const Color(0xFF1B1C1A), size: 20),
+        child: Icon(icon, color: c.textPrimary, size: 20),
       ),
     );
   }
 
   // --- MODAL: VIẾT NHẬT KÝ MỚI ---
   void _showWriteDiaryModal(BuildContext context, GardenPlant plant) {
+    final c = context.colors;
     final titleCtrl = TextEditingController();
     final contentCtrl = TextEditingController();
     String selectedTag = 'Đâm chồi';
@@ -762,12 +774,12 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
 
     // Loại bỏ hoàn toàn các icon của đâm chồi, ra hoa... chỉ giữ chữ thanh lịch
     final tagsList = [
-      {'tag': 'Đâm chồi', 'bg': 0xFFDCFCE7, 'text': 0xFF15803D},
-      {'tag': 'Ra hoa', 'bg': 0xFFFCE7F3, 'text': 0xFFBE185D},
-      {'tag': 'Thay chậu', 'bg': 0xFFFEF3C7, 'text': 0xFFB45309},
-      {'tag': 'Cắt tỉa', 'bg': 0xFFE0F2FE, 'text': 0xFF0369A1},
-      {'tag': 'Kỷ niệm', 'bg': 0xFFF3E8FF, 'text': 0xFF7E22CE},
-      {'tag': 'Tâm tình', 'bg': 0xFFE5F4EA, 'text': 0xFF1E3A24},
+      {'tag': 'Đâm chồi', 'label': context.tr('Đâm chồi', 'Sprouting'), 'bg': 0xFFDCFCE7, 'text': 0xFF15803D},
+      {'tag': 'Ra hoa', 'label': context.tr('Ra hoa', 'Blooming'), 'bg': 0xFFFCE7F3, 'text': 0xFFBE185D},
+      {'tag': 'Thay chậu', 'label': context.tr('Thay chậu', 'Repotting'), 'bg': 0xFFFEF3C7, 'text': 0xFFB45309},
+      {'tag': 'Cắt tỉa', 'label': context.tr('Cắt tỉa', 'Pruning'), 'bg': 0xFFE0F2FE, 'text': 0xFF0369A1},
+      {'tag': 'Kỷ niệm', 'label': context.tr('Kỷ niệm', 'Memory'), 'bg': 0xFFF3E8FF, 'text': 0xFF7E22CE},
+      {'tag': 'Tâm tình', 'label': context.tr('Tâm tình', 'Thoughts'), 'bg': 0xFFE5F4EA, 'text': 0xFF1E3A24},
     ];
 
     Future<void> pickMoreImages(StateSetter setModalState) async {
@@ -784,8 +796,8 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
             final bytes = await f.readAsBytes();
             final draft = _DiaryDraftPhoto(bytes: bytes, isUploading: true);
 
-            // Kích hoạt upload ngầm lên ImgBB Cloud ngay trong lúc người dùng đang gõ bài
-            draft.future = StorageService.uploadToImgbb(
+            // Kích hoạt upload ngầm lên Cloudinary Cloud ngay trong lúc người dùng đang gõ bài
+            draft.future = StorageService.uploadToCloud(
               bytes,
               onProgress: (count, total) {
                 if (total > 0) {
@@ -827,7 +839,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
           final bytes = await file.readAsBytes();
           if (draftPhotos.length < 8) {
             final draft = _DiaryDraftPhoto(bytes: bytes, isUploading: true);
-            draft.future = StorageService.uploadToImgbb(
+            draft.future = StorageService.uploadToCloud(
               bytes,
               onProgress: (count, total) {
                 if (total > 0) {
@@ -863,19 +875,19 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
         builder: (pickerCtx) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: c.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Thêm ảnh vào nhật ký",
+                  context.tr("Thêm ảnh vào nhật ký", "Add photo to diary"),
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -883,16 +895,19 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAF5EC),
+                      color: c.surfaceTint,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.photo_library_outlined, color: Color(0xFF2E6F40)),
+                    child: Icon(Icons.photo_library_outlined, color: c.primary),
                   ),
                   title: Text(
-                    "Chọn từ thư viện ảnh",
-                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A)),
+                    context.tr("Chọn từ thư viện ảnh", "Choose from gallery"),
+                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600, color: c.textPrimary),
                   ),
-                  subtitle: Text("Thêm tối đa 8 ảnh chất lượng cao", style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
+                  subtitle: Text(
+                    context.tr("Thêm tối đa 8 ảnh chất lượng cao", "Add up to 8 high quality photos"),
+                    style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
+                  ),
                   onTap: () {
                     Navigator.pop(pickerCtx);
                     pickMoreImages(setModalState);
@@ -903,16 +918,19 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAF5EC),
+                      color: c.surfaceTint,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2E6F40)),
+                    child: Icon(Icons.camera_alt_outlined, color: c.primary),
                   ),
                   title: Text(
-                    "Chụp ảnh mới",
-                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600, color: const Color(0xFF1B1C1A)),
+                    context.tr("Chụp ảnh mới", "Take new photo"),
+                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600, color: c.textPrimary),
                   ),
-                  subtitle: Text("Mở camera ghi lại khoảnh khắc hiện tại", style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
+                  subtitle: Text(
+                    context.tr("Mở camera ghi lại khoảnh khắc hiện tại", "Open camera to capture the moment"),
+                    style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
+                  ),
                   onTap: () {
                     Navigator.pop(pickerCtx);
                     takePhoto(setModalState);
@@ -939,9 +957,9 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                 right: 20,
                 bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -954,7 +972,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                         width: 44,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0E5DD),
+                          color: c.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -974,17 +992,17 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "Trang nhật ký mới",
+                              context.tr("Trang nhật ký mới", "New Diary Entry"),
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1B1C1A),
+                                color: c.textPrimary,
                               ),
                             ),
                           ],
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF6A756B)),
+                          icon: Icon(Icons.close_rounded, color: c.textSecondary),
                           onPressed: () => Navigator.pop(modalCtx),
                         ),
                       ],
@@ -997,22 +1015,22 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Ảnh nhật ký (${draftPhotos.length}/8)",
+                            "${context.tr('Ảnh nhật ký', 'Diary photos')} (${draftPhotos.length}/8)",
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1B1C1A),
+                              color: c.textPrimary,
                             ),
                           ),
                           if (draftPhotos.length < 8)
                             GestureDetector(
                               onTap: () => showImageSourcePicker(setModalState),
                               child: Text(
-                                "+ Thêm ảnh",
+                                "+ ${context.tr('Thêm ảnh', 'Add photo')}",
                                 style: GoogleFonts.inter(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF2E6F40),
+                                  color: c.primary,
                                 ),
                               ),
                             ),
@@ -1032,24 +1050,24 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                 child: Container(
                                   width: 95,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF7F9F6),
+                                    color: c.surfaceMuted,
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: const Color(0xFF2E6F40).withValues(alpha: 0.35),
+                                      color: c.border,
                                       width: 1.2,
                                     ),
                                   ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF2E6F40), size: 26),
+                                      Icon(Icons.add_photo_alternate_outlined, color: c.primary, size: 26),
                                       const SizedBox(height: 4),
                                       Text(
-                                        "Thêm ảnh",
+                                        context.tr("Thêm ảnh", "Add photo"),
                                         style: GoogleFonts.inter(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E6F40),
+                                          color: c.primary,
                                         ),
                                       ),
                                     ],
@@ -1089,7 +1107,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                 ),
                                 // Hiệu ứng mờ mờ và hiển thị % chạy từ 0% -> 100%
                                 if (draft.isUploading)
-                                  Positioned.fill(
+                                    Positioned.fill(
                                     child: Container(
                                       decoration: BoxDecoration(
                                         color: Colors.black.withValues(alpha: 0.55),
@@ -1123,7 +1141,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            "Đang tải...",
+                                            context.tr("Đang tải...", "Uploading..."),
                                             style: GoogleFonts.inter(
                                               fontSize: 9.5,
                                               fontWeight: FontWeight.w600,
@@ -1145,7 +1163,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        "Ảnh bìa",
+                                        context.tr("Ảnh bìa", "Cover"),
                                         style: GoogleFonts.inter(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
                                       ),
                                     ),
@@ -1162,24 +1180,24 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                           width: double.infinity,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF7F9F6),
+                            color: c.surfaceMuted,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: const Color(0xFF2E6F40).withValues(alpha: 0.3),
+                              color: c.border,
                               style: BorderStyle.solid,
                             ),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.add_a_photo_outlined, color: Color(0xFF2E6F40), size: 28),
+                              Icon(Icons.add_a_photo_outlined, color: c.primary, size: 28),
                               const SizedBox(height: 6),
                               Text(
-                                "Thêm ảnh chụp cho cây (Tối đa 8 ảnh)",
+                                context.tr("Thêm ảnh chụp cho cây (Tối đa 8 ảnh)", "Add photos for plant (Max 8 photos)"),
                                 style: GoogleFonts.inter(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF2E6F40),
+                                  color: c.primary,
                                 ),
                               ),
                             ],
@@ -1190,11 +1208,11 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
 
                     // Chọn Tag sinh trưởng (Loại bỏ các icon hoàn toàn)
                     Text(
-                      "Mốc sinh trưởng",
+                      context.tr("Mốc sinh trưởng", "Growth milestone"),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1215,7 +1233,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                             duration: const Duration(milliseconds: 150),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                             decoration: BoxDecoration(
-                              color: isSel ? Color(item['bg'] as int) : const Color(0xFFF3F4F1),
+                              color: isSel ? Color(item['bg'] as int) : c.surfaceMuted,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isSel ? Color(item['text'] as int) : Colors.transparent,
@@ -1223,11 +1241,11 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                               ),
                             ),
                             child: Text(
-                              item['tag'] as String,
+                              item['label'] as String,
                               style: GoogleFonts.inter(
                                 fontSize: 12.5,
                                 fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                                color: isSel ? Color(item['text'] as int) : const Color(0xFF374151),
+                                color: isSel ? Color(item['text'] as int) : c.textSecondary,
                               ),
                             ),
                           ),
@@ -1236,41 +1254,41 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Tiêu đề bài viết (Chữ đậm nét rõ ràng, không mờ)
+                    // Tiêu đề bài viết
                     TextField(
                       controller: titleCtrl,
                       style: GoogleFonts.inter(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A), // Đen than sắc nét
+                        color: c.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: "Tiêu đề",
+                        hintText: context.tr("Tiêu đề", "Title"),
                         hintStyle: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w400,
-                          color: const Color(0xFF6B7280), // Xám trung tính đậm rõ ràng
+                          color: c.textMuted,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: c.surfaceMuted,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(color: c.border),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(color: c.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFF2E6F40), width: 1.5),
+                          borderSide: BorderSide(color: c.primary, width: 1.5),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Nội dung ghi chú (Chữ đậm nét rõ ràng, không mờ)
+                    // Nội dung ghi chú
                     TextField(
                       controller: contentCtrl,
                       minLines: 3,
@@ -1279,28 +1297,28 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         height: 1.5,
-                        color: const Color(0xFF1B1C1A), // Đen than sắc nét
+                        color: c.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: "Ghi chép cảm nhận, thời tiết, tình trạng đất và nước...",
+                        hintText: context.tr("Ghi chép cảm nhận, thời tiết, tình trạng đất và nước...", "Notes on feelings, weather, soil and water condition..."),
                         hintStyle: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w400,
-                          color: const Color(0xFF6B7280), // Xám trung tính đậm rõ ràng
+                          color: c.textMuted,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: c.surfaceMuted,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(color: c.border),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          borderSide: BorderSide(color: c.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFF2E6F40), width: 1.5),
+                          borderSide: BorderSide(color: c.primary, width: 1.5),
                         ),
                         contentPadding: const EdgeInsets.all(14),
                       ),
@@ -1320,10 +1338,10 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       behavior: SnackBarBehavior.floating,
-                                      backgroundColor: const Color(0xFF1E3A24),
+                                      backgroundColor: c.primary,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                       content: Text(
-                                        "Vui lòng nhập nội dung trang nhật ký!",
+                                        context.tr("Vui lòng nhập nội dung trang nhật ký!", "Please enter diary content!"),
                                         style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
                                       ),
                                     ),
@@ -1372,7 +1390,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       behavior: SnackBarBehavior.floating,
-                                      backgroundColor: const Color(0xFF1E3A24),
+                                      backgroundColor: c.primary,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                       content: Row(
                                         children: [
@@ -1380,8 +1398,8 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                           const SizedBox(width: 10),
                                           Text(
                                             success
-                                                ? "Đã lưu trang nhật ký mới cho cây!"
-                                                : "Chưa thể lưu nhật ký. Vui lòng thử lại.",
+                                                ? context.tr("Đã lưu trang nhật ký mới cho cây!", "Saved new diary entry for plant!")
+                                                : context.tr("Chưa thể lưu nhật ký. Vui lòng thử lại.", "Could not save diary. Please try again."),
                                             style: GoogleFonts.inter(
                                               fontWeight: FontWeight.w600,
                                               color: Colors.white,
@@ -1394,7 +1412,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A24),
+                          backgroundColor: c.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 2,
@@ -1411,14 +1429,14 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                                   const SizedBox(width: 10),
                                   Text(
                                     draftPhotos.any((d) => d.isUploading)
-                                        ? "Đang tải ảnh (${(draftPhotos.where((d) => d.isUploading).map((d) => d.progress).fold(0.0, (a, b) => a + b) / (draftPhotos.where((d) => d.isUploading).isNotEmpty ? draftPhotos.where((d) => d.isUploading).length : 1) * 100).toInt()}%)..."
-                                        : "Đang lưu bài viết...",
+                                        ? "${context.tr('Đang tải ảnh', 'Uploading photos')} (${(draftPhotos.where((d) => d.isUploading).map((d) => d.progress).fold(0.0, (a, b) => a + b) / (draftPhotos.where((d) => d.isUploading).isNotEmpty ? draftPhotos.where((d) => d.isUploading).length : 1) * 100).toInt()}%)..."
+                                        : context.tr("Đang lưu bài viết...", "Saving post..."),
                                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               )
                             : Text(
-                                "Lưu trang nhật ký",
+                                context.tr("Lưu trang nhật ký", "Save Diary Entry"),
                                 style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold),
                               ),
                       ),
@@ -1435,23 +1453,24 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
 
   // --- CONFIRM DELETE ENTRY ---
   void _confirmDeleteEntry(BuildContext context, DiaryEntry entry) {
+    final c = context.colors;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          "Xóa bài nhật ký?",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+          context.tr("Xóa bài nhật ký?", "Delete diary entry?"),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.textPrimary),
         ),
         content: Text(
-          "Trang nhật ký này sẽ bị xóa vĩnh viễn khỏi dòng thời gian của cây.",
-          style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF6A756B)),
+          context.tr("Trang nhật ký này sẽ bị xóa vĩnh viễn khỏi dòng thời gian của cây.", "This diary page will be permanently deleted from the plant timeline."),
+          style: GoogleFonts.inter(fontSize: 13.5, color: c.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("Hủy", style: GoogleFonts.inter(color: const Color(0xFF6A756B))),
+            child: Text(context.tr("Hủy", "Cancel"), style: GoogleFonts.inter(color: c.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1464,7 +1483,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text("Xóa"),
+            child: Text(context.tr("Xóa", "Delete")),
           ),
         ],
       ),

@@ -12,6 +12,8 @@ import '../../shop/providers/shop_provider.dart';
 import '../../shop/screens/product_detail_screen.dart';
 import '../models/chat_session.dart';
 import '../providers/chat_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class CareScheduleProposal {
   final int waterDays;
@@ -152,23 +154,24 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   void _showRenameDialog(BuildContext context, {required String sessionId, required String currentTitle}) {
+    final c = context.colors;
     final textController = TextEditingController(text: currentTitle);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: c.surface,
+        surfaceTintColor: c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(
           children: [
-            const Icon(Icons.edit_note_rounded, color: Color(0xFF2E6F40), size: 24),
+            Icon(Icons.edit_note_rounded, color: c.primary, size: 24),
             const SizedBox(width: 8),
             Text(
-              "Đổi tên cuộc trò chuyện",
+              context.tr("Đổi tên cuộc trò chuyện", "Rename Chat"),
               style: GoogleFonts.inter(
                 fontSize: 16.5,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF151E16),
+                color: c.textPrimary,
               ),
             ),
           ],
@@ -178,11 +181,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Nhập tên gợi nhớ cho cuộc trò chuyện này:",
+              context.tr("Nhập tên gợi nhớ cho cuộc trò chuyện này:", "Enter a memorable name for this chat:"),
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF4B5563),
+                color: c.textSecondary,
               ),
             ),
             const SizedBox(height: 14),
@@ -192,26 +195,26 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF151E16),
+                color: c.textPrimary,
               ),
-              cursorColor: const Color(0xFF2E6F40),
+              cursorColor: c.primary,
               decoration: InputDecoration(
-                hintText: "Ví dụ: Hỏi chăm sóc Cây Lưỡi Hổ...",
-                hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF)),
+                hintText: context.tr("Ví dụ: Hỏi chăm sóc Cây Lưỡi Hổ...", "E.g. Snake Plant care questions..."),
+                hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 filled: true,
-                fillColor: const Color(0xFFF3F6F3),
+                fillColor: c.surfaceMuted,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFDDE3DC)),
+                  borderSide: BorderSide(color: c.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                  borderSide: BorderSide(color: c.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF2E6F40), width: 1.8),
+                  borderSide: BorderSide(color: c.primary, width: 1.8),
                 ),
               ),
             ),
@@ -221,9 +224,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "Hủy",
+              context.tr("Hủy", "Cancel"),
               style: GoogleFonts.inter(
-                color: const Color(0xFF4B5563),
+                color: c.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: 13.5,
               ),
@@ -231,7 +234,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E6F40),
+              backgroundColor: c.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -250,7 +253,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text("Lưu tên"),
+            child: Text(context.tr("Lưu tên", "Save")),
           ),
         ],
       ),
@@ -286,38 +289,39 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   String _formatSessionTime(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return "Vừa xong";
-    if (diff.inMinutes < 60) return "${diff.inMinutes} phút trước";
-    if (diff.inHours < 24) return "${diff.inHours} giờ trước";
-    if (diff.inDays < 7) return "${diff.inDays} ngày trước";
+    if (diff.inMinutes < 1) return context.tr("Vừa xong", "Just now");
+    if (diff.inMinutes < 60) return "${diff.inMinutes} ${context.tr('phút trước', 'mins ago')}";
+    if (diff.inHours < 24) return "${diff.inHours} ${context.tr('giờ trước', 'hours ago')}";
+    if (diff.inDays < 7) return "${diff.inDays} ${context.tr('ngày trước', 'days ago')}";
     return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}";
   }
 
   void _confirmDeleteSession(BuildContext context, ChatSession session) {
+    final c = context.colors;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(
           children: [
             const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 22),
             const SizedBox(width: 8),
             Text(
-              "Xóa cuộc trò chuyện",
+              context.tr("Xóa cuộc trò chuyện", "Delete Chat"),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF111827),
+                color: c.textPrimary,
               ),
             ),
           ],
         ),
         content: Text(
-          "Bạn có chắc muốn xóa '${session.title}'? Thao tác này sẽ xóa toàn bộ nội dung trong cuộc trò chuyện này.",
+          "${context.tr('Bạn có chắc muốn xóa', 'Are you sure you want to delete')} '${session.title}'? ${context.tr('Thao tác này sẽ xóa toàn bộ nội dung trong cuộc trò chuyện này.', 'This will delete all messages in this conversation.')}",
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: const Color(0xFF374151),
+            color: c.textSecondary,
             fontWeight: FontWeight.w400,
             height: 1.45,
           ),
@@ -326,9 +330,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "Hủy",
+              context.tr("Hủy", "Cancel"),
               style: GoogleFonts.inter(
-                color: const Color(0xFF4B5563),
+                color: c.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -351,7 +355,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               }
             },
             child: Text(
-              "Xóa",
+              context.tr("Xóa", "Delete"),
               style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
@@ -361,8 +365,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildHistoryDrawer() {
+    final c = context.colors;
     return Drawer(
-      backgroundColor: const Color(0xFFF7F9F6),
+      backgroundColor: c.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,11 +380,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF364534),
+                      color: c.primary,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF364534).withValues(alpha: 0.2),
+                          color: c.primary.withValues(alpha: 0.2),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         )
@@ -395,18 +400,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Lịch sử trò chuyện",
+                          context.tr("Lịch sử trò chuyện", "Chat History"),
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF151E16),
+                            color: c.textPrimary,
                           ),
                         ),
                         Text(
-                          "Danh sách các phiên tư vấn AI",
+                          context.tr("Danh sách các phiên tư vấn AI", "List of AI consultations"),
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: const Color(0xFF6B7280),
+                            color: c.textMuted,
                           ),
                         ),
                       ],
@@ -428,12 +433,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: c.surfaceMuted,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF2E6F40).withValues(alpha: 0.35)),
+                    border: Border.all(color: c.border),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
+                        color: c.shadow,
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -441,14 +446,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF2E6F40), size: 20),
+                      Icon(Icons.add_circle_outline_rounded, color: c.primary, size: 20),
                       const SizedBox(width: 10),
                       Text(
-                        "Cuộc trò chuyện mới",
+                        context.tr("Cuộc trò chuyện mới", "New Chat"),
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF2E6F40),
+                          color: c.primary,
                         ),
                       ),
                     ],
@@ -458,14 +463,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ),
 
             const SizedBox(height: 6),
-            const Divider(height: 1, color: Color(0xFFE4E8E2)),
+            Divider(height: 1, color: c.border),
 
             // Danh sách các cuộc trò chuyện
             Expanded(
               child: Consumer<ChatProvider>(
                 builder: (context, chatProvider, child) {
                   if (chatProvider.isLoading) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFF364534), strokeWidth: 2.5));
+                    return Center(child: CircularProgressIndicator(color: c.primary, strokeWidth: 2.5));
                   }
                   final sessions = chatProvider.sessions;
                   if (sessions.isEmpty) {
@@ -475,17 +480,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.chat_bubble_outline_rounded, size: 44, color: Colors.grey.shade400),
+                            Icon(Icons.chat_bubble_outline_rounded, size: 44, color: c.textMuted),
                             const SizedBox(height: 12),
                             Text(
-                              "Chưa có cuộc trò chuyện nào",
-                              style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: const Color(0xFF374151)),
+                              context.tr("Chưa có cuộc trò chuyện nào", "No conversations yet"),
+                              style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: c.textPrimary),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Các câu hỏi của bạn với Bác sĩ Cây trồng sẽ được tự động lưu tại đây.",
+                              context.tr("Các câu hỏi của bạn với Bác sĩ Cây trồng sẽ được tự động lưu tại đây.", "Your questions with Plant Doctor will be saved here."),
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)),
+                              style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                             ),
                           ],
                         ),
@@ -503,15 +508,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 6),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFE7F3E8) : Colors.white,
+                          color: isSelected ? c.surfaceTint : c.surfaceMuted,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF66BB6A) : const Color(0xFFE5E9E4),
+                            color: isSelected ? c.primary : c.border,
                             width: isSelected ? 1.4 : 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
+                              color: c.shadow,
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             )
@@ -523,7 +528,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                           leading: Icon(
                             isSelected ? Icons.chat_rounded : Icons.chat_bubble_outline_rounded,
                             size: 18,
-                            color: isSelected ? const Color(0xFF2E6F40) : const Color(0xFF6B7280),
+                            color: isSelected ? c.primary : c.textMuted,
                           ),
                           title: Text(
                             session.title,
@@ -532,22 +537,22 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFF1B3B22) : const Color(0xFF1B1C1A),
+                              color: isSelected ? c.primary : c.textPrimary,
                             ),
                           ),
                           subtitle: Text(
-                            "${_formatSessionTime(session.updatedAt)} • ${session.messages.length} tin nhắn",
+                            "${_formatSessionTime(session.updatedAt)} • ${session.messages.length} ${context.tr('tin nhắn', 'messages')}",
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: isSelected ? const Color(0xFF2E6F40) : const Color(0xFF6B7280),
+                              color: isSelected ? c.primary : c.textMuted,
                             ),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit_outlined, size: 17, color: Color(0xFF6B7280)),
-                                tooltip: "Đổi tên",
+                                icon: Icon(Icons.edit_outlined, size: 17, color: c.textMuted),
+                                tooltip: context.tr("Đổi tên", "Rename"),
                                 splashRadius: 18,
                                 onPressed: () => _showRenameDialog(
                                   context,
@@ -556,8 +561,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFF9CA3AF)),
-                                tooltip: "Xóa",
+                                icon: Icon(Icons.delete_outline_rounded, size: 17, color: c.textMuted),
+                                tooltip: context.tr("Xóa", "Delete"),
                                 splashRadius: 18,
                                 onPressed: () => _confirmDeleteSession(context, session),
                               ),
@@ -802,21 +807,22 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final String activePlant = widget.plantNameVi ?? "";
 
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: _buildHistoryDrawer(),
-      backgroundColor: const Color(0xFFF7F9F6),
+      backgroundColor: c.background,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(68),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
+            color: c.surface,
+            border: Border(bottom: BorderSide(color: c.border)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: c.shadow,
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               )
@@ -828,18 +834,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF151E16), size: 20),
+                    icon: Icon(Icons.arrow_back_ios_new, color: c.textPrimary, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF364534),
+                      color: c.primary,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF364534).withValues(alpha: 0.25),
+                          color: c.primary.withValues(alpha: 0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         )
@@ -856,7 +862,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                           ? () => _showRenameDialog(
                                 context,
                                 sessionId: _currentSessionId!,
-                                currentTitle: _currentSessionTitle ?? "Cuộc trò chuyện mới",
+                                currentTitle: _currentSessionTitle ?? context.tr("Cuộc trò chuyện mới", "New Chat"),
                               )
                           : null,
                       borderRadius: BorderRadius.circular(8),
@@ -869,11 +875,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                             Row(
                               children: [
                                 Text(
-                                  "Trợ lý Floria",
+                                  context.tr("Trợ lý Floria", "Floria Assistant"),
                                   style: GoogleFonts.inter(
                                     fontSize: 15.5,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF151E16),
+                                    color: c.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
@@ -890,14 +896,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                             const SizedBox(height: 2),
                             Text(
                               _currentSessionTitle != null
-                                  ? "$_currentSessionTitle • Đang trực tuyến"
-                                  : "Đang trực tuyến",
+                                  ? "$_currentSessionTitle • ${context.tr('Đang trực tuyến', 'Online')}"
+                                  : context.tr("Đang trực tuyến", "Online"),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF364534),
+                                color: c.primary,
                               ),
                             ),
                           ],
@@ -907,14 +913,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ),
                   // Nút tạo cuộc trò chuyện mới
                   IconButton(
-                    icon: const Icon(Icons.add_comment_outlined, color: Color(0xFF364534), size: 21),
-                    tooltip: "Cuộc trò chuyện mới",
+                    icon: Icon(Icons.add_comment_outlined, color: c.primary, size: 21),
+                    tooltip: context.tr("Cuộc trò chuyện mới", "New Chat"),
                     onPressed: _startNewChat,
                   ),
                   // Nút mở lịch sử trò chuyện
                   IconButton(
-                    icon: const Icon(Icons.history_rounded, color: Color(0xFF364534), size: 22),
-                    tooltip: "Lịch sử trò chuyện",
+                    icon: Icon(Icons.history_rounded, color: c.primary, size: 22),
+                    tooltip: context.tr("Lịch sử trò chuyện", "Chat History"),
                     onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                   ),
                 ],
@@ -952,24 +958,25 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildContextBar(String plantName) {
+    final c = context.colors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF364534).withValues(alpha: 0.08),
-        border: Border(bottom: BorderSide(color: const Color(0xFF364534).withValues(alpha: 0.1))),
+        color: c.surfaceTint,
+        border: Border(bottom: BorderSide(color: c.border)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.local_florist, size: 16, color: Color(0xFF364534)),
+          Icon(Icons.local_florist, size: 16, color: c.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              "Đang trò chuyện về: $plantName ${widget.diseaseContext != null ? '(${widget.diseaseContext})' : ''}",
+              "${context.tr('Đang trò chuyện về:', 'Chatting about:')} $plantName ${widget.diseaseContext != null ? '(${widget.diseaseContext})' : ''}",
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF364534),
+                color: c.primary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -981,6 +988,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessageItem msg) {
+    final c = context.colors;
     if (msg.isUser) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -993,7 +1001,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF364534),
+                  color: c.primary,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -1002,7 +1010,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF364534).withValues(alpha: 0.15),
+                      color: c.primary.withValues(alpha: 0.15),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     )
@@ -1050,27 +1058,27 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               height: 34,
               margin: const EdgeInsets.only(right: 10, top: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF364534).withValues(alpha: 0.1),
+                color: c.surfaceTint,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF364534).withValues(alpha: 0.2)),
+                border: Border.all(color: c.primary.withValues(alpha: 0.2)),
               ),
-              child: const Icon(Icons.eco, color: Color(0xFF364534), size: 18),
+              child: Icon(Icons.eco, color: c.primary, size: 18),
             ),
             Flexible(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: c.surface,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(4),
                     topRight: Radius.circular(20),
                     bottomRight: Radius.circular(20),
                     bottomLeft: Radius.circular(20),
                   ),
-                  border: Border.all(color: const Color(0xFFE4E2DF)),
+                  border: Border.all(color: c.border),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: c.shadow,
                       blurRadius: 12,
                       offset: const Offset(0, 2),
                     )
@@ -1083,21 +1091,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(
+                          SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFF2E6F40),
+                              color: c.primary,
                             ),
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            "Đang suy nghĩ...",
+                            context.tr("Đang suy nghĩ...", "Thinking..."),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
-                              color: const Color(0xFF364534),
+                              color: c.primary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1111,59 +1119,59 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                           p: GoogleFonts.inter(
                             fontSize: 14,
                             height: 1.6,
-                            color: const Color(0xFF1E241E),
+                            color: c.textPrimary,
                           ),
                           strong: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1B3B22),
+                            color: c.primaryText,
                           ),
                           em: GoogleFonts.inter(
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
-                            color: const Color(0xFF374151),
+                            color: c.textSecondary,
                           ),
                           h1: GoogleFonts.inter(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1B3B22),
+                            color: c.primaryText,
                           ),
                           h2: GoogleFonts.inter(
                             fontSize: 15.5,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1B3B22),
+                            color: c.primaryText,
                           ),
                           h3: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2E6F40),
+                            color: c.primary,
                           ),
                           listBullet: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2E6F40),
+                            color: c.primary,
                           ),
                           blockquote: GoogleFonts.inter(
                             fontSize: 13.5,
                             fontStyle: FontStyle.italic,
-                            color: const Color(0xFF2E6F40),
+                            color: c.primary,
                           ),
                           blockquoteDecoration: BoxDecoration(
-                            color: const Color(0xFFF1F7F2),
+                            color: c.surfaceMuted,
                             borderRadius: BorderRadius.circular(8),
-                            border: const Border(
-                              left: BorderSide(color: Color(0xFF2E6F40), width: 3.5),
+                            border: Border(
+                              left: BorderSide(color: c.primary, width: 3.5),
                             ),
                           ),
                           code: GoogleFonts.robotoMono(
                             fontSize: 12.5,
-                            color: const Color(0xFF1B5E20),
-                            backgroundColor: const Color(0xFFE8F0E8),
+                            color: c.primary,
+                            backgroundColor: c.surfaceTint,
                           ),
                           codeblockDecoration: BoxDecoration(
-                            color: const Color(0xFFF3F6F3),
+                            color: c.surfaceMuted,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFD6E2D6)),
+                            border: Border.all(color: c.border),
                           ),
                         ),
                       ),
@@ -1175,21 +1183,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE5F4EA),
+                          color: c.surfaceTint,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.medical_services_rounded, color: Color(0xFF2E6F40), size: 14),
+                            Icon(Icons.medical_services_rounded, color: c.primary, size: 14),
                             const SizedBox(width: 6),
                             Text(
-                              "TRỢ LÝ FLORIA KÊ ĐƠN VẬT TƯ ĐIỀU TRỊ",
+                              context.tr("TRỢ LÝ FLORIA KÊ ĐƠN VẬT TƯ ĐIỀU TRỊ", "FLORIA ASSISTANT TREATMENT PRESCRIPTION"),
                               style: GoogleFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.5,
-                                color: const Color(0xFF2E6F40),
+                                color: c.primary,
                               ),
                             ),
                           ],
@@ -1275,6 +1283,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildAiMessageActions(ChatMessageItem msg) {
+    final c = context.colors;
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: Row(
@@ -1284,8 +1293,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             onTap: () {
               Clipboard.setData(ClipboardData(text: msg.text));
               _showAppToast(
-                title: "Đã sao chép vào bộ nhớ tạm",
-                subtitle: "Nội dung phản hồi đã sẵn sàng để dán.",
+                title: context.tr("Đã sao chép vào bộ nhớ tạm", "Copied to clipboard"),
+                subtitle: context.tr("Nội dung phản hồi đã sẵn sàng để dán.", "Response content ready to paste."),
                 icon: Icons.copy_rounded,
                 iconColor: const Color(0xFF4ADE80),
               );
@@ -1296,14 +1305,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.copy_rounded, size: 13, color: Color(0xFF6B7280)),
+                  Icon(Icons.copy_rounded, size: 13, color: c.textMuted),
                   const SizedBox(width: 4),
                   Text(
-                    "Sao chép",
+                    context.tr("Sao chép", "Copy"),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF6B7280),
+                      color: c.textMuted,
                     ),
                   ),
                 ],
@@ -1314,7 +1323,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             "${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}",
             style: GoogleFonts.inter(
               fontSize: 10.5,
-              color: const Color(0xFF9CA3AF),
+              color: c.textMuted,
             ),
           ),
         ],
@@ -1323,6 +1332,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildProductRecommendationCard(String productId) {
+    final c = context.colors;
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final product = shopProvider.getProductById(productId);
     if (product == null) return const SizedBox.shrink();
@@ -1331,9 +1341,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBF8),
+        color: c.surfaceMuted,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFC8E6C9)),
+        border: Border.all(color: c.border),
       ),
       child: Row(
         children: [
@@ -1358,7 +1368,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF191C19),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1367,7 +1377,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2E6F40),
+                    color: c.primary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -1385,13 +1395,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: c.surface,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFB0BEC5)),
+                          border: Border.all(color: c.border),
                         ),
                         child: Text(
-                          "Chi tiết",
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF455A64)),
+                          context.tr("Chi tiết", "Details"),
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: c.textSecondary),
                         ),
                       ),
                     ),
@@ -1400,7 +1410,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       onTap: () {
                         shopProvider.addToCart(product);
                         _showAppToast(
-                          title: "Đã thêm vào giỏ hàng",
+                          title: context.tr("Đã thêm vào giỏ hàng", "Added to cart"),
                           subtitle: product.name,
                           icon: Icons.shopping_bag_outlined,
                           iconColor: const Color(0xFF4ADE80),
@@ -1409,7 +1419,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF364534),
+                          color: c.primary,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -1418,7 +1428,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                             const Icon(Icons.add_shopping_cart_rounded, color: Colors.white, size: 12),
                             const SizedBox(width: 4),
                             Text(
-                              "Mua ngay",
+                              context.tr("Mua ngay", "Buy now"),
                               style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
                             ),
                           ],
@@ -1436,6 +1446,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildCareScheduleProposalCard(CareScheduleProposal proposal) {
+    final c = context.colors;
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
 
     // Tìm cây trong vườn khớp với ngữ cảnh hiện tại
@@ -1451,18 +1462,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ? gardenProvider.plants.firstWhere((p) => p.nameVi.toLowerCase() == (widget.plantNameVi ?? '').toLowerCase())
             : (gardenProvider.plants.isNotEmpty ? gardenProvider.plants.first : null));
 
-    final targetName = matchingPlant?.nickname ?? widget.plantNameVi ?? "Cây của bạn";
+    final targetName = matchingPlant?.nickname ?? widget.plantNameVi ?? context.tr("Cây của bạn", "Your plant");
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F9F4),
+        color: c.surfaceTint,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFB8E0BE), width: 1.2),
+        border: Border.all(color: c.border, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2E6F40).withValues(alpha: 0.08),
+            color: c.shadow,
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1476,10 +1487,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E6F40).withValues(alpha: 0.12),
+                  color: c.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF2E6F40), size: 16),
+                child: Icon(Icons.auto_awesome_rounded, color: c.primary, size: 16),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -1487,17 +1498,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "ĐỀ XUẤT LỊCH CHĂM SÓC TỪ TRỢ LÝ FLORIA",
+                      context.tr("ĐỀ XUẤT LỊCH CHĂM SÓC TỪ TRỢ LÝ FLORIA", "CARE SCHEDULE PROPOSAL FROM FLORIA"),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.5,
-                        color: const Color(0xFF1B5E20),
+                        color: c.primary,
                       ),
                     ),
                     Text(
-                      "Áp dụng cho: $targetName",
-                      style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF4B5563), fontWeight: FontWeight.w500),
+                      "${context.tr("Áp dụng cho:", "Apply to:")} $targetName",
+                      style: GoogleFonts.inter(fontSize: 11.5, color: c.textSecondary, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -1505,7 +1516,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(color: Color(0xFFD4E8CE), height: 1),
+          Divider(color: c.border, height: 1),
           const SizedBox(height: 10),
 
           // 3 thông số đề xuất
@@ -1515,20 +1526,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               _buildCareParamBadge(
                 icon: Icons.water_drop_rounded,
                 iconColor: const Color(0xFF0284C7),
-                title: "Tưới nước",
-                value: "${proposal.waterDays} ngày/lần",
+                title: context.tr("Tưới nước", "Watering"),
+                value: "${proposal.waterDays} ${context.tr("ngày/lần", "days/time")}",
               ),
               _buildCareParamBadge(
                 icon: Icons.science_rounded,
                 iconColor: const Color(0xFFD97706),
-                title: "Bón phân",
-                value: "${proposal.fertilizeDays} ngày/lần",
+                title: context.tr("Bón phân", "Fertilizing"),
+                value: "${proposal.fertilizeDays} ${context.tr("ngày/lần", "days/time")}",
               ),
               _buildCareParamBadge(
                 icon: Icons.eco_rounded,
                 iconColor: const Color(0xFF16A34A),
-                title: "Lau lá/Soi sâu",
-                value: "${proposal.cleanDays} ngày/lần",
+                title: context.tr("Lau lá/Soi sâu", "Pest/Clean"),
+                value: "${proposal.cleanDays} ${context.tr("ngày/lần", "days/time")}",
               ),
             ],
           ),
@@ -1554,23 +1565,26 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         notes: matchingPlant.notes,
                       );
 
-                      if (context.mounted && success) {
+                      if (mounted && success) {
                         setState(() {
                           proposal.isApplied = true;
                         });
                         _showAppToast(
-                          title: "Đã cập nhật lịch cho '$targetName'!",
-                          subtitle: "Lịch chăm sóc thực tế trong vườn đã đồng bộ theo Trợ lý Floria.",
+                          title: "${context.tr("Đã cập nhật lịch cho", "Updated schedule for")} '$targetName'!",
+                          subtitle: context.tr(
+                            "Lịch chăm sóc thực tế trong vườn đã đồng bộ theo Trợ lý Floria.",
+                            "Real garden care schedule synced with Floria Assistant.",
+                          ),
                           icon: Icons.check_circle_rounded,
                           iconColor: const Color(0xFF4ADE80),
                         );
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E6F40),
-                disabledBackgroundColor: const Color(0xFFE5E7EB),
+                backgroundColor: c.primary,
+                disabledBackgroundColor: c.surfaceMuted,
                 foregroundColor: Colors.white,
-                disabledForegroundColor: const Color(0xFF6B7280),
+                disabledForegroundColor: c.textMuted,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: proposal.isApplied ? 0 : 2,
               ),
@@ -1580,7 +1594,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 color: proposal.isApplied ? const Color(0xFF16A34A) : Colors.white,
               ),
               label: Text(
-                proposal.isApplied ? "Đã áp dụng vào cây trồng ✓" : "Áp dụng lịch này vào cây",
+                proposal.isApplied
+                    ? context.tr("Đã áp dụng vào cây trồng ✓", "Applied to plant ✓")
+                    : context.tr("Áp dụng lịch này vào cây", "Apply schedule to plant"),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -1600,6 +1616,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     required String title,
     required String value,
   }) {
+    final c = context.colors;
     return Column(
       children: [
         Container(
@@ -1613,18 +1630,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         const SizedBox(height: 4),
         Text(
           title,
-          style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280), fontWeight: FontWeight.w500),
+          style: GoogleFonts.inter(fontSize: 11, color: c.textMuted, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 2),
         Text(
           value,
-          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937)),
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: c.textPrimary),
         ),
       ],
     );
   }
 
   Widget _buildTypingIndicator() {
+    final c = context.colors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1635,36 +1653,36 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             height: 34,
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF364534).withValues(alpha: 0.1),
+              color: c.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.eco, color: Color(0xFF364534), size: 18),
+            child: Icon(Icons.eco, color: c.primary, size: 18),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE4E2DF)),
+              border: Border.all(color: c.border),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFF364534),
+                    color: c.primary,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  "Đang suy nghĩ...",
+                  context.tr("Đang suy nghĩ...", "Thinking..."),
                   style: GoogleFonts.inter(
                     fontSize: 12.5,
                     fontStyle: FontStyle.italic,
-                    color: const Color(0xFF364534),
+                    color: c.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1677,14 +1695,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Widget _buildInputDock() {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: const Color(0xFFE4E2DF))),
+        color: c.surface,
+        border: Border(top: BorderSide(color: c.border)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: c.shadow,
             blurRadius: 16,
             offset: const Offset(0, -4),
           )
@@ -1701,9 +1720,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF7F9F6),
+                  color: c.surfaceMuted,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFD4E8CE)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Row(
                   children: [
@@ -1719,12 +1738,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "Đã đính kèm ảnh cây để Trợ lý Floria chẩn đoán",
-                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF364534), fontWeight: FontWeight.w500),
+                        context.tr("Đã đính kèm ảnh cây để Trợ lý Floria chẩn đoán", "Attached plant photo for Floria diagnosis"),
+                        style: GoogleFonts.inter(fontSize: 12, color: c.textPrimary, fontWeight: FontWeight.w500),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                      icon: Icon(Icons.close, size: 18, color: c.textMuted),
                       onPressed: () => setState(() => _attachedImageBytes = null),
                     ),
                   ],
@@ -1735,13 +1754,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.camera_alt_outlined, color: Color(0xFF364534)),
-                  tooltip: "Chụp ảnh cây",
+                  icon: Icon(Icons.camera_alt_outlined, color: c.primary),
+                  tooltip: context.tr("Chụp ảnh cây", "Take plant photo"),
                   onPressed: () => _pickImage(ImageSource.camera),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.photo_outlined, color: Color(0xFF364534)),
-                  tooltip: "Chọn ảnh từ thư viện",
+                  icon: Icon(Icons.photo_outlined, color: c.primary),
+                  tooltip: context.tr("Chọn ảnh từ thư viện", "Pick from gallery"),
                   onPressed: () => _pickImage(ImageSource.gallery),
                 ),
                 const SizedBox(width: 4),
@@ -1749,17 +1768,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   child: Container(
                     constraints: const BoxConstraints(maxHeight: 120),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7F9F6),
+                      color: c.surfaceMuted,
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFE4E2DF)),
+                      border: Border.all(color: c.border),
                     ),
                     child: TextField(
                       controller: _messageController,
                       maxLines: null,
-                      style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1B1C1A)),
+                      style: GoogleFonts.inter(fontSize: 14, color: c.textPrimary),
                       decoration: InputDecoration(
-                        hintText: "Hỏi Trợ lý Floria về sâu bệnh, tưới nước...",
-                        hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF747871)),
+                        hintText: context.tr("Hỏi Trợ lý Floria về sâu bệnh, tưới nước...", "Ask Floria about pests, watering..."),
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
@@ -1769,8 +1788,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF364534),
+                  decoration: BoxDecoration(
+                    color: c.primary,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(

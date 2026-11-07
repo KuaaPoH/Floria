@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../home/screens/main_navigation_screen.dart';
 import 'register_screen.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _isSubmitting = false;
 
@@ -29,37 +31,56 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSubmitting = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     final error = await authProvider.login(
       _emailController.text.trim(),
       _passwordController.text,
     );
-    
+
     setState(() => _isSubmitting = false);
-    
+
     if (error == null && mounted) {
-      // Chuyển hướng sang màn hình MainNavigationScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'Đăng nhập thất bại')),
+        SnackBar(content: Text(error ?? context.tr('Đăng nhập thất bại', 'Login failed'))),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    final auth = context.read<AuthProvider>();
+    final success = await auth.loginWithGoogle();
+    if (!mounted) return;
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('Đăng nhập Google thất bại', 'Google sign-in failed')),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2FCEF), // Màu nền sáng tự nhiên giống thiết kế
+      backgroundColor: c.background,
       body: Stack(
         children: [
-          // Background Decor Orbs (Các khối tròn mờ ảo nghệ thuật)
+          // Background Decor Orbs
           Positioned(
             top: -150,
             right: -150,
@@ -68,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 350,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF00E676).withValues(alpha: 0.06),
+                color: c.primary.withValues(alpha: c.isDark ? 0.12 : 0.06),
               ),
             ),
           ),
@@ -80,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF91D78A).withValues(alpha: 0.08),
+                color: c.primary.withValues(alpha: c.isDark ? 0.08 : 0.08),
               ),
             ),
           ),
@@ -101,10 +122,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 96,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: c.surface.withValues(alpha: 0.85),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: c.shadow,
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
@@ -125,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF006D35),
+                          color: c.primary,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -133,19 +154,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Greeting
                       Text(
-                        'Mừng bạn trở lại!',
+                        context.tr('Mừng bạn trở lại!', 'Welcome Back!'),
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: c.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Tiếp tục chăm sóc khu vườn của bạn.',
+                        context.tr('Tiếp tục chăm sóc khu vườn của bạn.', 'Continue tending your lovely garden.'),
                         style: GoogleFonts.beVietnamPro(
                           fontSize: 14,
-                          color: Colors.black54,
+                          color: c.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -153,15 +174,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Email Field
                       _buildInputField(
                         controller: _emailController,
-                        hintText: "Email của bạn",
+                        hintText: context.tr("Email của bạn", "Your email"),
                         icon: Icons.mail_outline,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Vui lòng nhập Email';
+                            return context.tr('Vui lòng nhập Email', 'Please enter your email');
                           }
                           if (!value.contains('@')) {
-                            return 'Email không đúng định dạng';
+                            return context.tr('Email không đúng định dạng', 'Invalid email format');
                           }
                           return null;
                         },
@@ -171,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Password Field
                       _buildInputField(
                         controller: _passwordController,
-                        hintText: "Mật khẩu",
+                        hintText: context.tr("Mật khẩu", "Password"),
                         icon: Icons.lock_outline,
                         isPassword: true,
                         obscureText: _obscurePassword,
@@ -182,10 +203,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Vui lòng nhập mật khẩu';
+                            return context.tr('Vui lòng nhập mật khẩu', 'Please enter password');
                           }
                           if (value.length < 6) {
-                            return 'Mật khẩu phải từ 6 ký tự trở lên';
+                            return context.tr('Mật khẩu phải từ 6 ký tự trở lên', 'Password must be at least 6 characters');
                           }
                           return null;
                         },
@@ -200,11 +221,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             _showForgotPasswordDialog(context);
                           },
                           child: Text(
-                            'Quên mật khẩu?',
+                            context.tr('Quên mật khẩu?', 'Forgot password?'),
                             style: GoogleFonts.beVietnamPro(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF00E676),
+                              color: c.primary,
                             ),
                           ),
                         ),
@@ -217,26 +238,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00E676),
-                            foregroundColor: const Color(0xFF004D26),
+                            backgroundColor: c.primary,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 3,
-                            shadowColor: const Color(0xFF00E676).withValues(alpha: 0.3),
+                            shadowColor: c.shadow,
                           ),
                           child: _isSubmitting
                               ? const SizedBox(
                                   width: 22,
                                   height: 22,
                                   child: CircularProgressIndicator(
-                                    color: Color(0xFF004D26),
+                                    color: Colors.white,
                                     strokeWidth: 2.5,
                                   ),
                                 )
                               : Text(
-                                  'Đăng Nhập',
+                                  context.tr('Đăng Nhập', 'Sign In'),
                                   style: GoogleFonts.beVietnamPro(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -249,19 +270,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Divider
                       Row(
                         children: [
-                          Expanded(child: Divider(color: Colors.grey[300])),
+                          Expanded(child: Divider(color: c.border)),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Text(
-                              'HOẶC TIẾP TỤC VỚI',
+                              context.tr('HOẶC TIẾP TỤC VỚI', 'OR CONTINUE WITH'),
                               style: GoogleFonts.beVietnamPro(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black38,
+                                color: c.textMuted,
                               ),
                             ),
                           ),
-                          Expanded(child: Divider(color: Colors.grey[300])),
+                          Expanded(child: Divider(color: c.border)),
                         ],
                       ),
                       const SizedBox(height: 25),
@@ -277,29 +298,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: 18,
                                 height: 18,
                               ),
-                              onTap: () async {
-                                final auth = context.read<AuthProvider>();
-                                bool success = await auth.loginWithGoogle();
-                                if (success && mounted) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-                                  );
-                                } else if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Đăng nhập Google thất bại')),
-                                  );
-                                }
-                              },
+                              onTap: _handleGoogleLogin,
                             ),
                           ),
                           const SizedBox(width: 15),
                           Expanded(
                             child: _buildSocialButton(
                               label: "Apple",
-                              iconWidget: const Icon(
+                              iconWidget: Icon(
                                 Icons.apple,
-                                color: Colors.black87,
+                                color: c.textPrimary,
                                 size: 20,
                               ),
                             ),
@@ -313,10 +321,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Chưa có tài khoản?',
+                            context.tr('Chưa có tài khoản?', 'Don\'t have an account?'),
                             style: GoogleFonts.beVietnamPro(
                               fontSize: 14,
-                              color: Colors.black54,
+                              color: c.textSecondary,
                             ),
                           ),
                           GestureDetector(
@@ -327,11 +335,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                             child: Text(
-                              ' Đăng ký ngay',
+                              context.tr(' Đăng ký ngay', ' Sign up now'),
                               style: GoogleFonts.beVietnamPro(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF00E676),
+                                color: c.primary,
                               ),
                             ),
                           ),
@@ -359,14 +367,15 @@ class _LoginScreenState extends State<LoginScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
+    final c = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
+        color: c.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 0.5),
+        border: Border.all(color: c.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.015),
+            color: c.shadow,
             blurRadius: 10,
             offset: const Offset(0, 3),
           )
@@ -377,16 +386,16 @@ class _LoginScreenState extends State<LoginScreen> {
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
-        style: GoogleFonts.beVietnamPro(fontSize: 14, color: Colors.black87),
+        style: GoogleFonts.beVietnamPro(fontSize: 14, color: c.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: Colors.black38),
-          prefixIcon: Icon(icon, color: Colors.black38, size: 20),
+          hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: c.textMuted),
+          prefixIcon: Icon(icon, color: c.textMuted, size: 20),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.black38,
+                    color: c.textMuted,
                     size: 20,
                   ),
                   onPressed: onSuffixIconTap,
@@ -404,18 +413,21 @@ class _LoginScreenState extends State<LoginScreen> {
     required Widget iconWidget,
     VoidCallback? onTap,
   }) {
+    final c = context.colors;
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: c.border),
       ),
       child: InkWell(
         onTap: onTap ?? () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Phương thức đăng nhập $label đang được tích hợp'),
+              content: Text(
+                "${context.tr('Phương thức đăng nhập', 'Sign in method')} $label ${context.tr('đang được tích hợp', 'is coming soon')}",
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -431,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: GoogleFonts.beVietnamPro(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: c.textPrimary,
               ),
             ),
           ],
@@ -441,6 +453,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showForgotPasswordDialog(BuildContext context) {
+    final c = context.colors;
     final resetEmailController = TextEditingController();
     bool isSending = false;
 
@@ -450,26 +463,43 @@ class _LoginScreenState extends State<LoginScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
+              backgroundColor: c.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
-                'Khôi phục mật khẩu',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 18),
+                context.tr('Khôi phục mật khẩu', 'Reset Password'),
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 18, color: c.textPrimary),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Vui lòng nhập Email của bạn. Chúng tôi sẽ gửi một đường dẫn để đặt lại mật khẩu.',
-                    style: GoogleFonts.beVietnamPro(fontSize: 14, color: Colors.black54),
+                    context.tr(
+                      'Vui lòng nhập Email của bạn. Chúng tôi sẽ gửi một đường dẫn để đặt lại mật khẩu.',
+                      'Please enter your email. We will send a link to reset your password.',
+                    ),
+                    style: GoogleFonts.beVietnamPro(fontSize: 14, color: c.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: resetEmailController,
                     keyboardType: TextInputType.emailAddress,
+                    style: GoogleFonts.beVietnamPro(fontSize: 14, color: c.textPrimary),
                     decoration: InputDecoration(
-                      hintText: "Email của bạn",
-                      prefixIcon: const Icon(Icons.mail_outline, size: 20),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      hintText: context.tr("Email của bạn", "Your email"),
+                      hintStyle: GoogleFonts.beVietnamPro(fontSize: 13, color: c.textMuted),
+                      prefixIcon: Icon(Icons.mail_outline, size: 20, color: c.textMuted),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: c.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: c.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: c.primary, width: 1.5),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
@@ -478,7 +508,7 @@ class _LoginScreenState extends State<LoginScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: Text('Hủy', style: GoogleFonts.beVietnamPro(color: Colors.grey)),
+                  child: Text(context.tr('Hủy', 'Cancel'), style: GoogleFonts.beVietnamPro(color: c.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isSending
@@ -487,7 +517,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           final email = resetEmailController.text.trim();
                           if (email.isEmpty || !email.contains('@')) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Vui lòng nhập Email hợp lệ')),
+                              SnackBar(
+                                content: Text(context.tr('Vui lòng nhập Email hợp lệ', 'Please enter a valid email')),
+                              ),
                             );
                             return;
                           }
@@ -495,12 +527,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           setStateDialog(() => isSending = true);
                           final authProvider = Provider.of<AuthProvider>(context, listen: false);
                           final error = await authProvider.resetPassword(email);
+                          if (!ctx.mounted) return;
                           setStateDialog(() => isSending = false);
 
                           if (error == null) {
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã gửi Email khôi phục! Vui lòng kiểm tra hộp thư.')),
+                              SnackBar(
+                                content: Text(
+                                  context.tr(
+                                    'Đã gửi Email khôi phục! Vui lòng kiểm tra hộp thư.',
+                                    'Reset email sent! Please check your inbox.',
+                                  ),
+                                ),
+                              ),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -509,12 +549,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E676),
+                    backgroundColor: c.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: isSending
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text('Gửi', style: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold, color: const Color(0xFF004D26))),
+                      : Text(context.tr('Gửi', 'Send'), style: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ],
             );

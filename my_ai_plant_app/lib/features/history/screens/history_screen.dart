@@ -5,6 +5,8 @@ import '../providers/history_provider.dart';
 import '../models/scan_history_item.dart';
 import '../../scan/screens/plant_wiki_screen.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -16,14 +18,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  static const Color primary = Color(0xFF364534);
-  static const Color primaryAccent = Color(0xFF4F9D69);
-  static const Color bg = Color(0xFFFBF9F6);
-  static const Color surface = Colors.white;
-  static const Color textMain = Color(0xFF1F2A21);
-  static const Color textMuted = Color(0xFF6A756B);
   static const Color stateDanger = Color(0xFFBA1A1A);
-  static const Color stateWarning = Color(0xFFD1A34D);
 
   @override
   void dispose() {
@@ -33,10 +28,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final historyProvider = Provider.of<HistoryProvider>(context);
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: c.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,6 +52,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- APP BAR ---
   Widget _buildAppBar(BuildContext context, HistoryProvider provider) {
+    final c = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -64,7 +61,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: textMain, size: 20),
+                icon: Icon(Icons.arrow_back_ios_new, color: c.textPrimary, size: 20),
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 4),
@@ -72,20 +69,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'NHẬT KÝ QUÉT CÂY',
+                    context.tr('NHẬT KÝ QUÉT CÂY', 'PLANT SCAN LOG'),
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.5,
-                      color: primaryAccent,
+                      color: c.primary,
                     ),
                   ),
                   Text(
-                    'Lịch Sử Quét',
+                    context.tr('Lịch Sử Quét', 'Scan History'),
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: textMain,
+                      color: c.textPrimary,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -95,9 +92,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           if (provider.totalCount > 0)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: textMain),
+              icon: Icon(Icons.more_vert, color: c.textPrimary),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.white,
+              color: c.surface,
               onSelected: (value) {
                 if (value == 'clear_all') {
                   _showConfirmClearDialog(context, provider);
@@ -111,7 +108,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       const Icon(Icons.delete_sweep_outlined, color: stateDanger, size: 20),
                       const SizedBox(width: 10),
                       Text(
-                        'Xóa toàn bộ lịch sử',
+                        context.tr('Xóa toàn bộ lịch sử', 'Clear All History'),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -130,17 +127,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- THANH TÌM KIẾM ---
   Widget _buildSearchBar(HistoryProvider provider) {
+    final c = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE4E2DF)),
+          border: Border.all(color: c.border),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF17231A).withValues(alpha: 0.03),
+              color: c.shadow,
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -149,16 +147,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
-            const Icon(Icons.search, color: textMuted, size: 20),
+            Icon(Icons.search, color: c.textMuted, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
                 controller: _searchController,
                 onChanged: provider.setSearchQuery,
-                style: GoogleFonts.inter(fontSize: 14, color: textMain),
+                style: GoogleFonts.inter(fontSize: 14, color: c.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Tìm theo tên cây, bệnh lá...',
-                  hintStyle: GoogleFonts.inter(fontSize: 13, color: textMuted),
+                  hintText: context.tr('Tìm theo tên cây, bệnh lá...', 'Search by plant, leaf disease...'),
+                  hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
@@ -171,7 +169,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   _searchController.clear();
                   provider.setSearchQuery('');
                 },
-                child: const Icon(Icons.close, color: textMuted, size: 18),
+                child: Icon(Icons.close, color: c.textMuted, size: 18),
               ),
           ],
         ),
@@ -187,19 +185,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Row(
         children: [
           _buildChip(
-            label: 'Tất cả (${provider.totalCount})',
+            label: '${context.tr("Tất cả", "All")} (${provider.totalCount})',
             isSelected: provider.selectedFilter == 'all',
             onTap: () => provider.setFilter('all'),
           ),
           const SizedBox(width: 8),
           _buildChip(
-            label: '🌿 Loài cây (${provider.plantCount})',
+            label: '🌿 ${context.tr("Loài cây", "Species")} (${provider.plantCount})',
             isSelected: provider.selectedFilter == 'plant_discovery',
             onTap: () => provider.setFilter('plant_discovery'),
           ),
           const SizedBox(width: 8),
           _buildChip(
-            label: '🔬 Bệnh lá (${provider.diseaseCount})',
+            label: '🔬 ${context.tr("Bệnh lá", "Diseases")} (${provider.diseaseCount})',
             isSelected: provider.selectedFilter == 'disease_diagnosis',
             onTap: () => provider.setFilter('disease_diagnosis'),
           ),
@@ -213,21 +211,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? primary : Colors.white,
+          color: isSelected ? c.primary : c.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? primary : const Color(0xFFE4E2DF),
+            color: isSelected ? c.primary : c.border,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: primary.withValues(alpha: 0.25),
+                    color: c.primary.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -239,7 +238,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? Colors.white : textMain,
+            color: isSelected ? Colors.white : c.textPrimary,
           ),
         ),
       ),
@@ -248,9 +247,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- NỘI DUNG DANH SÁCH LỊCH SỬ ---
   Widget _buildHistoryContent(HistoryProvider provider) {
+    final c = context.colors;
     if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: primary),
+      return Center(
+        child: CircularProgressIndicator(color: c.primary),
       );
     }
 
@@ -264,14 +264,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
               const Icon(Icons.cloud_off_rounded, size: 48, color: stateDanger),
               const SizedBox(height: 12),
               Text(
-                'Lỗi kết nối lịch sử',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textMain),
+                context.tr('Lỗi kết nối lịch sử', 'History connection error'),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary),
               ),
               const SizedBox(height: 6),
               Text(
                 provider.errorMessage!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 13, color: textMuted),
+                style: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
               ),
             ],
           ),
@@ -302,6 +302,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ScanHistoryItem item,
     HistoryProvider provider,
   ) {
+    final c = context.colors;
     final bool isDisease = item.isDisease;
     final bool isHealthy = item.isHealthy;
 
@@ -311,17 +312,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (isDisease) {
       if (isHealthy) {
-        iconBgColor = const Color(0xFFE5F4EA);
+        iconBgColor = c.isDark ? const Color(0xFF1E3A24) : const Color(0xFFE5F4EA);
         iconColor = const Color(0xFF3E8055);
         iconData = Icons.verified_user_outlined;
       } else {
-        iconBgColor = const Color(0xFFFFEBEE);
+        iconBgColor = c.isDark ? const Color(0xFF3E1E1E) : const Color(0xFFFFEBEE);
         iconColor = stateDanger;
         iconData = Icons.coronavirus_outlined;
       }
     } else {
-      iconBgColor = const Color(0xFFE8F2E3);
-      iconColor = primary;
+      iconBgColor = c.surfaceTint;
+      iconColor = c.primary;
       iconData = Icons.eco_outlined;
     }
 
@@ -346,7 +347,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         provider.deleteItem(item.id);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã xóa bản ghi "${item.displayName}" khỏi lịch sử.'),
+            content: Text(
+              '${context.tr("Đã xóa bản ghi", "Deleted record")} "${item.displayName}" ${context.tr("khỏi lịch sử.", "from history.")}',
+            ),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             duration: const Duration(seconds: 2),
@@ -358,12 +361,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: surface,
+            color: c.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE4E2DF)),
+            border: Border.all(color: c.border),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF17231A).withValues(alpha: 0.04),
+                color: c.shadow,
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -398,7 +401,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: textMain,
+                              color: c.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -408,7 +411,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF0EFEB),
+                            color: c.surfaceMuted,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -416,7 +419,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: primary,
+                              color: c.primary,
                             ),
                           ),
                         ),
@@ -425,12 +428,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(height: 2),
                     Text(
                       isDisease && item.plantName.isNotEmpty
-                          ? 'Cây kiểm tra: ${item.plantName}'
+                          ? '${context.tr("Cây kiểm tra:", "Inspected plant:")} ${item.plantName}'
                           : item.cleanPrediction,
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
-                        color: textMuted,
+                        color: c.textMuted,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -445,34 +448,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           decoration: BoxDecoration(
                             color: isDisease
                                 ? (isHealthy
-                                    ? const Color(0xFFE5F4EA)
-                                    : const Color(0xFFFFEBEE))
-                                : const Color(0xFFE8F2E3),
+                                    ? (c.isDark ? const Color(0xFF1E3A24) : const Color(0xFFE5F4EA))
+                                    : (c.isDark ? const Color(0xFF3E1E1E) : const Color(0xFFFFEBEE)))
+                                : c.surfaceTint,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             isDisease
                                 ? (item.severityVi.isNotEmpty
                                     ? item.severityVi
-                                    : (isHealthy ? 'Khỏe mạnh' : 'Bệnh lá'))
-                                : 'Loài cây',
+                                    : (isHealthy ? context.tr('Khỏe mạnh', 'Healthy') : context.tr('Bệnh lá', 'Leaf disease')))
+                                : context.tr('Loài cây', 'Plant species'),
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: isDisease
                                   ? (isHealthy ? const Color(0xFF3E8055) : stateDanger)
-                                  : primary,
+                                  : c.primary,
                             ),
                           ),
                         ),
                         // Thời gian
                         Row(
                           children: [
-                            const Icon(Icons.schedule, size: 12, color: textMuted),
+                            Icon(Icons.schedule, size: 12, color: c.textMuted),
                             const SizedBox(width: 4),
                             Text(
                               dateString,
-                              style: GoogleFonts.inter(fontSize: 11, color: textMuted),
+                              style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
                             ),
                           ],
                         ),
@@ -490,6 +493,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- MODAL CHI TIẾT KẾT QUẢ ---
   void _showDetailModal(BuildContext context, ScanHistoryItem item) {
+    final c = context.colors;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -499,9 +503,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final bool isHealthy = item.isHealthy;
 
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
           child: SafeArea(
@@ -517,7 +521,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: c.textMuted.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -530,25 +534,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: isDisease
-                              ? (isHealthy ? const Color(0xFFE5F4EA) : const Color(0xFFFFEBEE))
-                              : const Color(0xFFE8F2E3),
+                              ? (isHealthy
+                                  ? (c.isDark ? const Color(0xFF1E3A24) : const Color(0xFFE5F4EA))
+                                  : (c.isDark ? const Color(0xFF3E1E1E) : const Color(0xFFFFEBEE)))
+                              : c.surfaceTint,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          isDisease ? "CHẨN ĐOÁN BỆNH HỌC" : "NHẬN DIỆN THỰC VẬT",
+                          isDisease
+                              ? context.tr("CHẨN ĐOÁN BỆNH HỌC", "PATHOLOGY DIAGNOSIS")
+                              : context.tr("NHẬN DIỆN THỰC VẬT", "PLANT IDENTIFICATION"),
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                             color: isDisease
                                 ? (isHealthy ? const Color(0xFF3E8055) : stateDanger)
-                                : primary,
+                                : c.primary,
                           ),
                         ),
                       ),
                       Text(
                         _formatDateTime(item.timestamp),
-                        style: GoogleFonts.inter(fontSize: 12, color: textMuted),
+                        style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                       ),
                     ],
                   ),
@@ -558,7 +566,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: textMain,
+                      color: c.textPrimary,
                       height: 1.2,
                     ),
                   ),
@@ -569,7 +577,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontStyle: FontStyle.italic,
-                        color: textMuted,
+                        color: c.textMuted,
                       ),
                     ),
                   ],
@@ -578,22 +586,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: bg,
+                      color: c.surfaceMuted,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE4E2DF)),
+                      border: Border.all(color: c.border),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildParamCol("Độ tin cậy", "${item.confidence.toStringAsFixed(1)}%"),
-                        Container(width: 1, height: 28, color: const Color(0xFFE4E2DF)),
+                        _buildParamCol(context.tr("Độ tin cậy", "Confidence"), "${item.confidence.toStringAsFixed(1)}%"),
+                        Container(width: 1, height: 28, color: c.border),
                         _buildParamCol(
-                          "Phân loại",
-                          isDisease ? (isHealthy ? "Khỏe mạnh" : "Bệnh lý") : "Loài cây",
+                          context.tr("Phân loại", "Classification"),
+                          isDisease
+                              ? (isHealthy ? context.tr("Khỏe mạnh", "Healthy") : context.tr("Bệnh lý", "Pathological"))
+                              : context.tr("Loài cây", "Plant species"),
                         ),
                         if (isDisease && item.severityVi.isNotEmpty) ...[
-                          Container(width: 1, height: 28, color: const Color(0xFFE4E2DF)),
-                          _buildParamCol("Mức độ", item.severityVi),
+                          Container(width: 1, height: 28, color: c.border),
+                          _buildParamCol(context.tr("Mức độ", "Severity"), item.severityVi),
                         ],
                       ],
                     ),
@@ -604,27 +614,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     if (item.cause.isNotEmpty) ...[
                       const SizedBox(height: 18),
                       Text(
-                        'Nguyên nhân & Mầm bệnh',
+                        context.tr('Nguyên nhân & Mầm bệnh', 'Causes & Pathogens'),
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: textMain,
+                          color: c.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         item.cause,
-                        style: GoogleFonts.inter(fontSize: 13, color: textMuted, height: 1.4),
+                        style: GoogleFonts.inter(fontSize: 13, color: c.textMuted, height: 1.4),
                       ),
                     ],
                     if (item.treatmentSteps.isNotEmpty) ...[
                       const SizedBox(height: 18),
                       Text(
-                        'Phác đồ điều trị khuyến nghị',
+                        context.tr('Phác đồ điều trị khuyến nghị', 'Recommended Treatment Protocol'),
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: textMain,
+                          color: c.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -638,8 +648,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 width: 20,
                                 height: 20,
                                 margin: const EdgeInsets.only(top: 2, right: 10),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF364534),
+                                decoration: BoxDecoration(
+                                  color: c.primary,
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,
@@ -657,7 +667,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   entry.value,
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
-                                    color: textMain,
+                                    color: c.textPrimary,
                                     height: 1.4,
                                   ),
                                 ),
@@ -692,8 +702,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               );
                             },
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: primary,
-                              side: const BorderSide(color: primary),
+                              foregroundColor: c.primary,
+                              side: BorderSide(color: c.primary),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -701,7 +711,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ),
                             icon: const Icon(Icons.menu_book, size: 18),
                             label: Text(
-                              'Từ điển cây',
+                              context.tr('Từ điển cây', 'Plant Wiki'),
                               style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -719,7 +729,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: primary,
+                            backgroundColor: c.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -729,7 +739,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                           icon: const Icon(Icons.auto_awesome, size: 18),
                           label: Text(
-                            'Hỏi Trợ lý Floria',
+                            context.tr('Hỏi Trợ lý Floria', 'Ask Floria Assistant'),
                             style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -746,13 +756,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildParamCol(String label, String val) {
+    final c = context.colors;
     return Column(
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 11, color: textMuted)),
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: c.textMuted)),
         const SizedBox(height: 4),
         Text(
           val,
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: textMain),
+          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
         ),
       ],
     );
@@ -760,6 +771,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- TRẠNG THÁI RỖNG ---
   Widget _buildEmptyState(HistoryProvider provider) {
+    final c = context.colors;
     final bool isSearching = provider.searchQuery.isNotEmpty;
 
     return Center(
@@ -772,33 +784,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFEEEA),
+                color: c.surfaceMuted,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
                 isSearching ? Icons.search_off : Icons.history_edu_outlined,
                 size: 38,
-                color: textMuted,
+                color: c.textMuted,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               isSearching
-                  ? 'Không tìm thấy kết quả phù hợp'
-                  : 'Chưa có lịch sử quét nào',
+                  ? context.tr('Không tìm thấy kết quả phù hợp', 'No matching results found')
+                  : context.tr('Chưa có lịch sử quét nào', 'No scan history yet'),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: textMain,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               isSearching
-                  ? 'Hãy thử tìm kiếm với từ khóa khác.'
-                  : 'Mỗi khi bạn quét nhận diện hoặc kiểm tra bệnh lá cây, kết quả sẽ được lưu tại đây.',
+                  ? context.tr('Hãy thử tìm kiếm với từ khóa khác.', 'Try searching with different keywords.')
+                  : context.tr('Mỗi khi bạn quét nhận diện hoặc kiểm tra bệnh lá cây, kết quả sẽ được lưu tại đây.', 'Scan results for plants and leaf diseases will appear here.'),
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 13, color: textMuted, height: 1.4),
+              style: GoogleFonts.inter(fontSize: 13, color: c.textMuted, height: 1.4),
             ),
           ],
         ),
@@ -808,23 +820,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // --- DIALOG XÁC NHẬN ---
   void _showConfirmClearDialog(BuildContext context, HistoryProvider provider) {
+    final c = context.colors;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Xóa toàn bộ lịch sử?',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+          context.tr('Xóa toàn bộ lịch sử?', 'Clear all history?'),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18, color: c.textPrimary),
         ),
         content: Text(
-          'Hành động này sẽ xóa vĩnh viễn tất cả nhật ký quét nhận diện và chẩn đoán bệnh của bạn.',
-          style: GoogleFonts.inter(fontSize: 13, color: textMuted, height: 1.4),
+          context.tr('Hành động này sẽ xóa vĩnh viễn tất cả nhật ký quét nhận diện và chẩn đoán bệnh của bạn.', 'This will permanently delete all scan and diagnosis logs.'),
+          style: GoogleFonts.inter(fontSize: 13, color: c.textMuted, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Hủy', style: GoogleFonts.inter(color: textMuted, fontWeight: FontWeight.w600)),
+            child: Text(context.tr('Hủy', 'Cancel'), style: GoogleFonts.inter(color: c.textMuted, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -837,7 +850,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
-            child: Text('Xóa tất cả', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text(context.tr('Xóa tất cả', 'Delete all'), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -848,23 +861,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
     BuildContext context,
     ScanHistoryItem item,
   ) async {
+    final c = context.colors;
     return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: Colors.white,
+            backgroundColor: c.surface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
-              'Xóa bản ghi này?',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+              context.tr('Xóa bản ghi này?', 'Delete this record?'),
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: c.textPrimary),
             ),
             content: Text(
-              'Bạn có chắc chắn muốn xóa bản ghi "${item.displayName}" khỏi lịch sử?',
-              style: GoogleFonts.inter(fontSize: 13, color: textMuted),
+              '${context.tr("Bạn có chắc chắn muốn xóa bản ghi", "Are you sure you want to delete")} "${item.displayName}" ${context.tr("khỏi lịch sử?", "from history?")}',
+              style: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Hủy', style: GoogleFonts.inter(color: textMuted, fontWeight: FontWeight.w600)),
+                child: Text(context.tr('Hủy', 'Cancel'), style: GoogleFonts.inter(color: c.textMuted, fontWeight: FontWeight.w600)),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
@@ -874,7 +888,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                child: Text('Xóa', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                child: Text(context.tr('Xóa', 'Delete'), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -890,9 +904,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
     if (diff.inDays == 0 && dt.day == now.day) {
-      return 'Hôm nay, $timeStr';
+      return '${context.tr("Hôm nay", "Today")}, $timeStr';
     } else if (diff.inDays <= 1 && dt.day == now.day - 1) {
-      return 'Hôm qua, $timeStr';
+      return '${context.tr("Hôm qua", "Yesterday")}, $timeStr';
     } else {
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}, $timeStr';
     }

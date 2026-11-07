@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'plant_diary_screen.dart';
 import '../../../core/widgets/custom_image.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 import '../../scan/screens/diagnosis_report_screen.dart';
 import '../../scan/providers/scan_provider.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
@@ -34,8 +36,10 @@ class PlantDetailScreen extends StatelessWidget {
               )
             : null;
 
+        final c = context.colors;
+
         return Scaffold(
-          backgroundColor: const Color(0xFFFBF9F6), // background
+          backgroundColor: c.background,
           body: Stack(
             children: [
               SingleChildScrollView(
@@ -71,6 +75,7 @@ class PlantDetailScreen extends StatelessWidget {
   }
 
   Widget _buildTopBar(BuildContext context, GardenPlant? currentPlant) {
+    final c = context.colors;
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
 
     return Positioned(
@@ -88,11 +93,11 @@ class PlantDetailScreen extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
+                  color: c.surface.withValues(alpha: c.isDark ? 0.95 : 0.85),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: c.shadow.withValues(alpha: c.isDark ? 0.4 : 0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     )
@@ -100,7 +105,7 @@ class PlantDetailScreen extends StatelessWidget {
                 ),
                 child: IconButton(
                   padding: EdgeInsets.zero,
-                  icon: const Icon(Icons.keyboard_arrow_left, color: Color(0xFF1B1C1A), size: 24),
+                  icon: Icon(Icons.keyboard_arrow_left, color: c.textPrimary, size: 24),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -114,26 +119,26 @@ class PlantDetailScreen extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
+                  color: c.surface.withValues(alpha: c.isDark ? 0.95 : 0.85),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: c.shadow.withValues(alpha: c.isDark ? 0.4 : 0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     )
                   ],
                 ),
                 child: PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_horiz, color: Color(0xFF1B1C1A), size: 24),
+                  icon: Icon(Icons.more_horiz, color: c.textPrimary, size: 24),
                   padding: EdgeInsets.zero,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
+                  color: c.surface,
+                  surfaceTintColor: c.surface,
                   elevation: 10,
-                  shadowColor: Colors.black.withValues(alpha: 0.2),
+                  shadowColor: c.shadow.withValues(alpha: 0.25),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
-                    side: const BorderSide(color: Color(0xFFE4E2DF), width: 1),
+                    side: BorderSide(color: c.border, width: 1),
                   ),
                   onSelected: (val) async {
                     if (currentPlant == null) return;
@@ -169,7 +174,7 @@ class PlantDetailScreen extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "Đã tưới nước cho '${currentPlant.nickname}'! 💧",
+                                        "${context.tr("Đã tưới nước cho", "Watered")} '${currentPlant.nickname}'! 💧",
                                         style: GoogleFonts.inter(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w700,
@@ -178,7 +183,7 @@ class PlantDetailScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        "Lần tưới tiếp theo: sau ${currentPlant.waterFrequencyDays} ngày.",
+                                        "${context.tr("Lần tưới tiếp theo: sau", "Next watering in")} ${currentPlant.waterFrequencyDays} ${context.tr("ngày", "days")}.",
                                         style: GoogleFonts.inter(
                                           color: const Color(0xFFB4F4C2),
                                           fontSize: 11.5,
@@ -197,15 +202,24 @@ class PlantDetailScreen extends StatelessWidget {
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          backgroundColor: Colors.white,
-                          surfaceTintColor: Colors.white,
+                          backgroundColor: c.surface,
+                          surfaceTintColor: c.surface,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          title: Text("Xóa khỏi vườn?", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF1B1C1A))),
-                          content: Text("Bạn có chắc muốn xóa cây '${currentPlant.nickname}' khỏi khu vườn của mình không?", style: GoogleFonts.inter(color: const Color(0xFF444842))),
+                          title: Text(
+                            context.tr("Xóa khỏi vườn?", "Delete from garden?"),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: c.textPrimary),
+                          ),
+                          content: Text(
+                            context.tr(
+                              "Bạn có chắc muốn xóa cây '${currentPlant.nickname}' khỏi khu vườn của mình không?",
+                              "Are you sure you want to remove '${currentPlant.nickname}' from your garden?",
+                            ),
+                            style: GoogleFonts.inter(color: c.textSecondary),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: Text("Hủy", style: GoogleFonts.inter(color: Colors.grey.shade700)),
+                              child: Text(context.tr("Hủy", "Cancel"), style: GoogleFonts.inter(color: c.textMuted)),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(ctx, true),
@@ -214,7 +228,7 @@ class PlantDetailScreen extends StatelessWidget {
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              child: Text("Xóa", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                              child: Text(context.tr("Xóa", "Delete"), style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -226,7 +240,7 @@ class PlantDetailScreen extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                "Đã xóa '${currentPlant.nickname}' khỏi khu vườn.",
+                                "${context.tr("Đã xóa", "Deleted")} '${currentPlant.nickname}' ${context.tr("khỏi khu vườn.", "from garden.")}",
                                 style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
                               ),
                               backgroundColor: const Color(0xFF364534),
@@ -246,18 +260,18 @@ class PlantDetailScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF364534).withValues(alpha: 0.08),
+                                color: c.surfaceTint,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.edit_outlined, color: Color(0xFF364534), size: 16),
+                              child: Icon(Icons.edit_outlined, color: c.textSecondary, size: 16),
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              "Chỉnh sửa cây",
+                              context.tr("Chỉnh sửa cây", "Edit plant"),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1B1C1A),
+                                color: c.textPrimary,
                               ),
                             ),
                           ],
@@ -270,18 +284,18 @@ class PlantDetailScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF006D35).withValues(alpha: 0.08),
+                                color: const Color(0xFF006D35).withValues(alpha: 0.12),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.water_drop_outlined, color: Color(0xFF006D35), size: 16),
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              "Đã tưới nước hôm nay",
+                              context.tr("Đã tưới nước hôm nay", "Watered today"),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1B1C1A),
+                                color: c.textPrimary,
                               ),
                             ),
                           ],
@@ -295,14 +309,14 @@ class PlantDetailScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.08),
+                                color: Colors.red.withValues(alpha: 0.12),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              "Xóa khỏi vườn",
+                              context.tr("Xóa khỏi vườn", "Delete from garden"),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -356,52 +370,66 @@ class PlantDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMainInfoCard(BuildContext context, GardenPlant? currentPlant) {
+    final c = context.colors;
     final title = currentPlant?.nickname ?? plant?["title"] ?? "Cây cảnh";
     final sciName = currentPlant?.scientificName ?? plant?["scientificName"] ?? "";
     final location = currentPlant?.zone ?? plant?["location"] ?? "Phòng khách";
     final statusText = currentPlant?.effectiveStatusText ?? plant?["status"] ?? "Khỏe mạnh";
 
-    Color statusBg = const Color(0xFFE8F2E3);
-    Color statusFg = const Color(0xFF364534);
+    Color statusBg = c.surfaceTint;
+    Color statusFg = c.primaryText;
     IconData statusIcon = Icons.check_circle;
 
     if (statusText.startsWith('Bị') || statusText == 'Cần điều trị') {
-      statusBg = const Color(0xFFFFEBEE);
-      statusFg = const Color(0xFFD32F2F);
+      statusBg = c.isDark ? const Color(0xFF3E1E22) : const Color(0xFFFFEBEE);
+      statusFg = const Color(0xFFEF5350);
       statusIcon = Icons.warning_amber_rounded;
     } else if (statusText == 'Cần tưới nước') {
-      statusBg = const Color(0xFFFFF3E0);
-      statusFg = const Color(0xFFE06C00);
+      statusBg = c.isDark ? const Color(0xFF3E2D1A) : const Color(0xFFFFF3E0);
+      statusFg = const Color(0xFFFFA726);
       statusIcon = Icons.water_drop;
     } else if (statusText == 'Cần bón phân') {
-      statusBg = const Color(0xFFFEF3C7);
-      statusFg = const Color(0xFFD97706);
+      statusBg = c.isDark ? const Color(0xFF3E3218) : const Color(0xFFFEF3C7);
+      statusFg = const Color(0xFFFBBF24);
       statusIcon = Icons.science_rounded;
     } else if (statusText == 'Cần kiểm tra' || statusText == 'Cần chú ý') {
-      statusBg = const Color(0xFFFFF8E1);
-      statusFg = const Color(0xFFF57F17);
+      statusBg = c.isDark ? const Color(0xFF3E3618) : const Color(0xFFFFF8E1);
+      statusFg = const Color(0xFFFFCA28);
       statusIcon = Icons.shield_outlined;
     } else if (statusText == 'Đang phục hồi') {
-      statusBg = const Color(0xFFDBEAFE);
-      statusFg = const Color(0xFF2563EB);
+      statusBg = c.isDark ? const Color(0xFF1E2D40) : const Color(0xFFDBEAFE);
+      statusFg = const Color(0xFF60A5FA);
       statusIcon = Icons.autorenew_rounded;
     }
 
-    final light = currentPlant?.wikiData['light'] ?? "Sáng yếu đến trung bình";
+    String translatedStatus = statusText;
+    if (context.isEnglish) {
+      if (statusText == 'Khỏe mạnh') translatedStatus = 'Healthy';
+      else if (statusText == 'Cần tưới nước') translatedStatus = 'Needs water';
+      else if (statusText == 'Cần bón phân') translatedStatus = 'Needs fertilizer';
+      else if (statusText == 'Cần kiểm tra') translatedStatus = 'Needs check';
+      else if (statusText == 'Cần chú ý') translatedStatus = 'Needs attention';
+      else if (statusText == 'Đang phục hồi') translatedStatus = 'Recovering';
+      else if (statusText == 'Bị vàng lá') translatedStatus = 'Yellow leaves';
+      else if (statusText == 'Bị sâu bệnh') translatedStatus = 'Pests detected';
+      else if (statusText == 'Cần điều trị') translatedStatus = 'Needs treatment';
+    }
+
+    final light = currentPlant?.wikiData['light'] ?? (context.tr("Sáng yếu đến trung bình", "Low to medium light"));
     final waterFreq = currentPlant != null
-        ? "Mỗi ${currentPlant.waterFrequencyDays} ngày"
-        : (plant?["waterFrequency"] ?? "Tưới 2-3 lần/tuần");
+        ? "${context.tr("Mỗi", "Every")} ${currentPlant.waterFrequencyDays} ${context.tr("ngày", "days")}"
+        : (plant?["waterFrequency"] ?? (context.tr("Tưới 2-3 lần/tuần", "2-3 times/week")));
     final temp = currentPlant?.wikiData['temperature'] ?? "18-28°C";
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.surface,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0xFFE4E2DF)),
+        border: Border.all(color: c.border),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF364534).withOpacity(0.08),
+            color: c.shadow.withValues(alpha: c.isDark ? 0.35 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -423,7 +451,7 @@ class PlantDetailScreen extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                     ),
                     if (sciName.isNotEmpty) ...[
@@ -433,21 +461,21 @@ class PlantDetailScreen extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
-                          color: const Color(0xFF6A756B),
+                          color: c.textMuted,
                         ),
                       ),
                     ],
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 14, color: Color(0xFF747871)),
+                        Icon(Icons.location_on, size: 14, color: c.textMuted),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            "Vị trí: $location",
+                            "${context.tr("Vị trí:", "Location:")} $location",
                             style: GoogleFonts.inter(
                               fontSize: 13,
-                              color: const Color(0xFF747871),
+                              color: c.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -472,7 +500,7 @@ class PlantDetailScreen extends StatelessWidget {
                     Icon(statusIcon, color: statusFg, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      statusText,
+                      translatedStatus,
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -484,15 +512,15 @@ class PlantDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(color: Color(0xFFE4E2DF), height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: c.border, height: 1),
           ),
           Row(
             children: [
-              _buildMetricItem(Icons.light_mode, light),
-              _buildMetricItem(Icons.water_drop, waterFreq),
-              _buildMetricItem(Icons.device_thermostat, temp),
+              _buildMetricItem(context, Icons.light_mode, light),
+              _buildMetricItem(context, Icons.water_drop, waterFreq),
+              _buildMetricItem(context, Icons.device_thermostat, temp),
             ],
           ),
         ],
@@ -500,7 +528,8 @@ class PlantDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricItem(IconData icon, String text) {
+  Widget _buildMetricItem(BuildContext context, IconData icon, String text) {
+    final c = context.colors;
     return Expanded(
       child: Column(
         children: [
@@ -508,11 +537,11 @@ class PlantDetailScreen extends StatelessWidget {
             width: 40,
             height: 40,
             margin: const EdgeInsets.only(bottom: 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF4F8F3),
+            decoration: BoxDecoration(
+              color: c.surfaceTint,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF364534), size: 20),
+            child: Icon(icon, color: c.textSecondary, size: 20),
           ),
           Text(
             text,
@@ -520,7 +549,7 @@ class PlantDetailScreen extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF1B1C1A),
+              color: c.textPrimary,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -536,8 +565,9 @@ class PlantDetailScreen extends StatelessWidget {
         // 1. Nút Chi tiết (Thông tin sinh học bách khoa của cây)
         Expanded(
           child: _buildActionBtn(
+            context,
             icon: Icons.info_outline,
-            label: "Chi tiết",
+            label: context.tr("Chi tiết", "Details"),
             isPrimary: false,
             onTap: () => _showPlantWikiModal(context, currentPlant),
           ),
@@ -546,8 +576,9 @@ class PlantDetailScreen extends StatelessWidget {
         // 2. Nút Quét bệnh
         Expanded(
           child: _buildActionBtn(
+            context,
             icon: Icons.photo_camera,
-            label: "Quét bệnh",
+            label: context.tr("Quét bệnh", "Scan"),
             isPrimary: false,
             onTap: () => _showDiseaseScanModal(context, currentPlant),
           ),
@@ -556,8 +587,9 @@ class PlantDetailScreen extends StatelessWidget {
         // 3. Nút Nhật ký
         Expanded(
           child: _buildActionBtn(
+            context,
             icon: Icons.menu_book,
-            label: "Nhật ký",
+            label: context.tr("Nhật ký", "Diary"),
             isPrimary: false,
             onTap: () => _openPlantDiarySubpage(context, currentPlant),
           ),
@@ -566,8 +598,9 @@ class PlantDetailScreen extends StatelessWidget {
         // 4. Nút Trợ lý Floria (Tập trung chuyên sâu cho loài cây này)
         Expanded(
           child: _buildActionBtn(
+            context,
             icon: Icons.auto_awesome,
-            label: "Trợ lý Floria",
+            label: context.tr("Trợ lý Floria", "Floria AI"),
             isPrimary: true,
             iconColor: const Color(0xFFFFD700), // Gold star
             onTap: () {
@@ -597,6 +630,7 @@ class PlantDetailScreen extends StatelessWidget {
 
   // Mở trang nhật ký như một subpage trượt từ phải sang trái, chừa lại 1 khoảng bên trái để lộ trang detail
   void _openPlantDiarySubpage(BuildContext context, GardenPlant? currentPlant) {
+    final c = context.colors;
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
@@ -615,7 +649,7 @@ class PlantDetailScreen extends StatelessWidget {
               padding: EdgeInsets.only(left: leftOffset),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFBF9F6),
+                  color: c.background,
                   borderRadius: const BorderRadius.horizontal(
                     left: Radius.circular(24),
                   ),
@@ -656,7 +690,8 @@ class PlantDetailScreen extends StatelessWidget {
 
   // Modal chẩn đoán bệnh lá cho cây trong vườn
   void _showDiseaseScanModal(BuildContext context, GardenPlant? currentPlant) {
-    final plantName = currentPlant?.nameVi ?? plant?["title"] ?? "cây cảnh";
+    final c = context.colors;
+    final plantName = currentPlant?.nameVi ?? plant?["title"] ?? (context.tr("cây cảnh", "plant"));
 
     showModalBottomSheet(
       context: context,
@@ -664,9 +699,9 @@ class PlantDetailScreen extends StatelessWidget {
       builder: (ctx) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          decoration: const BoxDecoration(
-            color: Color(0xFFFBF9F6),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -677,7 +712,7 @@ class PlantDetailScreen extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.35),
+                    color: c.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -688,10 +723,10 @@ class PlantDetailScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF364534).withOpacity(0.1),
+                      color: c.surfaceTint,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.coronavirus_outlined, color: Color(0xFF364534), size: 24),
+                    child: Icon(Icons.coronavirus_outlined, color: c.textSecondary, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -699,20 +734,20 @@ class PlantDetailScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Chẩn đoán bệnh lá: $plantName",
+                          "${context.tr("Chẩn đoán bệnh lá:", "Leaf disease diagnosis:")} $plantName",
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1B1C1A),
+                            color: c.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          "Chụp cận cảnh chiếc lá nghi ngờ bị mầm bệnh",
+                          context.tr("Chụp cận cảnh chiếc lá nghi ngờ bị mầm bệnh", "Take a close-up photo of the suspected leaf"),
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: const Color(0xFF74796E),
+                            color: c.textMuted,
                           ),
                         ),
                       ],
@@ -724,18 +759,21 @@ class PlantDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF364534).withOpacity(0.05),
+                  color: c.surfaceTint,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF364534).withOpacity(0.12)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Color(0xFF364534), size: 20),
+                    Icon(Icons.info_outline, color: c.textSecondary, size: 20),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "Floria sẽ phân tích các vết đốm, mầm bệnh thán thư, cháy lá vi khuẩn hoặc phấn trắng và đề xuất phác đồ điều trị.",
-                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF364534), height: 1.35),
+                        context.tr(
+                          "Floria sẽ phân tích các vết đốm, mầm bệnh thán thư, cháy lá vi khuẩn hoặc phấn trắng và đề xuất phác đồ điều trị.",
+                          "Floria will analyze spots, anthracnose, leaf blight, or powdery mildew and suggest a treatment plan.",
+                        ),
+                        style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary, height: 1.35),
                       ),
                     ),
                   ],
@@ -748,13 +786,13 @@ class PlantDetailScreen extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => _handlePickAndDiagnose(context, ctx, ImageSource.camera, currentPlant),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF364534),
+                        backgroundColor: c.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       icon: const Icon(Icons.camera_alt, size: 20),
-                      label: Text("Chụp ảnh lá", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+                      label: Text(context.tr("Chụp ảnh lá", "Take leaf photo"), style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -762,13 +800,13 @@ class PlantDetailScreen extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => _handlePickAndDiagnose(context, ctx, ImageSource.gallery, currentPlant),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF364534),
-                        side: const BorderSide(color: Color(0xFF364534)),
+                        foregroundColor: c.textPrimary,
+                        side: BorderSide(color: c.border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       icon: const Icon(Icons.photo_library, size: 20),
-                      label: Text("Chọn từ album", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+                      label: Text(context.tr("Chọn từ album", "Choose from gallery"), style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
                 ],
@@ -813,32 +851,34 @@ class PlantDetailScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildActionBtn({
+  Widget _buildActionBtn(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required bool isPrimary,
     Color? iconColor,
     required VoidCallback onTap,
   }) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isPrimary ? const Color(0xFF364534) : Colors.white,
+          color: isPrimary ? c.primary : c.surface,
           borderRadius: BorderRadius.circular(16),
-          border: isPrimary ? null : Border.all(color: const Color(0xFFE4E2DF)),
+          border: isPrimary ? null : Border.all(color: c.border),
           boxShadow: isPrimary
               ? [
                   BoxShadow(
-                    color: const Color(0xFF364534).withOpacity(0.2),
+                    color: c.primary.withValues(alpha: 0.28),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   )
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: c.shadow.withValues(alpha: c.isDark ? 0.2 : 0.02),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )
@@ -848,7 +888,7 @@ class PlantDetailScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: iconColor ?? (isPrimary ? Colors.white : const Color(0xFF364534)),
+              color: iconColor ?? (isPrimary ? Colors.white : c.textSecondary),
               size: 22,
             ),
             const SizedBox(height: 6),
@@ -857,7 +897,7 @@ class PlantDetailScreen extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: isPrimary ? Colors.white : const Color(0xFF1B1C1A),
+                color: isPrimary ? Colors.white : c.textPrimary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -869,6 +909,7 @@ class PlantDetailScreen extends StatelessWidget {
   }
 
   Widget _buildCareSchedule(BuildContext context, GardenPlant? currentPlant) {
+    final c = context.colors;
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
 
     final isWaterNeeded = currentPlant?.isNeedsWater ?? false;
@@ -886,6 +927,13 @@ class PlantDetailScreen extends StatelessWidget {
       moistureBarColor = const Color(0xFFF59E0B); // Vàng ẩm vừa
     }
 
+    String trMoistureLabel = moistureLabel;
+    if (context.isEnglish) {
+      if (moistureLabel.contains("Độ ẩm tốt")) trMoistureLabel = "Good moisture (70-80%)";
+      else if (moistureLabel.contains("Đất khô")) trMoistureLabel = "Dry soil (<30%)";
+      else if (moistureLabel.contains("Độ ẩm trung bình")) trMoistureLabel = "Medium moisture (30-60%)";
+    }
+
     final hasPendingTasksToday = isWaterNeeded || isFertNeeded || isCleanNeeded;
 
     return Column(
@@ -897,29 +945,37 @@ class PlantDetailScreen extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  "Lịch chăm sóc thực tế",
+                  context.tr("Lịch chăm sóc thực tế", "Actual care schedule"),
                   style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: hasPendingTasksToday ? const Color(0xFFFEF3C7) : const Color(0xFFDCFCE7),
+                    color: hasPendingTasksToday
+                        ? (c.isDark ? const Color(0xFF3E3218) : const Color(0xFFFEF3C7))
+                        : (c.isDark ? const Color(0xFF1E3A24) : const Color(0xFFDCFCE7)),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: hasPendingTasksToday ? const Color(0xFFFDE68A) : const Color(0xFFBBF7D0),
+                      color: hasPendingTasksToday
+                          ? (c.isDark ? const Color(0xFF5A4820) : const Color(0xFFFDE68A))
+                          : (c.isDark ? const Color(0xFF2A5034) : const Color(0xFFBBF7D0)),
                     ),
                   ),
                   child: Text(
-                    hasPendingTasksToday ? "Có việc cần làm" : "Đã chu toàn",
+                    hasPendingTasksToday
+                        ? context.tr("Có việc cần làm", "Tasks pending")
+                        : context.tr("Đã chu toàn", "All caught up"),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: hasPendingTasksToday ? const Color(0xFFB45309) : const Color(0xFF15803D),
+                      color: hasPendingTasksToday
+                          ? (c.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+                          : (c.isDark ? const Color(0xFF86EFAC) : const Color(0xFF15803D)),
                     ),
                   ),
                 ),
@@ -931,20 +987,20 @@ class PlantDetailScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF364534).withValues(alpha: 0.08),
+                    color: c.surfaceTint,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.tune_rounded, size: 14, color: Color(0xFF364534)),
+                      Icon(Icons.tune_rounded, size: 14, color: c.textSecondary),
                       const SizedBox(width: 4),
                       Text(
-                        "Tùy chỉnh",
+                        context.tr("Tùy chỉnh", "Customize"),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF364534),
+                          color: c.textSecondary,
                         ),
                       ),
                     ],
@@ -959,12 +1015,12 @@ class PlantDetailScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: c.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE4E2DF)),
+            border: Border.all(color: c.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
+                color: c.shadow.withValues(alpha: c.isDark ? 0.2 : 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -981,13 +1037,13 @@ class PlantDetailScreen extends StatelessWidget {
                       Icon(Icons.opacity_rounded, size: 16, color: moistureBarColor),
                       const SizedBox(width: 6),
                       Text(
-                        "Độ ẩm đất dự kiến:",
-                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF4B5563)),
+                        context.tr("Độ ẩm đất dự kiến:", "Estimated soil moisture:"),
+                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: c.textSecondary),
                       ),
                     ],
                   ),
                   Text(
-                    moistureLabel,
+                    trMoistureLabel,
                     style: GoogleFonts.inter(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
@@ -1002,7 +1058,7 @@ class PlantDetailScreen extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: moisture,
                   minHeight: 8,
-                  backgroundColor: const Color(0xFFF3F4F6),
+                  backgroundColor: c.surfaceMuted,
                   valueColor: AlwaysStoppedAnimation<Color>(moistureBarColor),
                 ),
               ),
@@ -1014,9 +1070,9 @@ class PlantDetailScreen extends StatelessWidget {
         // 2. DANH SÁCH 3 TÁC VỤ NÔNG HỌC THỰC TẾ
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: c.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE4E2DF)),
+            border: Border.all(color: c.border),
           ),
           child: Column(
             children: [
@@ -1027,8 +1083,8 @@ class PlantDetailScreen extends StatelessWidget {
                   if (!isWaterNeeded) {
                     _showActionToast(
                       context,
-                      title: "Cây '${currentPlant.nickname}' chưa đến hạn tưới! 🌱",
-                      subtitle: "Độ ẩm đất vẫn tốt. Còn ${currentPlant.daysUntilWater} ngày nữa mới cần tưới tiếp.",
+                      title: "${context.tr("Cây", "Plant")} '${currentPlant.nickname}' ${context.tr("chưa đến hạn tưới! 🌱", "does not need water yet! 🌱")}",
+                      subtitle: "${context.tr("Độ ẩm đất vẫn tốt. Còn", "Soil moisture is good. Still")} ${currentPlant.daysUntilWater} ${context.tr("ngày nữa mới cần tưới tiếp.", "days until next watering.")}",
                       icon: Icons.info_outline_rounded,
                       iconColor: const Color(0xFF38BDF8),
                     );
@@ -1039,17 +1095,20 @@ class PlantDetailScreen extends StatelessWidget {
                   if (context.mounted) {
                     _showActionToast(
                       context,
-                      title: "Đã tưới nước cho '${currentPlant.nickname}'! 💧",
-                      subtitle: "Lần tưới tiếp theo: sau ${currentPlant.waterFrequencyDays} ngày.",
+                      title: "${context.tr("Đã tưới nước cho", "Watered")} '${currentPlant.nickname}'! 💧",
+                      subtitle: "${context.tr("Lần tưới tiếp theo: sau", "Next watering in")} ${currentPlant.waterFrequencyDays} ${context.tr("ngày.", "days.")}",
                       icon: Icons.water_drop_rounded,
                       iconColor: const Color(0xFF38BDF8),
                     );
                   }
                 },
                 child: _buildTaskItem(
+                  context,
                   icon: Icons.water_drop_rounded,
-                  title: "Tưới nước (${currentPlant?.waterFrequencyDays ?? 3} ngày/lần • ${currentPlant?.reminderTime ?? '07:00'})",
-                  time: isWaterNeeded ? "Đã đến hạn tưới" : "Còn ${currentPlant?.daysUntilWater ?? 0} ngày đến lượt",
+                  title: "${context.tr("Tưới nước", "Watering")} (${currentPlant?.waterFrequencyDays ?? 3} ${context.tr("ngày/lần", "days/time")} • ${currentPlant?.reminderTime ?? '07:00'})",
+                  time: isWaterNeeded
+                      ? context.tr("Đã đến hạn tưới", "Due for watering")
+                      : "${context.tr("Còn", "In")} ${currentPlant?.daysUntilWater ?? 0} ${context.tr("ngày đến lượt", "days")}",
                   timeIcon: isWaterNeeded ? Icons.warning_amber_rounded : Icons.schedule_rounded,
                   timeColor: isWaterNeeded ? const Color(0xFFDC2626) : const Color(0xFF2E6F40),
                   isDone: !isWaterNeeded,
@@ -1065,8 +1124,8 @@ class PlantDetailScreen extends StatelessWidget {
                     if (!isFertNeeded) {
                       _showActionToast(
                         context,
-                        title: "Cây đã nạp đủ dưỡng chất! 🧪",
-                        subtitle: "Tránh bón quá liều gây sót rễ. Còn ${currentPlant.daysUntilFertilizer} ngày nữa mới cần bón tiếp.",
+                        title: context.tr("Cây đã nạp đủ dưỡng chất! 🧪", "Plant already well fertilized! 🧪"),
+                        subtitle: "${context.tr("Tránh bón quá liều gây sót rễ. Còn", "Avoid overfeeding. In")} ${currentPlant.daysUntilFertilizer} ${context.tr("ngày nữa mới cần bón tiếp.", "days until next fertilization.")}",
                         icon: Icons.info_outline_rounded,
                         iconColor: const Color(0xFFF59E0B),
                       );
@@ -1077,19 +1136,22 @@ class PlantDetailScreen extends StatelessWidget {
                     if (context.mounted) {
                       _showActionToast(
                         context,
-                        title: "Đã bón phân cho '${currentPlant.nickname}'! 🧪",
-                        subtitle: "Cây đã nạp đủ vi lượng. Lần tới: sau ${currentPlant.fertilizeFrequencyDays} ngày.",
+                        title: "${context.tr("Đã bón phân cho", "Fertilized")} '${currentPlant.nickname}'! 🧪",
+                        subtitle: "${context.tr("Cây đã nạp đủ vi lượng. Lần tới: sau", "Nutrients added. Next:")} ${currentPlant.fertilizeFrequencyDays} ${context.tr("ngày.", "days.")}",
                         icon: Icons.science_rounded,
                         iconColor: const Color(0xFFF59E0B),
                       );
                     }
                   },
                   child: _buildTaskItem(
+                    context,
                     icon: Icons.science_rounded,
-                    title: "Bón phân vi lượng (${currentPlant?.fertilizeFrequencyDays ?? 20} ngày/lần)",
-                    time: isFertNeeded ? "Đã đến hạn bón phân" : "Còn ${currentPlant?.daysUntilFertilizer ?? 0} ngày đến lượt",
+                    title: "${context.tr("Bón phân vi lượng", "Fertilization")} (${currentPlant?.fertilizeFrequencyDays ?? 20} ${context.tr("ngày/lần", "days/time")})",
+                    time: isFertNeeded
+                        ? context.tr("Đã đến hạn bón phân", "Due for fertilization")
+                        : "${context.tr("Còn", "In")} ${currentPlant?.daysUntilFertilizer ?? 0} ${context.tr("ngày đến lượt", "days")}",
                     timeIcon: isFertNeeded ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
-                    timeColor: isFertNeeded ? const Color(0xFFEA580C) : const Color(0xFF6B7280),
+                    timeColor: isFertNeeded ? const Color(0xFFEA580C) : c.textMuted,
                     isDone: !isFertNeeded,
                     isLast: false,
                   ),
@@ -1102,8 +1164,8 @@ class PlantDetailScreen extends StatelessWidget {
                   if (!isCleanNeeded) {
                     _showActionToast(
                       context,
-                      title: "Mặt lá vẫn sạch sẽ! 🍃",
-                      subtitle: "Đã kiểm tra gần đây. Còn ${currentPlant.daysUntilCheckPest} ngày nữa đến lượt kiểm tra tiếp theo.",
+                      title: context.tr("Mặt lá vẫn sạch sẽ! 🍃", "Leaves are clean! 🍃"),
+                      subtitle: "${context.tr("Đã kiểm tra gần đây. Còn", "Checked recently. Still")} ${currentPlant.daysUntilCheckPest} ${context.tr("ngày nữa đến lượt kiểm tra tiếp theo.", "days until next inspection.")}",
                       icon: Icons.info_outline_rounded,
                       iconColor: const Color(0xFF4ADE80),
                     );
@@ -1114,19 +1176,22 @@ class PlantDetailScreen extends StatelessWidget {
                   if (context.mounted) {
                     _showActionToast(
                       context,
-                      title: "Đã kiểm tra & lau sạch lá cho cây! 🍃",
-                      subtitle: "Bề mặt lá sạch bụi giúp cây quang hợp tối đa.",
+                      title: context.tr("Đã kiểm tra & lau sạch lá cho cây! 🍃", "Inspected & cleaned plant leaves! 🍃"),
+                      subtitle: context.tr("Bề mặt lá sạch bụi giúp cây quang hợp tối đa.", "Dust-free leaves optimize photosynthesis."),
                       icon: Icons.eco_rounded,
                       iconColor: const Color(0xFF4ADE80),
                     );
                   }
                 },
                 child: _buildTaskItem(
+                  context,
                   icon: Icons.eco_rounded,
-                  title: "Kiểm tra sâu bệnh & Lau lá (${currentPlant?.checkPestFrequencyDays ?? 3} ngày/lần)",
-                  time: isCleanNeeded ? "Đã đến hạn kiểm tra" : "Còn ${currentPlant?.daysUntilCheckPest ?? 0} ngày đến lượt",
+                  title: "${context.tr("Kiểm tra sâu bệnh & Lau lá", "Check pests & Clean leaves")} (${currentPlant?.checkPestFrequencyDays ?? 3} ${context.tr("ngày/lần", "days/time")})",
+                  time: isCleanNeeded
+                      ? context.tr("Đã đến hạn kiểm tra", "Due for inspection")
+                      : "${context.tr("Còn", "In")} ${currentPlant?.daysUntilCheckPest ?? 0} ${context.tr("ngày đến lượt", "days")}",
                   timeIcon: isCleanNeeded ? Icons.warning_amber_rounded : Icons.done_all_rounded,
-                  timeColor: isCleanNeeded ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                  timeColor: isCleanNeeded ? const Color(0xFFDC2626) : c.textMuted,
                   isDone: !isCleanNeeded,
                   isLast: true,
                 ),
@@ -1150,8 +1215,8 @@ class PlantDetailScreen extends StatelessWidget {
                     if (context.mounted) {
                       _showActionToast(
                         context,
-                        title: "Tuyệt vời! Đã chu toàn mọi việc hôm nay! 🌟",
-                        subtitle: "Mọi tác vụ đến hạn của '${currentPlant.nickname}' đã được xử lý xong.",
+                        title: context.tr("Tuyệt vời! Đã chu toàn mọi việc hôm nay! 🌟", "Awesome! All tasks finished today! 🌟"),
+                        subtitle: "${context.tr("Mọi tác vụ đến hạn của", "All due tasks for")} '${currentPlant.nickname}' ${context.tr("đã được xử lý xong.", "are completed.")}",
                         icon: Icons.task_alt_rounded,
                         iconColor: const Color(0xFF4ADE80),
                       );
@@ -1159,24 +1224,26 @@ class PlantDetailScreen extends StatelessWidget {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E6F40),
-              disabledBackgroundColor: const Color(0xFFE5E7EB),
+              backgroundColor: c.primary,
+              disabledBackgroundColor: c.surfaceMuted,
               foregroundColor: Colors.white,
-              disabledForegroundColor: const Color(0xFF9CA3AF),
+              disabledForegroundColor: c.textMuted,
               elevation: hasPendingTasksToday ? 3 : 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             icon: Icon(
               hasPendingTasksToday ? Icons.done_all_rounded : Icons.check_circle_rounded,
               size: 20,
-              color: hasPendingTasksToday ? Colors.white : const Color(0xFF9CA3AF),
+              color: hasPendingTasksToday ? Colors.white : c.textMuted,
             ),
             label: Text(
-              hasPendingTasksToday ? "Hoàn tất mọi việc hôm nay" : "Đã hoàn thành mọi việc hôm nay",
+              hasPendingTasksToday
+                  ? context.tr("Hoàn tất mọi việc hôm nay", "Complete all tasks today")
+                  : context.tr("Đã hoàn thành mọi việc hôm nay", "All tasks completed today"),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: hasPendingTasksToday ? Colors.white : const Color(0xFF9CA3AF),
+                color: hasPendingTasksToday ? Colors.white : c.textMuted,
               ),
             ),
           ),
@@ -1244,6 +1311,7 @@ class PlantDetailScreen extends StatelessWidget {
 
   // MODAL 1: CHỈNH SỬA TOÀN DIỆN THÔNG TIN CÂY (Tên, Vị trí, Tần suất tưới, Tình trạng, Giờ nhắc)
   void _showEditPlantModal(BuildContext context, GardenPlant plantItem) {
+    final c = context.colors;
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
 
     final TextEditingController nameCtrl = TextEditingController(text: plantItem.nickname);
@@ -1302,9 +1370,9 @@ class PlantDetailScreen extends StatelessWidget {
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.88,
               ),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFBF9F6),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -1317,7 +1385,7 @@ class PlantDetailScreen extends StatelessWidget {
                         height: 4,
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD4E8CE),
+                          color: c.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1326,15 +1394,15 @@ class PlantDetailScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Chỉnh sửa cây trồng",
+                          context.tr("Chỉnh sửa cây trồng", "Edit plant"),
                           style: GoogleFonts.inter(
                             fontSize: 19,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1B1C1A),
+                            color: c.textPrimary,
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Color(0xFF747871)),
+                          icon: Icon(Icons.close, color: c.textMuted),
                           onPressed: () => Navigator.pop(ctx),
                         ),
                       ],
@@ -1343,8 +1411,8 @@ class PlantDetailScreen extends StatelessWidget {
 
                     // 1. Tên biệt danh
                     Text(
-                      "Tên hiển thị / Biệt danh:",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                      context.tr("Tên hiển thị / Biệt danh:", "Display name / Nickname:"),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                     ),
                     const SizedBox(height: 6),
                     TextField(
@@ -1352,25 +1420,25 @@ class PlantDetailScreen extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white,
-                        hintText: "Ví dụ: Em sen đá nhỏ, Cây tài lộc...",
-                        hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF)),
+                        fillColor: c.surfaceMuted,
+                        hintText: context.tr("Ví dụ: Em sen đá nhỏ, Cây tài lộc...", "e.g., Little succulent, Money tree..."),
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DF))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DF))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E6F40), width: 1.5)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.primary, width: 1.5)),
                       ),
                     ),
                     const SizedBox(height: 16),
 
                     // 2. Vị trí đặt cây
                     Text(
-                      "Vị trí đặt cây (Góc vườn):",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                      context.tr("Vị trí đặt cây (Góc vườn):", "Plant location (Garden spot):"),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -1378,23 +1446,32 @@ class PlantDetailScreen extends StatelessWidget {
                       runSpacing: 8,
                       children: zoneSuggestions.map((z) {
                         final isSelected = selectedZone == z;
+                        String trZ = z;
+                        if (context.isEnglish) {
+                          if (z == 'Phòng khách') trZ = 'Living room';
+                          else if (z == 'Ban công') trZ = 'Balcony';
+                          else if (z == 'Cửa sổ') trZ = 'Window';
+                          else if (z == 'Bàn làm việc') trZ = 'Desk';
+                          else if (z == 'Sân thượng') trZ = 'Rooftop';
+                          else if (z == 'Phòng ngủ') trZ = 'Bedroom';
+                        }
                         return ChoiceChip(
-                          label: Text(z),
+                          label: Text(trZ),
                           selected: isSelected,
                           checkmarkColor: Colors.white,
                           onSelected: (val) {
                             if (val) setModalState(() => selectedZone = z);
                           },
-                          selectedColor: const Color(0xFF364534),
-                          backgroundColor: Colors.white,
+                          selectedColor: c.primary,
+                          backgroundColor: c.surfaceMuted,
                           labelStyle: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : const Color(0xFF1B1C1A),
+                            color: isSelected ? Colors.white : c.textPrimary,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: isSelected ? const Color(0xFF364534) : const Color(0xFFE4E2DF)),
+                            side: BorderSide(color: isSelected ? c.primary : c.border),
                           ),
                         );
                       }).toList(),
@@ -1403,8 +1480,8 @@ class PlantDetailScreen extends StatelessWidget {
 
                     // 3. Tình trạng sức khỏe cây
                     Text(
-                      "Tình trạng sức khỏe hiện tại:",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                      context.tr("Tình trạng sức khỏe hiện tại:", "Current health status:"),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -1412,27 +1489,36 @@ class PlantDetailScreen extends StatelessWidget {
                       runSpacing: 8,
                       children: healthOptions.map((h) {
                         final isSelected = selectedHealth == h;
-                        Color chipColor = const Color(0xFF364534);
+                        Color chipColor = c.primary;
                         if (h == 'Bị sâu bệnh' || h == 'Bị vàng lá') chipColor = const Color(0xFFD32F2F);
                         if (h == 'Cần tưới nước') chipColor = const Color(0xFFE06C00);
 
+                        String trH = h;
+                        if (context.isEnglish) {
+                          if (h == 'Khỏe mạnh') trH = 'Healthy';
+                          else if (h == 'Cần tưới nước') trH = 'Needs water';
+                          else if (h == 'Bị vàng lá') trH = 'Yellow leaves';
+                          else if (h == 'Bị sâu bệnh') trH = 'Pests detected';
+                          else if (h == 'Cần chú ý') trH = 'Needs attention';
+                        }
+
                         return ChoiceChip(
-                          label: Text(h),
+                          label: Text(trH),
                           selected: isSelected,
                           checkmarkColor: Colors.white,
                           onSelected: (val) {
                             if (val) setModalState(() => selectedHealth = h);
                           },
                           selectedColor: chipColor,
-                          backgroundColor: Colors.white,
+                          backgroundColor: c.surfaceMuted,
                           labelStyle: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : const Color(0xFF1B1C1A),
+                            color: isSelected ? Colors.white : c.textPrimary,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: isSelected ? chipColor : const Color(0xFFE4E2DF)),
+                            side: BorderSide(color: isSelected ? chipColor : c.border),
                           ),
                         );
                       }).toList(),
@@ -1444,19 +1530,19 @@ class PlantDetailScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Tần suất tưới nước:",
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                          context.tr("Tần suất tưới nước:", "Watering frequency:"),
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
+                            color: c.surfaceTint,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFC8E6C9)),
+                            border: Border.all(color: c.border),
                           ),
                           child: Text(
-                            "Mỗi $frequencyDays ngày / lần",
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF1B5E20)),
+                            "${context.tr("Mỗi", "Every")} $frequencyDays ${context.tr("ngày / lần", "days")}",
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: c.primaryText),
                           ),
                         ),
                       ],
@@ -1464,11 +1550,11 @@ class PlantDetailScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFF2E6F40),
-                        inactiveTrackColor: const Color(0xFFE4E8E2),
-                        thumbColor: const Color(0xFF2E6F40),
-                        overlayColor: const Color(0xFF2E6F40).withValues(alpha: 0.15),
-                        valueIndicatorColor: const Color(0xFF1E3A24),
+                        activeTrackColor: c.primary,
+                        inactiveTrackColor: c.surfaceMuted,
+                        thumbColor: c.primary,
+                        overlayColor: c.primary.withValues(alpha: 0.15),
+                        valueIndicatorColor: c.primary,
                         valueIndicatorTextStyle: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -1481,7 +1567,7 @@ class PlantDetailScreen extends StatelessWidget {
                         min: 1,
                         max: 14,
                         divisions: 13,
-                        label: "$frequencyDays ngày/lần",
+                        label: "$frequencyDays ${context.tr("ngày/lần", "days")}",
                         onChanged: (val) {
                           setModalState(() => frequencyDays = val.round());
                         },
@@ -1494,24 +1580,32 @@ class PlantDetailScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Yêu cầu bón phân dinh dưỡng:",
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                          context.tr("Yêu cầu bón phân dinh dưỡng:", "Fertilization requirement:"),
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: enableFertilizer ? const Color(0xFFFEF3C7) : const Color(0xFFF3F4F6),
+                            color: enableFertilizer
+                                ? (c.isDark ? const Color(0xFF3E3218) : const Color(0xFFFEF3C7))
+                                : c.surfaceMuted,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: enableFertilizer ? const Color(0xFFFDE68A) : const Color(0xFFE5E7EB),
+                              color: enableFertilizer
+                                  ? (c.isDark ? const Color(0xFF5A4820) : const Color(0xFFFDE68A))
+                                  : c.border,
                             ),
                           ),
                           child: Text(
-                            enableFertilizer ? "Mỗi $fertilizeDays ngày / lần" : "Không áp dụng",
+                            enableFertilizer
+                                ? "${context.tr("Mỗi", "Every")} $fertilizeDays ${context.tr("ngày / lần", "days")}"
+                                : context.tr("Không áp dụng", "Not applicable"),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: enableFertilizer ? const Color(0xFFB45309) : const Color(0xFF6B7280),
+                              color: enableFertilizer
+                                  ? (c.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+                                  : c.textMuted,
                             ),
                           ),
                         ),
@@ -1534,10 +1628,12 @@ class PlantDetailScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                               decoration: BoxDecoration(
-                                color: enableFertilizer ? const Color(0xFFFEF3C7) : Colors.white,
+                                color: enableFertilizer
+                                    ? (c.isDark ? const Color(0xFF3E3218) : const Color(0xFFFEF3C7))
+                                    : c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: enableFertilizer ? const Color(0xFFF59E0B) : const Color(0xFFE4E2DF),
+                                  color: enableFertilizer ? const Color(0xFFF59E0B) : c.border,
                                   width: enableFertilizer ? 1.5 : 1,
                                 ),
                               ),
@@ -1561,11 +1657,13 @@ class PlantDetailScreen extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      "Cần bón phân",
+                                      context.tr("Cần bón phân", "Needs fertilizer"),
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: enableFertilizer ? const Color(0xFF92400E) : const Color(0xFF4B5563),
+                                        color: enableFertilizer
+                                            ? (c.isDark ? const Color(0xFFFBBF24) : const Color(0xFF92400E))
+                                            : c.textSecondary,
                                       ),
                                     ),
                                   ),
@@ -1586,10 +1684,14 @@ class PlantDetailScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                               decoration: BoxDecoration(
-                                color: !enableFertilizer ? const Color(0xFFF3F4F6) : Colors.white,
+                                color: !enableFertilizer
+                                    ? (c.isDark ? const Color(0xFF2E332F) : const Color(0xFFF3F4F6))
+                                    : c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: !enableFertilizer ? const Color(0xFF9CA3AF) : const Color(0xFFE4E2DF),
+                                  color: !enableFertilizer
+                                      ? (c.isDark ? c.primaryText : const Color(0xFF9CA3AF))
+                                      : c.border,
                                   width: !enableFertilizer ? 1.5 : 1,
                                 ),
                               ),
@@ -1598,7 +1700,7 @@ class PlantDetailScreen extends StatelessWidget {
                                   Radio<bool>(
                                     value: false,
                                     groupValue: enableFertilizer,
-                                    activeColor: const Color(0xFF4B5563),
+                                    activeColor: c.textSecondary,
                                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     visualDensity: VisualDensity.compact,
                                     onChanged: (val) {
@@ -1612,11 +1714,11 @@ class PlantDetailScreen extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      "Không cần bón",
+                                      context.tr("Không cần bón", "No fertilizer"),
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: !enableFertilizer ? const Color(0xFF1F2937) : const Color(0xFF4B5563),
+                                        color: !enableFertilizer ? c.textPrimary : c.textMuted,
                                       ),
                                     ),
                                   ),
@@ -1633,7 +1735,7 @@ class PlantDetailScreen extends StatelessWidget {
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: const Color(0xFFF59E0B),
-                          inactiveTrackColor: const Color(0xFFE4E8E2),
+                          inactiveTrackColor: c.surfaceMuted,
                           thumbColor: const Color(0xFFF59E0B),
                           overlayColor: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                           valueIndicatorColor: const Color(0xFF78350F),
@@ -1649,7 +1751,7 @@ class PlantDetailScreen extends StatelessWidget {
                           min: 7,
                           max: 60,
                           divisions: 53,
-                          label: "$fertilizeDays ngày/lần",
+                          label: "$fertilizeDays ${context.tr("ngày/lần", "days")}",
                           onChanged: (val) {
                             setModalState(() => fertilizeDays = val.round());
                           },
@@ -1659,8 +1761,11 @@ class PlantDetailScreen extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 2, bottom: 8),
                         child: Text(
-                          "💡 Loài cây này không yêu cầu phân bón (ví dụ: cây không khí, sen đá giai đoạn nghỉ...). Tác vụ bón phân sẽ được tắt khỏi lịch nhắc việc.",
-                          style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF6B7280), fontStyle: FontStyle.italic),
+                          context.tr(
+                            "💡 Loài cây này không yêu cầu phân bón (ví dụ: cây không khí, sen đá giai đoạn nghỉ...). Tác vụ bón phân sẽ được tắt khỏi lịch nhắc việc.",
+                            "💡 This plant doesn't require fertilizer (e.g., air plants, dormant succulents). Fertilizing tasks will be disabled.",
+                          ),
+                          style: GoogleFonts.inter(fontSize: 11.5, color: c.textMuted, fontStyle: FontStyle.italic),
                         ),
                       ),
                     ],
@@ -1669,19 +1774,23 @@ class PlantDetailScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Chu kỳ kiểm tra sâu bệnh & lau lá:",
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                          context.tr("Chu kỳ kiểm tra sâu bệnh & lau lá:", "Pest check & clean frequency:"),
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE0F2FE),
+                            color: c.isDark ? const Color(0xFF1E2D40) : const Color(0xFFE0F2FE),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFBAE6FD)),
+                            border: Border.all(color: c.isDark ? const Color(0xFF2A4260) : const Color(0xFFBAE6FD)),
                           ),
                           child: Text(
-                            "Mỗi $checkPestDays ngày / lần",
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF0369A1)),
+                            "${context.tr("Mỗi", "Every")} $checkPestDays ${context.tr("ngày / lần", "days")}",
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: c.isDark ? const Color(0xFF60A5FA) : const Color(0xFF0369A1),
+                            ),
                           ),
                         ),
                       ],
@@ -1690,7 +1799,7 @@ class PlantDetailScreen extends StatelessWidget {
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: const Color(0xFF0284C7),
-                        inactiveTrackColor: const Color(0xFFE4E8E2),
+                        inactiveTrackColor: c.surfaceMuted,
                         thumbColor: const Color(0xFF0284C7),
                         overlayColor: const Color(0xFF0284C7).withValues(alpha: 0.15),
                         valueIndicatorColor: const Color(0xFF0C4A6E),
@@ -1706,7 +1815,7 @@ class PlantDetailScreen extends StatelessWidget {
                         min: 1,
                         max: 14,
                         divisions: 13,
-                        label: "$checkPestDays ngày/lần",
+                        label: "$checkPestDays ${context.tr("ngày/lần", "days")}",
                         onChanged: (val) {
                           setModalState(() => checkPestDays = val.round());
                         },
@@ -1716,8 +1825,8 @@ class PlantDetailScreen extends StatelessWidget {
 
                     // 7. Khung giờ nhắc nhở tưới
                     Text(
-                      "Khung giờ nhắc nhở:",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                      context.tr("Khung giờ nhắc nhở:", "Reminder time:"),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -1730,10 +1839,10 @@ class PlantDetailScreen extends StatelessWidget {
                               margin: const EdgeInsets.symmetric(horizontal: 3),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF364534) : Colors.white,
+                                color: isSelected ? c.primary : c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF364534) : const Color(0xFFE4E2DF),
+                                  color: isSelected ? c.primary : c.border,
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -1742,7 +1851,7 @@ class PlantDetailScreen extends StatelessWidget {
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: isSelected ? Colors.white : const Color(0xFF1B1C1A),
+                                  color: isSelected ? Colors.white : c.textPrimary,
                                 ),
                               ),
                             ),
@@ -1754,8 +1863,8 @@ class PlantDetailScreen extends StatelessWidget {
 
                     // 6. Ghi chú riêng
                     Text(
-                      "Ghi chú chăm sóc:",
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                      context.tr("Ghi chú chăm sóc:", "Care notes:"),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
                     ),
                     const SizedBox(height: 6),
                     TextField(
@@ -1764,17 +1873,17 @@ class PlantDetailScreen extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white,
-                        hintText: "Ví dụ: Đặt cạnh cửa sổ hướng đông, tưới buổi sáng...",
-                        hintStyle: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF9CA3AF)),
+                        fillColor: c.surfaceMuted,
+                        hintText: context.tr("Ví dụ: Đặt cạnh cửa sổ hướng đông, tưới buổi sáng...", "e.g., Near east window, water in morning..."),
+                        hintStyle: GoogleFonts.inter(fontSize: 12.5, color: c.textMuted),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DF))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DF))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E6F40), width: 1.5)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.primary, width: 1.5)),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -1827,7 +1936,7 @@ class PlantDetailScreen extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "Đã cập nhật cây '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
+                                              "${context.tr("Đã cập nhật cây", "Updated plant")} '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
                                               style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w700,
@@ -1836,7 +1945,7 @@ class PlantDetailScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              "Thông tin và lịch chăm sóc mới đã được lưu thành công.",
+                                              context.tr("Thông tin và lịch chăm sóc mới đã được lưu thành công.", "Care information and new schedule have been saved successfully."),
                                               style: GoogleFonts.inter(
                                                 color: const Color(0xFFB4F4C2),
                                                 fontSize: 12,
@@ -1855,13 +1964,13 @@ class PlantDetailScreen extends StatelessWidget {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF364534),
+                          backgroundColor: c.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
                         child: Text(
-                          "Lưu thay đổi",
+                          context.tr("Lưu thay đổi", "Save changes"),
                           style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1878,19 +1987,20 @@ class PlantDetailScreen extends StatelessWidget {
 
   // MODAL 2: XEM BÁCH KHOA TOÀN THƯ THỰC VẬT CỦA CÂY (Nút "Chi tiết")
   void _showPlantWikiModal(BuildContext context, GardenPlant? currentPlant) {
+    final c = context.colors;
     final title = currentPlant?.nameVi ?? plant?["title"] ?? "Cây cảnh";
     final sciName = currentPlant?.scientificName ?? plant?["scientificName"] ?? "";
     final wiki = currentPlant?.wikiData ?? const {};
 
-    final light = wiki['light'] ?? "Sáng yếu đến trung bình";
-    final water = wiki['watering'] ?? "Tưới khi lớp đất mặt khô 2-3 cm";
+    final light = wiki['light'] ?? context.tr("Sáng yếu đến trung bình", "Low to medium light");
+    final water = wiki['watering'] ?? context.tr("Tưới khi lớp đất mặt khô 2-3 cm", "Water when top 2-3 cm of soil is dry");
     final temp = wiki['temperature'] ?? "18 - 28°C";
     final humidity = wiki['humidity'] ?? "50 - 70%";
-    final soil = wiki['soil'] ?? "Đất tơi xốp, thoát nước tốt";
-    final fertilizer = wiki['fertilizer'] ?? "Bón phân NPK pha loãng 1 tháng/lần";
-    final toxicity = wiki['toxicity'] ?? "An toàn / Đang cập nhật";
-    final difficulty = wiki['difficulty'] ?? "Dễ chăm sóc";
-    final description = wiki['description'] ?? "Loài cây cảnh tuyệt đẹp giúp thanh lọc không khí và mang lại sinh khí tươi mới cho không gian sống của bạn.";
+    final soil = wiki['soil'] ?? context.tr("Đất tơi xốp, thoát nước tốt", "Porous, well-draining soil");
+    final fertilizer = wiki['fertilizer'] ?? context.tr("Bón phân NPK pha loãng 1 tháng/lần", "Diluted NPK fertilizer once a month");
+    final toxicity = wiki['toxicity'] ?? context.tr("An toàn / Đang cập nhật", "Safe / Updating");
+    final difficulty = wiki['difficulty'] ?? context.tr("Dễ chăm sóc", "Easy care");
+    final description = wiki['description'] ?? context.tr("Loài cây cảnh tuyệt đẹp giúp thanh lọc không khí và mang lại sinh khí tươi mới cho không gian sống của bạn.", "A beautiful houseplant that purifies the air and adds fresh vibrancy to your living space.");
     final family = wiki['family'] ?? "";
 
     showModalBottomSheet(
@@ -1903,9 +2013,9 @@ class PlantDetailScreen extends StatelessWidget {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
-          decoration: const BoxDecoration(
-            color: Color(0xFFFBF9F6),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -1917,7 +2027,7 @@ class PlantDetailScreen extends StatelessWidget {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4E8CE),
+                      color: c.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1934,7 +2044,7 @@ class PlantDetailScreen extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1B1C1A),
+                              color: c.textPrimary,
                             ),
                           ),
                           if (sciName.isNotEmpty)
@@ -1943,14 +2053,14 @@ class PlantDetailScreen extends StatelessWidget {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
-                                color: const Color(0xFF6A756B),
+                                color: c.textMuted,
                               ),
                             ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF747871)),
+                      icon: Icon(Icons.close, color: c.textMuted),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -1959,26 +2069,26 @@ class PlantDetailScreen extends StatelessWidget {
 
                 // Lưới 3 Thẻ Thông Tin Nổi Bật (Độ khó, Họ cây, Phân loại)
                 () {
-                  String shortDifficulty = "Trung bình";
-                  Color diffBg = const Color(0xFFFFF3E0);
-                  Color diffFg = const Color(0xFFE65100);
+                  String shortDifficulty = context.tr("Trung bình", "Medium");
+                  Color diffBg = c.isDark ? const Color(0xFF3E3618) : const Color(0xFFFFF3E0);
+                  Color diffFg = const Color(0xFFFFB74D);
 
                   final lowerDiff = difficulty.toLowerCase();
-                  if (lowerDiff.contains("khó")) {
-                    shortDifficulty = "Khó";
-                    diffBg = const Color(0xFFFFEBEE);
-                    diffFg = const Color(0xFFD32F2F);
-                  } else if (lowerDiff.contains("dễ")) {
-                    shortDifficulty = "Dễ";
-                    diffBg = const Color(0xFFE8F5E9);
-                    diffFg = const Color(0xFF2E7D32);
-                  } else if (lowerDiff.contains("trung bình")) {
-                    shortDifficulty = "Trung bình";
-                    diffBg = const Color(0xFFFFF8E1);
-                    diffFg = const Color(0xFFF57F17);
+                  if (lowerDiff.contains("khó") || lowerDiff.contains("hard") || lowerDiff.contains("difficult")) {
+                    shortDifficulty = context.tr("Khó", "Hard");
+                    diffBg = c.isDark ? const Color(0xFF3E1E22) : const Color(0xFFFFEBEE);
+                    diffFg = const Color(0xFFEF5350);
+                  } else if (lowerDiff.contains("dễ") || lowerDiff.contains("easy")) {
+                    shortDifficulty = context.tr("Dễ", "Easy");
+                    diffBg = c.isDark ? const Color(0xFF1E3A24) : const Color(0xFFE8F5E9);
+                    diffFg = const Color(0xFF4ADE80);
+                  } else if (lowerDiff.contains("trung bình") || lowerDiff.contains("medium")) {
+                    shortDifficulty = context.tr("Trung bình", "Medium");
+                    diffBg = c.isDark ? const Color(0xFF3E3618) : const Color(0xFFFFF8E1);
+                    diffFg = const Color(0xFFFFB74D);
                   }
 
-                  String shortFamily = family.isNotEmpty ? family : "Chưa phân loại";
+                  String shortFamily = family.isNotEmpty ? family : context.tr("Chưa phân loại", "Unclassified");
                   if (shortFamily.contains("(")) {
                     shortFamily = shortFamily.split("(").first.trim();
                   }
@@ -1987,8 +2097,9 @@ class PlantDetailScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _buildSummaryMiniCard(
+                          context,
                           icon: Icons.military_tech_outlined,
-                          label: "ĐỘ KHÓ",
+                          label: context.tr("ĐỘ KHÓ", "DIFFICULTY"),
                           value: shortDifficulty,
                           badgeColor: diffBg,
                           textColor: diffFg,
@@ -1997,17 +2108,19 @@ class PlantDetailScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildSummaryMiniCard(
+                          context,
                           icon: Icons.spa_outlined,
-                          label: "HỌ THỰC VẬT",
+                          label: context.tr("HỌ THỰC VẬT", "FAMILY"),
                           value: shortFamily,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildSummaryMiniCard(
+                          context,
                           icon: Icons.category_outlined,
-                          label: "PHÂN LOẠI",
-                          value: currentPlant?.plantType ?? "Cây cảnh",
+                          label: context.tr("PHÂN LOẠI", "TYPE"),
+                          value: currentPlant?.plantType ?? context.tr("Cây cảnh", "Houseplant"),
                         ),
                       ),
                     ],
@@ -2021,9 +2134,9 @@ class PlantDetailScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF8E1),
+                      color: c.warningBg,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFFFE082)),
+                      border: Border.all(color: c.isDark ? const Color(0xFF5A4820) : const Color(0xFFFFE082)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2035,11 +2148,11 @@ class PlantDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Lưu ý về độ khó & môi trường:",
+                                context.tr("Lưu ý về độ khó & môi trường:", "Care difficulty & environment note:"),
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFFE65100),
+                                  color: c.isDark ? const Color(0xFFFFB74D) : const Color(0xFFE65100),
                                 ),
                               ),
                               const SizedBox(height: 3),
@@ -2048,7 +2161,7 @@ class PlantDetailScreen extends StatelessWidget {
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   height: 1.45,
-                                  color: const Color(0xFF5D4037),
+                                  color: c.isDark ? c.textSecondary : const Color(0xFF5D4037),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -2063,30 +2176,30 @@ class PlantDetailScreen extends StatelessWidget {
 
                 // Mô tả
                 Text(
-                  "Đặc tính sinh học",
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                  context.tr("Đặc tính sinh học", "Biological characteristics"),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: c.textPrimary),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   description,
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: const Color(0xFF444842)),
+                  style: GoogleFonts.inter(fontSize: 13, height: 1.5, color: c.textSecondary),
                 ),
                 const SizedBox(height: 20),
 
                 // Lưới thông số chăm sóc chuẩn
                 Text(
-                  "Yêu cầu sinh thái chuẩn bách khoa",
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                  context.tr("Yêu cầu sinh thái chuẩn bách khoa", "Standard botanical requirements"),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: c.textPrimary),
                 ),
                 const SizedBox(height: 12),
 
-                _buildWikiInfoRow(Icons.light_mode_outlined, "Ánh sáng", light),
-                _buildWikiInfoRow(Icons.water_drop_outlined, "Nước tưới", water),
-                _buildWikiInfoRow(Icons.thermostat_outlined, "Nhiệt độ", temp),
-                _buildWikiInfoRow(Icons.cloud_outlined, "Độ ẩm", humidity),
-                _buildWikiInfoRow(Icons.terrain_outlined, "Đất trồng", soil),
-                _buildWikiInfoRow(Icons.science_outlined, "Phân bón", fertilizer),
-                _buildWikiInfoRow(Icons.pets_outlined, "Độc tính", toxicity),
+                _buildWikiInfoRow(context, Icons.light_mode_outlined, context.tr("Ánh sáng", "Light"), light),
+                _buildWikiInfoRow(context, Icons.water_drop_outlined, context.tr("Nước tưới", "Watering"), water),
+                _buildWikiInfoRow(context, Icons.thermostat_outlined, context.tr("Nhiệt độ", "Temperature"), temp),
+                _buildWikiInfoRow(context, Icons.cloud_outlined, context.tr("Độ ẩm", "Humidity"), humidity),
+                _buildWikiInfoRow(context, Icons.terrain_outlined, context.tr("Đất trồng", "Soil"), soil),
+                _buildWikiInfoRow(context, Icons.science_outlined, context.tr("Phân bón", "Fertilizer"), fertilizer),
+                _buildWikiInfoRow(context, Icons.pets_outlined, context.tr("Độc tính", "Toxicity"), toxicity),
 
                 const SizedBox(height: 24),
                 // Nút chuyển ngay sang AI hỏi thêm
@@ -2110,11 +2223,11 @@ class PlantDetailScreen extends StatelessWidget {
                     },
                     icon: const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 18),
                     label: Text(
-                      "Hỏi Trợ lý Floria sâu hơn về loài cây này",
+                      context.tr("Hỏi Trợ lý Floria sâu hơn về loài cây này", "Ask Floria AI more about this plant"),
                       style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF364534),
+                      backgroundColor: c.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
@@ -2127,22 +2240,24 @@ class PlantDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryMiniCard({
+  Widget _buildSummaryMiniCard(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
     Color? badgeColor,
     Color? textColor,
   }) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: badgeColor ?? Colors.white,
+        color: badgeColor ?? c.surfaceMuted,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E2DF)),
+        border: Border.all(color: c.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: c.shadow.withValues(alpha: c.isDark ? 0.2 : 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -2153,7 +2268,7 @@ class PlantDetailScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: textColor ?? const Color(0xFF364534)),
+              Icon(icon, size: 14, color: textColor ?? c.textSecondary),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -2161,7 +2276,7 @@ class PlantDetailScreen extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF747871),
+                    color: c.textMuted,
                     letterSpacing: 0.5,
                   ),
                   maxLines: 1,
@@ -2176,7 +2291,7 @@ class PlantDetailScreen extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: textColor ?? const Color(0xFF1B1C1A),
+              color: textColor ?? c.textPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -2186,14 +2301,15 @@ class PlantDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWikiInfoRow(IconData icon, String title, String desc) {
+  Widget _buildWikiInfoRow(BuildContext context, IconData icon, String title, String desc) {
+    final c = context.colors;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.surfaceMuted,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE4E2DF)),
+        border: Border.all(color: c.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2201,10 +2317,10 @@ class PlantDetailScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFF364534).withOpacity(0.08),
+              color: c.surfaceTint,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF364534), size: 16),
+            child: Icon(icon, color: c.textSecondary, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2213,12 +2329,12 @@ class PlantDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: c.textPrimary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   desc,
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF444842)),
+                  style: GoogleFonts.inter(fontSize: 12, color: c.textSecondary),
                 ),
               ],
             ),
@@ -2228,7 +2344,8 @@ class PlantDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskItem({
+  Widget _buildTaskItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String time,
@@ -2237,17 +2354,18 @@ class PlantDetailScreen extends StatelessWidget {
     required bool isDone,
     required bool isLast,
   }) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDone ? const Color(0xFFF5F3F0) : Colors.transparent,
+        color: isDone ? (c.isDark ? c.surfaceMuted.withValues(alpha: 0.5) : const Color(0xFFF5F3F0)) : Colors.transparent,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(isLast ? 0 : 16),
           topRight: Radius.circular(isLast ? 0 : 16),
           bottomLeft: Radius.circular(isLast ? 16 : 0),
           bottomRight: Radius.circular(isLast ? 16 : 0),
         ),
-        border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFE4E2DF))),
+        border: isLast ? null : Border(bottom: BorderSide(color: c.border)),
       ),
       child: Row(
         children: [
@@ -2256,11 +2374,11 @@ class PlantDetailScreen extends StatelessWidget {
             child: Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE4E2DF),
+              decoration: BoxDecoration(
+                color: c.surfaceTint,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: const Color(0xFF364534), size: 20),
+              child: Icon(icon, color: c.textSecondary, size: 20),
             ),
           ),
           const SizedBox(width: 12),
@@ -2275,7 +2393,7 @@ class PlantDetailScreen extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1B1C1A),
+                      color: c.textPrimary,
                       decoration: isDone ? TextDecoration.lineThrough : null,
                     ),
                   ),
@@ -2301,9 +2419,9 @@ class PlantDetailScreen extends StatelessWidget {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: isDone ? const Color(0xFF364534) : Colors.transparent,
+              color: isDone ? c.primary : Colors.transparent,
               shape: BoxShape.circle,
-              border: Border.all(color: isDone ? const Color(0xFF364534) : const Color(0xFF747871), width: 2),
+              border: Border.all(color: isDone ? c.primary : c.textMuted, width: 2),
             ),
             child: isDone ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
           ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/l10n/app_tr.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../garden/providers/garden_provider.dart';
 import '../../garden/models/garden_plant.dart';
@@ -36,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final authProvider = Provider.of<AuthProvider>(context);
     final gardenProvider = Provider.of<GardenProvider>(context);
 
@@ -47,10 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
         todayTasks.add({
           "plant": plant,
           "taskType": "water",
-          "title": "Tưới nước cho ${plant.nickname}",
-          "tag": "Tưới nước",
+          "title": "${context.tr('Tưới nước cho', 'Water')} ${plant.nickname}",
+          "tag": context.tr("Tưới nước", "Water"),
           "tagColor": const Color(0xFF0284C7),
-          "tagBg": const Color(0xFFE0F2FE),
+          "tagBg": c.isDark ? const Color(0xFF132D3E) : const Color(0xFFE0F2FE),
           "icon": Icons.water_drop_rounded,
         });
       }
@@ -58,10 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
         todayTasks.add({
           "plant": plant,
           "taskType": "fertilize",
-          "title": "Bón phân cho ${plant.nickname}",
-          "tag": "Bón phân",
+          "title": "${context.tr('Bón phân cho', 'Fertilize')} ${plant.nickname}",
+          "tag": context.tr("Bón phân", "Fertilize"),
           "tagColor": const Color(0xFFD97706),
-          "tagBg": const Color(0xFFFEF3C7),
+          "tagBg": c.isDark ? const Color(0xFF382A13) : const Color(0xFFFEF3C7),
           "icon": Icons.science_rounded,
         });
       }
@@ -69,17 +72,17 @@ class _HomeScreenState extends State<HomeScreen> {
         todayTasks.add({
           "plant": plant,
           "taskType": "pest",
-          "title": "Kiểm tra sâu bệnh cho ${plant.nickname}",
-          "tag": "Sâu bệnh & Lau lá",
+          "title": "${context.tr('Kiểm tra sâu bệnh cho', 'Pest check for')} ${plant.nickname}",
+          "tag": context.tr("Sâu bệnh & Lau lá", "Pest & Clean"),
           "tagColor": const Color(0xFF15803D),
-          "tagBg": const Color(0xFFDCFCE7),
+          "tagBg": c.isDark ? const Color(0xFF14301D) : const Color(0xFFDCFCE7),
           "icon": Icons.shield_outlined,
         });
       }
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6),
+      backgroundColor: c.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 32, top: 16),
@@ -120,14 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 1. Header Chào hỏi cá nhân hóa theo buổi & đếm việc cần làm thật
   Widget _buildHeader(BuildContext context, AuthProvider authProvider, int totalTasks) {
+    final c = context.colors;
     final now = DateTime.now();
     String greeting;
     if (now.hour >= 5 && now.hour < 12) {
-      greeting = "Chào buổi sáng ☀️";
+      greeting = context.tr("Chào buổi sáng ☀️", "Good morning ☀️");
     } else if (now.hour >= 12 && now.hour < 18) {
-      greeting = "Chào buổi chiều 🌤️";
+      greeting = context.tr("Chào buổi chiều 🌤️", "Good afternoon 🌤️");
     } else {
-      greeting = "Chào buổi tối 🌙";
+      greeting = context.tr("Chào buổi tối 🌙", "Good evening 🌙");
     }
 
     String displayName = authProvider.userName?.trim() ?? '';
@@ -136,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (email != null && email.contains('@')) {
         displayName = email.split('@').first;
       } else {
-        displayName = "Bạn yêu cây";
+        displayName = context.tr("Bạn yêu cây", "Plant Lover");
       }
     }
 
@@ -152,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF6A756B),
+                color: c.textMuted,
                 letterSpacing: 0.3,
               ),
             ),
@@ -162,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: GoogleFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1B1C1A),
+                color: c.textPrimary,
                 height: 1.2,
               ),
               maxLines: 1,
@@ -173,12 +177,12 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: c.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE4E2DF)),
+            border: Border.all(color: c.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: c.shadow.withValues(alpha: 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -190,12 +194,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Hôm nay có',
-                    style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w500, color: const Color(0xFF747871)),
+                    context.tr('Hôm nay có', 'Today has'),
+                    style: GoogleFonts.inter(fontSize: 10.5, fontWeight: FontWeight.w500, color: c.textMuted),
                   ),
                   Text(
-                    'việc cần làm',
-                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                    context.tr('việc cần làm', 'tasks to do'),
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: c.textPrimary),
                   ),
                 ],
               ),
@@ -203,8 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 30,
                 height: 30,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF364534),
+                decoration: BoxDecoration(
+                  color: c.isDark ? c.primaryText : const Color(0xFF364534),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -213,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: c.isDark ? Colors.black : Colors.white,
                   ),
                 ),
               )
@@ -438,18 +442,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 3. Khôi phục lại khối Trợ lý Floria
   Widget _buildAIAssistantSection(BuildContext context) {
+    final c = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFD6E8CF),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFE8F2E3),
-            Color(0xFFD4E8CE),
-          ],
-        ),
+        color: c.isDark ? c.surface : const Color(0xFFD6E8CF),
+        gradient: c.isDark
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1B3322), Color(0xFF14241A)],
+              )
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFE8F2E3),
+                  Color(0xFFD4E8CE),
+                ],
+              ),
         borderRadius: BorderRadius.circular(24),
+        border: c.isDark ? Border.all(color: c.border) : null,
       ),
       child: Stack(
         children: [
@@ -459,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(
               Icons.auto_awesome,
               size: 140,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.white.withValues(alpha: c.isDark ? 0.08 : 0.5),
             ),
           ),
           Padding(
@@ -471,30 +483,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF364534),
+                      decoration: BoxDecoration(
+                        color: c.isDark ? c.primaryText : const Color(0xFF364534),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                      child: Icon(Icons.auto_awesome, color: c.isDark ? Colors.black : Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Trợ lý Floria',
+                      context.tr('Trợ lý Floria', 'Floria Assistant'),
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B1C1A),
+                        color: c.textPrimary,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Chẩn đoán bệnh qua ảnh và nhận\nlời khuyên chăm cây cá nhân hóa.',
+                  context.tr(
+                    'Chẩn đoán bệnh qua ảnh và nhận\nlời khuyên chăm cây cá nhân hóa.',
+                    'Diagnose plant issues from photos and receive personalized plant care advice.',
+                  ),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
-                    color: const Color(0xFF444842),
+                    color: c.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -507,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF364534),
+                    backgroundColor: const Color(0xFF2E6F40),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -515,7 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Hỏi ngay',
+                    context.tr('Hỏi ngay', 'Ask now'),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -533,6 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 4. Lịch chăm sóc hôm nay (Chỉ hiện lịch, bấm vào mở sang khu vườn)
   Widget _buildTodayScheduleSection(BuildContext context, List<Map<String, dynamic>> tasks) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -543,19 +559,19 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Lịch chăm sóc hôm nay",
+                  context.tr("Lịch chăm sóc hôm nay", "Today's Care Schedule"),
                   style: GoogleFonts.inter(
                     fontSize: 19,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 Text(
-                  "Chạm vào mục để xem và thao tác trong vườn",
+                  context.tr("Chạm vào mục để xem và thao tác trong vườn", "Tap an item to view and act in garden"),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF747871),
+                    color: c.textMuted,
                   ),
                 ),
               ],
@@ -565,11 +581,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 _navigateToGardenTab(context);
               },
               child: Text(
-                "Đến khu vườn ➔",
+                context.tr("Đến khu vườn ➔", "Go to garden ➔"),
                 style: GoogleFonts.inter(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF364534),
+                  color: c.primaryText,
                 ),
               ),
             ),
@@ -581,22 +597,22 @@ class _HomeScreenState extends State<HomeScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE4E2DF)),
+              border: Border.all(color: c.border),
             ),
             child: Column(
               children: [
                 const Icon(Icons.check_circle_outline, size: 40, color: Color(0xFF15803D)),
                 const SizedBox(height: 10),
                 Text(
-                  "Hôm nay khu vườn đã đủ ẩm và dinh dưỡng!",
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1B1C1A)),
+                  context.tr("Hôm nay khu vườn đã đủ ẩm và dinh dưỡng!", "Your garden is hydrated and nourished!"),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: c.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Chưa có chậu cây nào đến hạn cần chăm sóc thêm.",
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF747871)),
+                  context.tr("Chưa có chậu cây nào đến hạn cần chăm sóc thêm.", "No plants require immediate attention."),
+                  style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                 ),
               ],
             ),
@@ -626,12 +642,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: c.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE4E2DF)),
+                    border: Border.all(color: c.border),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
+                        color: c.shadow.withValues(alpha: 0.02),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -651,15 +667,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 errorBuilder: (ctx, err, stack) => Container(
                                   width: 50,
                                   height: 50,
-                                  color: const Color(0xFFE8F2E3),
-                                  child: const Icon(Icons.local_florist, color: Color(0xFF364534), size: 24),
+                                  color: c.surfaceTint,
+                                  child: Icon(Icons.local_florist, color: c.primaryText, size: 24),
                                 ),
                               )
                             : Container(
                                 width: 50,
                                 height: 50,
-                                color: const Color(0xFFE8F2E3),
-                                child: const Icon(Icons.local_florist, color: Color(0xFF364534), size: 24),
+                                color: c.surfaceTint,
+                                child: Icon(Icons.local_florist, color: c.primaryText, size: 24),
                               ),
                       ),
                       const SizedBox(width: 12),
@@ -674,7 +690,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1B1C1A),
+                                color: c.textPrimary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -687,18 +703,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF747871),
+                                    color: c.textMuted,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Text("•", style: TextStyle(color: Color(0xFF747871), fontSize: 10)),
+                                Text("•", style: TextStyle(color: c.textMuted, fontSize: 10)),
                                 const SizedBox(width: 6),
                                 Text(
                                   plant.reminderTime,
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF364534),
+                                    color: c.primaryText,
                                   ),
                                 ),
                               ],
@@ -724,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded, color: Color(0xFF9E9E9E), size: 18),
+                      Icon(Icons.chevron_right_rounded, color: c.textMuted, size: 18),
                     ],
                   ),
                 ),
@@ -737,6 +753,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 5. Khu vườn của tôi (Hiển thị đầy đủ tất cả các vườn & chuyển tab tự động)
   Widget _buildMyGardenSection(BuildContext context, GardenProvider gardenProvider) {
+    final c = context.colors;
     final List<UserGarden> gardens = gardenProvider.gardens;
     final List<GardenPlant> allPlants = gardenProvider.allUserPlants;
 
@@ -752,11 +769,11 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Khu vườn của tôi",
+              context.tr("Khu vườn của tôi", "My Garden"),
               style: GoogleFonts.inter(
                 fontSize: 19,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1B1C1A),
+                color: c.textPrimary,
               ),
             ),
             TextButton(
@@ -764,11 +781,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 _navigateToGardenTab(context);
               },
               child: Text(
-                "Xem tất cả",
+                context.tr("Xem tất cả", "View all"),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF364534),
+                  color: c.primaryText,
                 ),
               ),
             ),
@@ -784,7 +801,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 _buildGardenChip(
-                  label: "Tất cả các vườn",
+                  context: context,
+                  label: context.tr("Tất cả các vườn", "All gardens"),
                   isSelected: _selectedGardenFilterId == null,
                   onTap: () {
                     setState(() {
@@ -795,6 +813,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ...gardens.map((g) {
                   final isSel = _selectedGardenFilterId == g.id;
                   return _buildGardenChip(
+                    context: context,
                     label: g.name,
                     isSelected: isSel,
                     onTap: () {
@@ -815,17 +834,17 @@ class _HomeScreenState extends State<HomeScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE4E2DF)),
+              border: Border.all(color: c.border),
             ),
             child: Column(
               children: [
-                const Icon(Icons.yard_outlined, size: 40, color: Color(0xFF364534)),
+                Icon(Icons.yard_outlined, size: 40, color: c.primaryText),
                 const SizedBox(height: 8),
                 Text(
-                  "Chưa có chậu cây nào trong mục này",
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                  context.tr("Chưa có chậu cây nào trong mục này", "No plants in this category yet"),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: c.textPrimary),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
@@ -833,9 +852,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _navigateToGardenTab(context);
                   },
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text("Khám phá khu vườn"),
+                  label: Text(context.tr("Khám phá khu vườn", "Explore garden")),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF364534),
+                    backgroundColor: const Color(0xFF2E6F40),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -876,6 +895,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   healthIcon = Icons.check_circle_rounded;
                 }
 
+                String displayStatus = status;
+                if (status == 'Khỏe mạnh') {
+                  displayStatus = context.tr('Khỏe mạnh', 'Healthy');
+                } else if (status == 'Cần tưới nước') {
+                  displayStatus = context.tr('Cần tưới nước', 'Needs water');
+                } else if (status == 'Cần bón phân') {
+                  displayStatus = context.tr('Cần bón phân', 'Needs feed');
+                } else if (status == 'Cần kiểm tra') {
+                  displayStatus = context.tr('Cần kiểm tra', 'Needs check');
+                } else if (status == 'Cần chú ý') {
+                  displayStatus = context.tr('Cần chú ý', 'Attention');
+                } else if (status == 'Cần điều trị') {
+                  displayStatus = context.tr('Cần điều trị', 'Treatment');
+                } else if (status == 'Đang phục hồi') {
+                  displayStatus = context.tr('Đang phục hồi', 'Recovering');
+                }
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -889,12 +925,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 175,
                     margin: const EdgeInsets.only(right: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE4E2DF)),
+                      border: Border.all(color: c.border),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: c.shadow.withValues(alpha: 0.03),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -916,14 +952,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       fit: BoxFit.cover,
                                       errorBuilder: (ctx, err, stack) => Container(
                                         height: 125,
-                                        color: const Color(0xFFE8F2E3),
-                                        child: const Icon(Icons.local_florist, color: Color(0xFF364534), size: 36),
+                                        color: c.surfaceTint,
+                                        child: Icon(Icons.local_florist, color: c.primaryText, size: 36),
                                       ),
                                     )
                                   : Container(
                                       height: 125,
-                                      color: const Color(0xFFE8F2E3),
-                                      child: const Icon(Icons.local_florist, color: Color(0xFF364534), size: 36),
+                                      color: c.surfaceTint,
+                                      child: Icon(Icons.local_florist, color: c.primaryText, size: 36),
                                     ),
                             ),
                             Positioned(
@@ -932,7 +968,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.94),
+                                  color: c.isDark ? c.surface.withValues(alpha: 0.94) : Colors.white.withValues(alpha: 0.94),
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: [
                                     BoxShadow(
@@ -947,7 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Icon(healthIcon, size: 12, color: healthColor),
                                     const SizedBox(width: 4),
                                     Text(
-                                      status,
+                                      displayStatus,
                                       style: GoogleFonts.inter(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w700,
@@ -972,7 +1008,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1B1C1A),
+                                  color: c.textPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -980,7 +1016,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 3),
                               Row(
                                 children: [
-                                  const Icon(Icons.place_outlined, size: 13, color: Color(0xFF747871)),
+                                  Icon(Icons.place_outlined, size: 13, color: c.textMuted),
                                   const SizedBox(width: 3),
                                   Expanded(
                                     child: Text(
@@ -988,7 +1024,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF747871),
+                                        color: c.textMuted,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -1011,28 +1047,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGardenChip({
+    required BuildContext context,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final c = context.colors;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
         label: Text(label),
         selected: isSelected,
-        checkmarkColor: Colors.white,
+        checkmarkColor: c.isDark ? Colors.black : Colors.white,
         onSelected: (_) => onTap(),
-        selectedColor: const Color(0xFF364534),
-        backgroundColor: Colors.white,
+        selectedColor: c.isDark ? c.primaryText : const Color(0xFF364534),
+        backgroundColor: c.surface,
         labelStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          color: isSelected ? Colors.white : const Color(0xFF444842),
+          color: isSelected ? (c.isDark ? Colors.black : Colors.white) : c.textSecondary,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
           side: BorderSide(
-            color: isSelected ? const Color(0xFF364534) : const Color(0xFFE4E2DF),
+            color: isSelected ? (c.isDark ? c.primaryText : const Color(0xFF364534)) : c.border,
           ),
         ),
       ),
@@ -1041,6 +1079,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 6. Cẩm nang chăm sóc cây (Dạng Blog kiến thức chuyên sâu - Lưu trữ Firestore)
   Widget _buildCamNangBlogSection(BuildContext context) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1051,19 +1090,19 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Cẩm nang chăm sóc cây",
+                  context.tr("Cẩm nang chăm sóc cây", "Plant Care Handbook"),
                   style: GoogleFonts.inter(
                     fontSize: 19,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1B1C1A),
+                    color: c.textPrimary,
                   ),
                 ),
                 Text(
-                  "Kinh nghiệm thực chiến từ chuyên gia thực vật",
+                  context.tr("Kinh nghiệm thực chiến từ chuyên gia thực vật", "Practical tips from botanical specialists"),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF747871),
+                    color: c.textMuted,
                   ),
                 ),
               ],
@@ -1089,12 +1128,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 250,
                       margin: const EdgeInsets.only(right: 14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: c.surface,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFFE4E2DF)),
+                        border: Border.all(color: c.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
+                            color: c.shadow.withValues(alpha: 0.03),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -1115,8 +1154,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fit: BoxFit.cover,
                                   errorBuilder: (ctx, err, stack) => Container(
                                     height: 130,
-                                    color: const Color(0xFFE4E2DF),
-                                    child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+                                    color: c.surfaceTint,
+                                    child: Icon(Icons.image_not_supported_outlined, color: c.textMuted),
                                   ),
                                 ),
                                 Positioned(
@@ -1125,7 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF364534).withValues(alpha: 0.85),
+                                      color: (c.isDark ? Colors.black : const Color(0xFF364534)).withValues(alpha: 0.85),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -1172,7 +1211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF1B1C1A),
+                                    color: c.textPrimary,
                                     height: 1.3,
                                   ),
                                   maxLines: 2,
@@ -1183,7 +1222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   article.summary,
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
-                                    color: const Color(0xFF6B7280),
+                                    color: c.textMuted,
                                     height: 1.35,
                                   ),
                                   maxLines: 2,
@@ -1193,15 +1232,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      "Đọc bài viết",
+                                      context.tr("Đọc bài viết", "Read article"),
                                       style: GoogleFonts.inter(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF364534),
+                                        color: c.primaryText,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    const Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFF364534)),
+                                    Icon(Icons.arrow_forward_rounded, size: 14, color: c.primaryText),
                                   ],
                                 ),
                               ],
@@ -1231,6 +1270,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Hộp thoại đọc bài viết Blog chi tiết - Hỗ trợ chèn ảnh vào bất kỳ đoạn nào!
   void _openBlogDetailModal(BuildContext context, HandbookArticle article) {
+    final c = context.colors;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1240,9 +1280,9 @@ class _HomeScreenState extends State<HomeScreen> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.9,
           ),
-          decoration: const BoxDecoration(
-            color: Color(0xFFFBF9F6),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -1253,7 +1293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 4,
                   margin: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4E8CE),
+                    color: c.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1273,7 +1313,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF364534).withValues(alpha: 0.1),
+                              color: c.surfaceTint,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -1281,13 +1321,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF364534),
+                                color: c.primaryText,
                               ),
                             ),
                           ),
                           Text(
                             article.readTime,
-                            style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF747871)),
+                            style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                           ),
                         ],
                       ),
@@ -1299,17 +1339,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1B1C1A),
+                          color: c.textPrimary,
                           height: 1.3,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Tác giả: ${article.author}",
+                        "${context.tr('Tác giả:', 'Author:')} ${article.author}",
                         style: GoogleFonts.inter(
                           fontSize: 12.5,
                           fontStyle: FontStyle.italic,
-                          color: const Color(0xFF4A554A),
+                          color: c.textMuted,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1331,16 +1371,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F2E3),
+                          color: c.surfaceTint,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFCFE5CE)),
+                          border: Border.all(color: c.border),
                         ),
                         child: Text(
                           article.summary,
                           style: GoogleFonts.inter(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1E3A24),
+                            color: c.isDark ? c.primaryText : const Color(0xFF1E3A24),
                             height: 1.4,
                           ),
                         ),
@@ -1366,8 +1406,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     errorBuilder: (ctx, err, stack) => Container(
                                       width: double.infinity,
                                       height: 140,
-                                      color: const Color(0xFFE4E2DF),
-                                      child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+                                      color: c.surfaceTint,
+                                      child: Icon(Icons.image_not_supported_outlined, color: c.textMuted),
                                     ),
                                   ),
                                 ),
@@ -1378,7 +1418,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.inter(
                                       fontSize: 11.5,
                                       fontStyle: FontStyle.italic,
-                                      color: const Color(0xFF6B7280),
+                                      color: c.textMuted,
                                     ),
                                   ),
                                 ],
@@ -1391,16 +1431,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             margin: const EdgeInsets.only(bottom: 14),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
+                              color: c.warningBg,
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFFDE68A)),
+                              border: Border.all(color: const Color(0xFFFDE68A).withValues(alpha: c.isDark ? 0.3 : 1.0)),
                             ),
                             child: Text(
                               block.value,
                               style: GoogleFonts.inter(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF92400E),
+                                color: c.isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
                                 height: 1.45,
                               ),
                             ),
@@ -1413,7 +1453,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               block.value,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: const Color(0xFF374151),
+                                color: c.textSecondary,
                                 height: 1.55,
                               ),
                             ),
@@ -1435,13 +1475,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF364534),
+                      backgroundColor: const Color(0xFF2E6F40),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: Text(
-                      "Đóng bài viết",
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+                      context.tr("Đóng", "Close"),
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),

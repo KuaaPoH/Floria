@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../../core/l10n/app_tr.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../garden/providers/garden_provider.dart';
@@ -12,6 +14,7 @@ import 'support_center_screen.dart';
 import 'watering_reminders_screen.dart';
 import '../../history/screens/history_screen.dart';
 import '../../shop/screens/order_history_screen.dart';
+import '../models/floria_avatar_preset.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Function(int)? onNavigate; // Callback de chuyen tab tu trang ca nhan
@@ -23,6 +26,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   void _showModernToast(String message, {bool isError = false}) {
     if (!mounted) return;
@@ -124,14 +132,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showAvatarOptions(BuildContext context, AuthProvider authProvider) {
+    final c = context.colors;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -140,17 +149,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black12,
+                color: c.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              "Ảnh đại diện",
+              context.tr("Ảnh đại diện", "Profile picture"),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF1F2A21),
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 20),
@@ -158,17 +167,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3E8055).withValues(alpha: 0.1),
+                  color: c.isDark ? c.surfaceTint : const Color(0xFF2E6F40).withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.camera_alt, color: Color(0xFF3E8055)),
+                child: Icon(Icons.spa_rounded, color: c.primaryText),
               ),
               title: Text(
-                "Chụp ảnh mới",
+                context.tr("Bộ sưu tập Avatar Floria", "Floria Avatar presets"),
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: c.textPrimary,
+                ),
+              ),
+              subtitle: Text(
+                context.tr("Chọn linh vật thực vật Floria (Mầm Xanh, Monstera, Sen Đá...)", "Choose a plant mascot (Sprout, Monstera, Succulent...)"),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: c.textMuted,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showFloriaPresetAvatarPicker(context, authProvider);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: c.isDark ? c.surfaceTint : const Color(0xFF3E8055).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.camera_alt, color: c.primaryText),
+              ),
+              title: Text(
+                context.tr("Chụp ảnh mới", "Take new photo"),
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2A21),
+                  color: c.textPrimary,
                 ),
               ),
               onTap: () {
@@ -180,17 +218,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3E8055).withValues(alpha: 0.1),
+                  color: c.isDark ? c.surfaceTint : const Color(0xFF3E8055).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.photo_library, color: Color(0xFF3E8055)),
+                child: Icon(Icons.photo_library, color: c.primaryText),
               ),
               title: Text(
-                "Chọn từ thư viện",
+                context.tr("Chọn từ thư viện ảnh máy", "Choose from gallery"),
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2A21),
+                  color: c.textPrimary,
                 ),
               ),
               onTap: () {
@@ -209,41 +247,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: const Icon(Icons.restore, color: Colors.orange),
                 ),
                 title: Text(
-                  "Dùng lại ảnh Google mặc định",
+                  context.tr("Dùng Avatar mặc định Floria", "Use default Floria avatar"),
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2A21),
+                    color: c.textPrimary,
                   ),
                 ),
                 subtitle: Text(
-                  "Xóa ảnh đại diện riêng và hiển thị ảnh tài khoản Google ban đầu",
+                  context.tr("Quay về ảnh đại diện thực vật khởi đầu", "Revert to initial plant avatar"),
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF6A756B),
+                    color: c.textMuted,
                   ),
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await authProvider.resetToDefaultAvatar();
-                  _showModernToast("Đã chuyển về ảnh đại diện Google mặc định!");
+                  _showModernToast(context.tr("Đã chuyển về Avatar mặc định Floria!", "Reverted to default Floria avatar!"));
                 },
               ),
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4F9D69).withValues(alpha: 0.1),
+                  color: c.isDark ? c.surfaceTint : const Color(0xFF4F9D69).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.edit_note, color: Color(0xFF4F9D69)),
+                child: Icon(Icons.edit_note, color: c.primaryText),
               ),
               title: Text(
-                "Đổi tên & tiểu sử",
+                context.tr("Đổi tên & tiểu sử", "Edit name & bio"),
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2A21),
+                  color: c.textPrimary,
                 ),
               ),
               onTap: () {
@@ -259,34 +297,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditProfileDialog(BuildContext context, AuthProvider authProvider) {
+    final c = context.colors;
     final nameController = TextEditingController(text: authProvider.userName ?? "");
     final bioController = TextEditingController(
-      text: authProvider.bio ?? "Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.",
+      text: authProvider.bio ?? context.tr("Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.", "Caring for indoor plants with a steady, mindful routine."),
     );
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFE5F4EA),
+                color: c.isDark ? c.surfaceTint : const Color(0xFFE5F4EA),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.edit_note_rounded, color: Color(0xFF3E8055), size: 20),
+              child: Icon(Icons.edit_note_rounded, color: c.primaryText, size: 20),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "Đổi tên & tiểu sử",
+                context.tr("Đổi tên & tiểu sử", "Edit name & bio"),
                 style: GoogleFonts.inter(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1F2A21),
+                  color: c.textPrimary,
                 ),
               ),
             ),
@@ -300,21 +339,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 TextField(
                   controller: nameController,
-                  style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                  style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: "Tên hiển thị",
-                    prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF3E8055), size: 20),
-                    labelStyle: GoogleFonts.inter(color: const Color(0xFF6A756B), fontSize: 13),
+                    labelText: context.tr("Tên hiển thị", "Display name"),
+                    prefixIcon: Icon(Icons.person_outline_rounded, color: c.primaryText, size: 20),
+                    labelStyle: GoogleFonts.inter(color: c.textMuted, fontSize: 13),
                     filled: true,
-                    fillColor: const Color(0xFFF5F7F3),
+                    fillColor: c.surfaceMuted,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+                      borderSide: BorderSide(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.2)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF3E8055), width: 1.5),
+                      borderSide: BorderSide(color: c.primaryText, width: 1.5),
                     ),
                   ),
                 ),
@@ -322,21 +361,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 TextField(
                   controller: bioController,
                   maxLines: 3,
-                  style: GoogleFonts.inter(color: const Color(0xFF1F2A21), fontSize: 14),
+                  style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
                   decoration: InputDecoration(
-                    labelText: "Tiểu sử / Giới thiệu hồ sơ",
-                    prefixIcon: const Icon(Icons.eco_outlined, color: Color(0xFF3E8055), size: 20),
-                    labelStyle: GoogleFonts.inter(color: const Color(0xFF6A756B), fontSize: 13),
+                    labelText: context.tr("Tiểu sử / Giới thiệu hồ sơ", "Bio / Profile introduction"),
+                    prefixIcon: Icon(Icons.eco_outlined, color: c.primaryText, size: 20),
+                    labelStyle: GoogleFonts.inter(color: c.textMuted, fontSize: 13),
                     filled: true,
-                    fillColor: const Color(0xFFF5F7F3),
+                    fillColor: c.surfaceMuted,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+                      borderSide: BorderSide(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.2)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF3E8055), width: 1.5),
+                      borderSide: BorderSide(color: c.primaryText, width: 1.5),
                     ),
                   ),
                 ),
@@ -347,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("Hủy", style: GoogleFonts.inter(color: const Color(0xFF6A756B), fontWeight: FontWeight.w600)),
+            child: Text(context.tr("Hủy", "Cancel"), style: GoogleFonts.inter(color: c.textMuted, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -363,9 +402,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 bio: newBio,
               );
               if (ctx.mounted) Navigator.pop(ctx);
-              _showModernToast("Đã cập nhật tên & tiểu sử!");
+              _showModernToast(context.tr("Đã cập nhật tên & tiểu sử!", "Profile updated successfully!"));
             },
-            child: Text("Lưu", style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+            child: Text(context.tr("Lưu", "Save"), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),
@@ -373,6 +412,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAvatarImage(String photoUrl, String name) {
+    if (photoUrl.startsWith('preset:')) {
+      final preset = FloriaAvatarPreset.getById(photoUrl);
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: preset.gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          preset.icon,
+          size: 38,
+          color: preset.iconColor,
+        ),
+      );
+    }
     if (photoUrl.startsWith('data:image')) {
       try {
         final bytes = base64Decode(photoUrl.split(',').last);
@@ -388,21 +445,186 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Image.network(
       photoUrl,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(name),
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint("❌ [ProfileScreen] Lỗi tải avatar: $error, URL: $photoUrl");
+        return _buildDefaultAvatar(name);
+      },
     );
   }
 
   Widget _buildDefaultAvatar(String name) {
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'F';
     return Container(
-      color: const Color(0xFFE5F4EA),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF2E6F40), Color(0xFF52B788)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       alignment: Alignment.center,
-      child: Text(
-        initial,
-        style: GoogleFonts.inter(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: const Color(0xFF3E8055),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Icon(
+              Icons.spa_rounded,
+              size: 26,
+              color: Colors.white.withValues(alpha: 0.28),
+            ),
+          ),
+          Text(
+            initial,
+            style: GoogleFonts.outfit(
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFloriaPresetAvatarPicker(BuildContext context, AuthProvider authProvider) {
+    final c = context.colors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: c.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: c.isDark ? c.surfaceTint : const Color(0xFFE5F4EA),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.spa_rounded, color: c.primaryText, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  context.tr("Bộ sưu tập Avatar Floria", "Floria Avatar presets"),
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: c.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.tr(
+                "Chọn một biểu tượng thực vật làm ảnh đại diện cho trang cá nhân của bạn:",
+                "Choose a plant mascot as your profile avatar:",
+              ),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: c.textMuted,
+              ),
+            ),
+            const SizedBox(height: 20),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.88,
+              ),
+              itemCount: FloriaAvatarPreset.allPresets.length,
+              itemBuilder: (context, index) {
+                final preset = FloriaAvatarPreset.allPresets[index];
+                final isSelected = authProvider.effectivePhotoUrl == 'preset:${preset.id}';
+
+                return InkWell(
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final ok = await authProvider.selectPresetAvatar(preset.id);
+                    if (ok) {
+                      _showModernToast(context.tr("Đã chọn Avatar: ${preset.name}! 🌱", "Selected avatar: ${preset.name}! 🌱"));
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected ? (c.isDark ? c.surfaceTint : const Color(0xFFF0F7F2)) : c.surfaceMuted,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? c.primaryText : c.border,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: preset.gradientColors,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: preset.gradientColors.first.withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(preset.icon, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          preset.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
         ),
       ),
     );
@@ -410,16 +632,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final authProvider = Provider.of<AuthProvider>(context);
     final gardenProvider = Provider.of<GardenProvider>(context);
     final String name = authProvider.userName ?? "Nông Nghiệp Thông Minh";
     final String email = authProvider.userEmail ?? "user@example.com";
-    final String bio = authProvider.bio ?? 'Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.';
+    final String bio = authProvider.bio ?? context.tr('Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.', 'Caring for indoor plants with a steady, mindful routine.');
     final String? photoUrl = authProvider.effectivePhotoUrl;
     final int plantCount = gardenProvider.allUserPlants.length;
+    final int needsWaterCount = gardenProvider.allUserPlants.where((p) => p.isNeedsWater).length;
+    final int healthyCount = gardenProvider.allUserPlants.where((p) => p.healthStatus == 'Khỏe mạnh').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F3),
+      backgroundColor: c.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 40),
@@ -435,22 +660,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TÀI KHOẢN CỦA BẠN',
+                        context.tr('TÀI KHOẢN CỦA BẠN', 'YOUR ACCOUNT'),
                         style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 2,
-                          color: const Color(0xFF6A756B),
+                          color: c.textMuted,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Cá nhân',
+                        context.tr('Cá nhân', 'Profile'),
                         style: GoogleFonts.inter(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -1,
-                          color: const Color(0xFF1F2A21),
+                          color: c.textPrimary,
                         ),
                       ),
                     ],
@@ -463,16 +688,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  color: c.isDark ? c.surface : null,
+                  gradient: c.isDark ? null : const LinearGradient(
                     colors: [Color(0xEEF7F1EE), Color(0xEBFFFFFF)],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.12)),
+                  border: Border.all(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.12)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF17231A).withValues(alpha: 0.05),
+                      color: c.shadow.withValues(alpha: c.isDark ? 0.3 : 0.05),
                       blurRadius: 40,
                       offset: const Offset(0, 16),
                     )
@@ -491,7 +717,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 height: 74,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFFE5F4EA),
+                                  color: c.surfaceTint,
                                   boxShadow: [
                                     BoxShadow(
                                       color: const Color(0xFF4F9D69).withValues(alpha: 0.24),
@@ -525,21 +751,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(5),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: c.surface,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.2)),
+                                    border: Border.all(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.2)),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF17231A).withValues(alpha: 0.12),
+                                        color: c.shadow.withValues(alpha: 0.12),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       )
                                     ],
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.camera_alt,
                                     size: 13,
-                                    color: Color(0xFF3E8055),
+                                    color: c.primaryText,
                                   ),
                                 ),
                               ),
@@ -559,17 +785,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       style: GoogleFonts.inter(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF1F2A21),
+                                        color: c.textPrimary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF6A756B)),
+                                    icon: Icon(Icons.edit_outlined, size: 16, color: c.textMuted),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
-                                    tooltip: "Chỉnh sửa thông tin",
+                                    tooltip: context.tr("Chỉnh sửa thông tin", "Edit profile"),
                                     onPressed: () => _showEditProfileDialog(context, authProvider),
                                   ),
                                 ],
@@ -577,14 +803,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 email,
-                                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6A756B)),
+                                style: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 bio,
-                                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6A756B)),
+                                style: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -596,11 +822,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        _buildStatBox('Đang chăm', plantCount.toString(), 'cây'),
+                        _buildStatBox(context, context.tr('Đang chăm', 'Gardening'), plantCount.toString(), context.tr('cây', 'plants')),
                         const SizedBox(width: 12),
-                        _buildStatBox('Streak', '27', 'ngày'),
+                        _buildStatBox(context, context.tr('Cần tưới', 'Need water'), needsWaterCount.toString(), context.tr('cây', 'plants')),
                         const SizedBox(width: 12),
-                        _buildStatBox('Điểm', '1.280', 'điểm'),
+                        _buildStatBox(context, context.tr('Khỏe mạnh', 'Healthy'), healthyCount.toString(), context.tr('cây', 'plants')),
                       ],
                     )
                   ],
@@ -612,11 +838,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.84),
+                  color: c.surface.withValues(alpha: c.isDark ? 1.0 : 0.84),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.14)),
+                  border: Border.all(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.14)),
                   boxShadow: [
-                    BoxShadow(color: const Color(0xFF17231A).withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(0, 8))
+                    BoxShadow(color: c.shadow.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(0, 8))
                   ],
                 ),
                 child: Column(
@@ -631,21 +857,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'TÓM TẮT TUẦN NÀY',
+                                context.tr('TÓM TẮT TUẦN NÀY', 'THIS WEEK SUMMARY'),
                                 style: GoogleFonts.inter(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 1.5,
-                                  color: const Color(0xFF6A756B),
+                                  color: c.textMuted,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Nhịp chăm ổn định và gọn gàng',
+                                context.tr('Nhịp chăm ổn định và gọn gàng', 'Steady and neat care routine'),
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1F2A21),
+                                  color: c.textPrimary,
                                 ),
                               ),
                             ],
@@ -654,15 +880,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE5F4EA),
+                            color: c.isDark ? c.surfaceTint : const Color(0xFFE5F4EA),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '+120 điểm',
+                            context.tr('+120 điểm', '+120 pts'),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF3E8055),
+                              color: c.primaryText,
                             ),
                           ),
                         ),
@@ -670,10 +896,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Bạn đã hoàn thành 5 lần tưới đúng giờ, 2 lần quét lá và được tặng thêm điểm để đổi ưu đãi giảm giá.',
+                      context.tr(
+                        'Bạn đã hoàn thành 5 lần tưới đúng giờ, 2 lần quét lá và được tặng thêm điểm để đổi ưu đãi giảm giá.',
+                        'You completed 5 on-time waterings, 2 plant scans and earned reward points for discounts.',
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: const Color(0xFF6A756B),
+                        color: c.textMuted,
                         height: 1.5,
                       ),
                     ),
@@ -686,9 +915,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Column(
                 children: [
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.local_shipping_outlined,
-                    title: 'Địa chỉ & Thanh toán',
-                    desc: 'Sổ địa chỉ nhận hàng và thẻ ngân hàng đã lưu.',
+                    title: context.tr('Địa chỉ & Thanh toán', 'Address & Payment'),
+                    desc: context.tr('Sổ địa chỉ nhận hàng và thẻ ngân hàng đã lưu.', 'Shipping addresses and saved cards.'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -698,9 +928,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.receipt_long_outlined,
-                    title: 'Đơn hàng của tôi',
-                    desc: 'Theo dõi trạng thái giao hàng và lịch sử mua vật tư.',
+                    title: context.tr('Đơn hàng của tôi', 'My Orders'),
+                    desc: context.tr('Theo dõi trạng thái giao hàng và lịch sử mua vật tư.', 'Track deliveries and supply purchases.'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -710,9 +941,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.history,
-                    title: 'Lịch sử quét',
-                    desc: 'Xem lại các chẩn đoán và giống cây đã nhận diện.',
+                    title: context.tr('Lịch sử quét', 'Scan History'),
+                    desc: context.tr('Xem lại các chẩn đoán và giống cây đã nhận diện.', 'Review past diagnoses and identified plants.'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -722,9 +954,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.water_drop_outlined,
-                    title: 'Nhắc tưới',
-                    desc: 'Việc chăm sóc hôm nay, quyền thiết bị và chế độ không làm phiền.',
+                    title: context.tr('Nhắc tưới', 'Watering Reminders'),
+                    desc: context.tr('Việc chăm sóc hôm nay, quyền thiết bị và chế độ không làm phiền.', 'Today care tasks, permissions and DND.'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -734,9 +967,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.headset_mic_outlined,
-                    title: 'Trung tâm hỗ trợ',
-                    desc: 'Câu hỏi thường gặp và thông tin liên hệ hỗ trợ.',
+                    title: context.tr('Trung tâm hỗ trợ', 'Support Center'),
+                    desc: context.tr('Câu hỏi thường gặp và thông tin liên hệ hỗ trợ.', 'FAQ and contact information.'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -746,9 +980,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.settings_outlined,
-                    title: 'Cài đặt',
-                    desc: 'Thông báo, ngôn ngữ và quyền hiển thị.',
+                    title: context.tr('Cài đặt', 'Settings'),
+                    desc: context.tr('Thông báo, ngôn ngữ và quyền hiển thị.', 'Notifications, language and display.'),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -758,9 +993,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildShortcutRow(
+                    context: context,
                     icon: Icons.logout_outlined,
-                    title: 'Đăng xuất',
-                    desc: 'Đăng xuất khỏi tài khoản trên thiết bị này.',
+                    title: context.tr('Đăng xuất', 'Sign out'),
+                    desc: context.tr('Đăng xuất khỏi tài khoản trên thiết bị này.', 'Sign out of your account on this device.'),
                     onTap: () {
                       authProvider.logout();
                       Navigator.pushAndRemoveUntil(
@@ -780,29 +1016,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatBox(String label, String value, String unit) {
+  Widget _buildStatBox(BuildContext context, String label, String value, String unit) {
+    final c = context.colors;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.8),
+          color: c.surface.withValues(alpha: c.isDark ? 1.0 : 0.8),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.14)),
+          border: Border.all(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.14)),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6A756B)),
+              style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
             ),
             const SizedBox(height: 8),
             Text(
               value,
-              style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF3E8055)),
+              style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, color: c.primaryText),
             ),
             Text(
               unit,
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6A756B)),
+              style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
             ),
           ],
         ),
@@ -811,6 +1048,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildShortcutRow({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String desc,
@@ -818,17 +1056,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool isHighlight = false,
     bool isDestructive = false,
   }) {
-    final Color iconColor = isDestructive ? Colors.red[600]! : (isHighlight ? const Color(0xFFD1A34D) : const Color(0xFF3E8055));
-    final Color iconBgColor = isDestructive ? Colors.red.withValues(alpha: 0.08) : (isHighlight ? const Color(0xFFD1A34D).withValues(alpha: 0.1) : const Color(0xFF4F9D69).withValues(alpha: 0.08));
+    final c = context.colors;
+    final Color iconColor = isDestructive ? Colors.red[400]! : (isHighlight ? const Color(0xFFD1A34D) : c.primaryText);
+    final Color iconBgColor = isDestructive ? Colors.red.withValues(alpha: 0.1) : (isHighlight ? const Color(0xFFD1A34D).withValues(alpha: 0.1) : (c.isDark ? c.surfaceTint : const Color(0xFF4F9D69).withValues(alpha: 0.08)));
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.76),
+          color: c.surface.withValues(alpha: c.isDark ? 1.0 : 0.76),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF4F9D69).withValues(alpha: 0.14)),
+          border: Border.all(color: c.isDark ? c.border : const Color(0xFF4F9D69).withValues(alpha: 0.14)),
         ),
         child: Row(
           children: [
@@ -851,7 +1090,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDestructive ? Colors.red[700] : const Color(0xFF1F2A21),
+                      color: isDestructive ? Colors.red[400] : c.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -859,14 +1098,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     desc,
                     style: GoogleFonts.inter(
                       fontSize: 11,
-                      color: const Color(0xFF6A756B),
+                      color: c.textMuted,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Color(0xFF6A756B), size: 20),
+            Icon(Icons.chevron_right, color: c.textMuted, size: 20),
           ],
         ),
       ),

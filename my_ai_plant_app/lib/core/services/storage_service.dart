@@ -11,36 +11,44 @@ class StorageService {
     ),
   );
 
-  /// Tải 1 ảnh lên ImgBB Cloud và nhận về đường dẫn trực tiếp (Direct URL vĩnh viễn)
-  static Future<String?> uploadToImgbb(
+  /// Tải 1 ảnh lên Cloudinary Cloud (25GB lưu trữ vĩnh viễn, CDN toàn cầu, không giới hạn)
+  static Future<String?> uploadToCloud(
     Uint8List bytes, {
     ProgressCallback? onProgress,
   }) async {
     try {
-      final base64Image = base64Encode(bytes);
+      final base64Image = "data:image/jpeg;base64,${base64Encode(bytes)}";
       final formData = FormData.fromMap({
-        'key': AppConstants.imgbbApiKey,
-        'image': base64Image,
+        'file': base64Image,
+        'upload_preset': AppConstants.cloudinaryUploadPreset,
       });
 
       final response = await _dio.post(
-        AppConstants.imgbbUploadUrl,
+        AppConstants.cloudinaryUploadUrl,
         data: formData,
         onSendProgress: onProgress,
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['url'] != null) {
-          final String directUrl = data['url'].toString();
-          debugPrint("✅ Tải ảnh lên ImgBB thành công: $directUrl");
+        final secureUrl = response.data['secure_url'] ?? response.data['url'];
+        if (secureUrl != null) {
+          final String directUrl = secureUrl.toString();
+          debugPrint("✅ Tải ảnh lên Cloudinary thành công: $directUrl");
           return directUrl;
         }
       }
     } catch (e) {
-      debugPrint("⚠️ Lỗi upload ảnh lên ImgBB: $e");
+      debugPrint("⚠️ Lỗi upload ảnh lên Cloudinary: $e");
     }
     return null;
+  }
+
+  /// Tải 1 ảnh lên Cloud (Hỗ trợ tương thích ngược với các module gọi uploadToImgbb)
+  static Future<String?> uploadToImgbb(
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  }) async {
+    return await uploadToCloud(bytes, onProgress: onProgress);
   }
 
   /// Tải nhiều ảnh nhật ký cây lên ImgBB Cloud song song (tối ưu tốc độ cao)
@@ -72,13 +80,13 @@ class StorageService {
     return await uploadToImgbb(bytes, onProgress: onProgress);
   }
 
-  /// Tải một ảnh từ URL bên ngoài (VD: Unsplash) về và lưu vĩnh viễn lên ImgBB Cloud
+  /// Tải một ảnh từ URL bên ngoài (VD: Unsplash) về và lưu vĩnh viễn lên Cloudinary Cloud
   static Future<String?> migrateExternalUrlToStorage({
     required String externalUrl,
     required String targetPath,
   }) async {
-    // Nếu ảnh đã nằm trên ImgBB thì giữ nguyên
-    if (externalUrl.contains('ibb.co')) {
+    // Nếu ảnh đã nằm trên Cloudinary thì giữ nguyên
+    if (externalUrl.contains('cloudinary.com')) {
       return externalUrl;
     }
 
@@ -94,11 +102,11 @@ class StorageService {
 
       if (response.statusCode == 200 && response.data != null) {
         final bytes = Uint8List.fromList(response.data!);
-        final imgbbUrl = await uploadToImgbb(bytes);
-        return imgbbUrl ?? externalUrl;
+        final cloudUrl = await uploadToCloud(bytes);
+        return cloudUrl ?? externalUrl;
       }
     } catch (e) {
-      debugPrint("Không thể chuyển đổi ảnh từ $externalUrl sang ImgBB: $e");
+      debugPrint("Không thể chuyển đổi ảnh từ $externalUrl sang Cloudinary: $e");
     }
     return externalUrl;
   }

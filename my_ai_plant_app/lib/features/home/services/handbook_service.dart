@@ -48,7 +48,7 @@ class HandbookService {
       category: "Mẹo tưới cây",
       readTime: "4 phút đọc",
       author: "Ban biên tập Floria",
-      coverImage: "https://i.ibb.co/MxQ1Lz37/86388f5c7477.jpg",
+      coverImage: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990017/photo-1485955900006-10f4d324d411.jpg",
       summary: "Hơn 80% cây cảnh trong nhà chết vì tưới quá nhiều thay vì thiếu nước. Học ngay nguyên tắc ngón tay 3cm để đo độ ẩm rễ chuẩn xác nhất.",
       createdAt: DateTime.now().subtract(const Duration(hours: 4)),
       blocks: [
@@ -62,7 +62,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/nM1WJMxk/ecae44420f93.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989990/photo-1614594975525-e45190c55d0b.jpg",
           caption: "Minh họa: Cách kiểm tra độ ẩm bề mặt đất trước khi quyết định tưới",
         ),
         HandbookBlock(
@@ -71,7 +71,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/Xx5BTsRX/4714b95e7862.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989991/photo-1545241047-6083a3684587.jpg",
           caption: "Hệ rễ khỏe mạnh có màu trắng ngà, rễ úng sẽ chuyển sang màu nâu đen và nhũn",
         ),
         HandbookBlock(
@@ -86,7 +86,7 @@ class HandbookService {
       category: "Bắt bệnh cây",
       readTime: "5 phút đọc",
       author: "Bác sĩ Cây trồng Floria",
-      coverImage: "https://i.ibb.co/fzBxkDFZ/ef61677f451a.jpg",
+      coverImage: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990018/photo-1459411552884-841db9b3cc2a.jpg",
       summary: "Lá chuyển vàng mép ngoài khác hoàn toàn với vàng toàn bộ phiến lá. Phân biệt chính xác giữa thiếu vi lượng, thừa clo hay cháy nắng để chữa trị kịp thời.",
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
       blocks: [
@@ -96,7 +96,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/Zb4bdd8/d732d46ea60f.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989991/photo-1509423350716-97f9360b4e09.jpg",
           caption: "Cháy mép lá do tiếp xúc trực tiếp với luồng gió điều hòa hoặc ánh nắng gắt",
         ),
         HandbookBlock(
@@ -113,7 +113,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/whz73xn9/c710efab1c7d.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990018/photo-1518531933037-91b2f5f229cc.jpg",
           caption: "Cây sau khi được chuyển sang khu vực ánh sáng tán xạ êm dịu",
         ),
       ],
@@ -124,7 +124,7 @@ class HandbookService {
       category: "Chọn cây cảnh",
       readTime: "3 phút đọc",
       author: "Chuyên gia Không Gian Xanh",
-      coverImage: "https://i.ibb.co/whz73xn9/c710efab1c7d.jpg",
+      coverImage: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990018/photo-1518531933037-91b2f5f229cc.jpg",
       summary: "Báo cáo Clean Air Study của NASA chỉ ra cây lưỡi hổ và trầu bà có khả năng hấp thụ formaldehyde, benzene và nhả oxy ngay cả trong đêm tối.",
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
       blocks: [
@@ -134,7 +134,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/jZRfHvS4/93b8d9ffa9c5.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793989993/photo-1512428813834-c702c7702b78.jpg",
           caption: "Cây Lưỡi Hổ (Sansevieria) - 'Nhà máy lọc khí ban đêm' bền bỉ bậc nhất",
         ),
         HandbookBlock(
@@ -147,7 +147,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/xqZxDT18/5fc4d6ac2a8d.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990019/photo-1463936575829-25148e1db1b8.jpg",
           caption: "Lan Ý (Peace Lily) nở hoa trắng tinh khôi và diệt trừ bào tử nấm mốc",
         ),
         HandbookBlock(
@@ -162,7 +162,7 @@ class HandbookService {
       category: "Dinh dưỡng cây",
       readTime: "4 phút đọc",
       author: "Ban nông nghiệp thông minh",
-      coverImage: "https://i.ibb.co/wG57fFH/3bb2ddcbfd02.jpg",
+      coverImage: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990019/photo-1463936575829-25148e1db1b8.jpg",
       summary: "Sai lầm lớn nhất của người mới là bón phân quá đậm đặc khiến rễ bị 'xót'. Bí quyết pha loãng 1/2 liều lượng khuyến nghị cho cây trồng chậu trong nhà.",
       createdAt: DateTime.now().subtract(const Duration(days: 3)),
       blocks: [
@@ -176,7 +176,7 @@ class HandbookService {
         ),
         HandbookBlock(
           type: "image",
-          value: "https://i.ibb.co/MxQ1Lz37/86388f5c7477.jpg",
+          value: "https://res.cloudinary.com/vbiltn75/image/upload/v1793990017/photo-1485955900006-10f4d324d411.jpg",
           caption: "Bón phân dạng xịt sương trực tiếp lên mặt dưới phiến lá giúp hấp thu nhanh nhất",
         ),
         HandbookBlock(

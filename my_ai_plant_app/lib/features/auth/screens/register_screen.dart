@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_tr.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -43,23 +45,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (error == null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng ký thành công! Vui lòng vào hộp thư Email để XÁC THỰC tài khoản.')),
+        SnackBar(
+          content: Text(
+            context.tr(
+              'Đăng ký thành công! Vui lòng vào hộp thư Email để XÁC THỰC tài khoản.',
+              'Registration successful! Please check your email to verify your account.',
+            ),
+          ),
+        ),
       );
       Navigator.pop(context); // Quay về trang đăng nhập
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'Đăng ký thất bại. Vui lòng thử lại!')),
+        SnackBar(
+          content: Text(error ?? context.tr('Đăng ký thất bại. Vui lòng thử lại!', 'Registration failed. Please try again!')),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2FCEF), // Đồng bộ màu nền sáng
+      backgroundColor: c.background,
       body: Stack(
         children: [
-          // Background Decor Orbs (Các khối tròn mờ ảo)
+          // Background Decor Orbs
           Positioned(
             top: -120,
             left: -120,
@@ -68,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF00E676).withValues(alpha: 0.05),
+                color: c.primary.withValues(alpha: c.isDark ? 0.12 : 0.05),
               ),
             ),
           ),
@@ -80,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 350,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF91D78A).withValues(alpha: 0.07),
+                color: c.primary.withValues(alpha: c.isDark ? 0.08 : 0.07),
               ),
             ),
           ),
@@ -99,10 +112,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: c.surface.withValues(alpha: 0.85),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: c.shadow,
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           )
@@ -122,25 +135,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF006D35),
+                        color: c.primary,
                       ),
                     ),
                     const SizedBox(height: 15),
 
                     Text(
-                      'Tạo tài khoản mới',
+                      context.tr('Tạo tài khoản mới', 'Create New Account'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: c.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Bắt đầu hành trình xanh cùng chúng tôi.',
+                      context.tr('Bắt đầu hành trình xanh cùng chúng tôi.', 'Start your green journey with us.'),
                       style: GoogleFonts.beVietnamPro(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: c.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -151,12 +164,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: c.surface.withValues(alpha: c.isDark ? 0.85 : 0.7),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 0.5),
+                          border: Border.all(color: c.border),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
+                              color: c.shadow,
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             )
@@ -167,11 +180,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             // Name Input
                             _buildInputField(
                               controller: _nameController,
-                              hintText: "Họ và Tên",
+                              hintText: context.tr("Họ và Tên", "Full Name"),
                               icon: Icons.person_outline,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Vui lòng nhập Họ và Tên';
+                                  return context.tr('Vui lòng nhập Họ và Tên', 'Please enter your full name');
                                 }
                                 return null;
                               },
@@ -186,10 +199,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               keyboardType: TextInputType.emailAddress,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Vui lòng nhập Email';
+                                  return context.tr('Vui lòng nhập Email', 'Please enter your email');
                                 }
                                 if (!value.contains('@')) {
-                                  return 'Email không đúng định dạng';
+                                  return context.tr('Email không đúng định dạng', 'Invalid email format');
                                 }
                                 return null;
                               },
@@ -199,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             // Password Input
                             _buildInputField(
                               controller: _passwordController,
-                              hintText: "Mật khẩu",
+                              hintText: context.tr("Mật khẩu", "Password"),
                               icon: Icons.lock_outline,
                               isPassword: true,
                               obscureText: _obscurePassword,
@@ -210,10 +223,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Vui lòng nhập mật khẩu';
+                                  return context.tr('Vui lòng nhập mật khẩu', 'Please enter password');
                                 }
                                 if (value.length < 6) {
-                                  return 'Mật khẩu phải từ 6 ký tự trở lên';
+                                  return context.tr('Mật khẩu phải từ 6 ký tự trở lên', 'Password must be at least 6 characters');
                                 }
                                 return null;
                               },
@@ -226,25 +239,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               child: ElevatedButton(
                                 onPressed: _isSubmitting ? null : _submit,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF00E676),
-                                  foregroundColor: const Color(0xFF004D26),
+                                  backgroundColor: c.primary,
+                                  foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 2,
+                                  shadowColor: c.shadow,
                                 ),
                                 child: _isSubmitting
                                     ? const SizedBox(
                                         width: 20,
                                         height: 20,
                                         child: CircularProgressIndicator(
-                                          color: Color(0xFF004D26),
+                                          color: Colors.white,
                                           strokeWidth: 2,
                                         ),
                                       )
                                     : Text(
-                                        'Đăng Ký',
+                                        context.tr('Đăng Ký', 'Sign Up'),
                                         style: GoogleFonts.beVietnamPro(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -263,10 +277,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Đã có tài khoản?',
+                          context.tr('Đã có tài khoản?', 'Already have an account?'),
                           style: GoogleFonts.beVietnamPro(
                             fontSize: 14,
-                            color: Colors.black54,
+                            color: c.textSecondary,
                           ),
                         ),
                         GestureDetector(
@@ -274,11 +288,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Navigator.pop(context); // Quay lại trang đăng nhập
                           },
                           child: Text(
-                            ' Đăng nhập',
+                            context.tr(' Đăng nhập', ' Sign in'),
                             style: GoogleFonts.beVietnamPro(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF00E676),
+                              color: c.primary,
                             ),
                           ),
                         ),
@@ -305,27 +319,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
+    final c = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
+        color: c.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: c.border),
       ),
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
-        style: GoogleFonts.beVietnamPro(fontSize: 14, color: Colors.black87),
+        style: GoogleFonts.beVietnamPro(fontSize: 14, color: c.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: Colors.black38),
-          prefixIcon: Icon(icon, color: Colors.black38, size: 20),
+          hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: c.textMuted),
+          prefixIcon: Icon(icon, color: c.textMuted, size: 20),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.black38,
+                    color: c.textMuted,
                     size: 20,
                   ),
                   onPressed: onSuffixIconTap,
