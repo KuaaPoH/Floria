@@ -1227,3 +1227,51 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
     *   Khắc phục dứt điểm 8 lỗi biên dịch biến màu chưa định nghĩa (`text`, `textMuted`, `primaryStrong`, `primary`) trong `diagnosis_report_screen.dart` (`_buildContentBlock`).
     *   Đồng bộ sang `context.colors` (`c.textPrimary`, `c.textSecondary`, `c.primary`, `c.surface`) và `context.tr()` cho các khối thông báo lỗi quét bệnh lá và lỗi kết nối máy chủ.
     *   Xác nhận `flutter analyze` cho toàn bộ tính năng Scan đạt 0 lỗi biên dịch.
+
+---
+
+## 7. Ca làm việc ngày 13/11/2026: Cập Nhật Linh Vật Floria, Chuẩn Hóa Thư Mục `floria_app` & Định Hướng Web Next.js
+
+### 1. Cập Nhật Bộ Nhận Diện Logo & Linh Vật Floria (`floria_app`)
+*   **Lưu trữ cục bộ trong `floria_app/assets/images/`** (không qua bên thứ 3) và tách sạch nền caro thành PNG trong suốt (`RGBA`) cho 3 ảnh linh vật:
+    *   `logo.jpg`: Cập nhật thành icon ứng dụng cho Android (`mipmap-*`), Web (`favicon.png`, `Icon-192.png`, `Icon-512.png`) và logo màn hình đăng ký (`register_screen.dart`).
+    *   `mascot_chao_mung.png`: Hiển thị nổi bật ở đầu màn hình đăng nhập (`login_screen.dart`).
+    *   `mascot_huong_dan.png`: Hiển thị ở phần trên của màn hình Hướng dẫn chụp ảnh (`scan_screen.dart`), đẩy khối hướng dẫn Nên/Không nên & nút *"Mở camera ngay"* xuống dưới, đồng thời bổ sung khối thông tin *"Floria AI có thể nhận diện"* (*40+ Loài cây* & *5 Nhóm bệnh lá*).
+    *   `mascot_avatar_chatbot.png`: Thay thế toàn bộ avatar của Trợ lý Floria trên Trang chủ (`home_screen.dart`) và màn hình Trò chuyện AI (`ai_assistant_screen.dart` — AppBar, Drawer lịch sử, bong bóng tin nhắn, trạng thái đang suy nghĩ).
+*   **Tinh chỉnh UI**: Làm dịu toàn bộ `BoxShadow` trong `ai_assistant_screen.dart` và xóa bỏ mục *"Đồng bộ ảnh sang Cloudinary"* khỏi màn hình Cài đặt (`settings_screen.dart`).
+
+### 2. Chuẩn Hóa Cấu Trúc Dự Án & Ghi Chú Định Hướng `floria_web`
+*   **Đổi tên thư mục Flutter**: `my_ai_plant_app` $\rightarrow$ **`floria_app`** (đã cập nhật đường dẫn khởi chạy trong `start_all.bat`).
+*   **Ghi chú quan trọng cho phân hệ Web (`floria_web`)**:
+    *   Đã dọn dẹp sạch bản Web cũ để chuẩn bị thiết kế lại bộ giao diện mẫu chất lượng cao hơn (dự kiến dùng Lovable/template chuyên nghiệp).
+    *   **Công nghệ bắt buộc ghi nhớ**: Phần Web sau này (**`floria_web`** — bao gồm cả phiên bản Web cho người dùng giống `floria_app` và phân hệ quản trị **`/admin`** kết nối Firestore) **vẫn sẽ sử dụng Next.js (App Router + Tailwind CSS)**.
+
+---
+
+## 8. Ca làm việc ngày 14/11/2026: Tối Ưu Tải Trang Chủ, Nâng Cấp Splash Screen, Đóng Gói Font Offline & Sạch Lỗi Analyzer
+
+### 1. Tối Ưu Màn Hình Chờ (`SplashScreen`) & Skeleton Loading Trang Chủ (`HomeScreen`)
+*   **Preload dữ liệu & hình ảnh trong `SplashScreen` (`floria_app/lib/features/splash/screens/splash_screen.dart`)**:
+    *   Tải trước dữ liệu `GardenProvider`, `RealtimeWeatherService.fetchCurrentWeather()`, `WeatherWidgetService.streamConfigs()`, `HandbookService.streamArticles()` (giới hạn timeout 4.5s) và `precacheImage` cho ảnh nền thời tiết, ảnh bìa cẩm nang, ảnh cây trong vườn.
+    *   Giải mã trước (`precacheImage`) bộ ảnh `logo.png`, `mascot_chao_mung.png`, `mascot_huong_dan.png` trong `didChangeDependencies()` và đợi ảnh chào mừng sẵn sàng trước khi chuyển sang `LoginScreen`.
+    *   Chuyển lời gọi `_prepareAndNavigate()` vào `WidgetsBinding.instance.addPostFrameCallback(...)` kèm `try ... catch` để khắc phục triệt để lỗi `dependOnInheritedWidgetOfExactType<MediaQuery>()` trong `initState()`.
+*   **Skeleton Loading & Anti-Overflow trên `HomeScreen` (`floria_app/lib/features/home/screens/home_screen.dart` & `shimmer_loading.dart`)**:
+    *   Cập nhật `ShimmerLoading` hỗ trợ cả Light Mode & Dark Mode.
+    *   Lưu `_weatherFuture` trong `initState()` thay vì tạo mới mỗi lần `build()`.
+    *   Bổ sung khung xương `_buildHomeSkeleton` với `AnimatedSwitcher` (300ms) và `loadingBuilder` dùng `ShimmerLoading` cho ảnh mạng.
+    *   Sửa lỗi `RenderFlex overflowed` ở thẻ Lịch chăm sóc hôm nay bằng `Flexible` + `ConstrainedBox(maxWidth: 100)` + `TextOverflow.ellipsis`.
+
+### 2. Nâng Cấp Giao Diện Seamless Splash (`web/index.html` + `SplashScreen`) & Logo PNG
+*   **Logo PNG trong suốt**: Tạo `floria_app/assets/images/logo.png` và bản web `floria_app/web/icons/logo.png`, cập nhật `register_screen.dart` dùng `logo.png`.
+*   **Đồng bộ giao diện sáng tươi (`#F5F7F3` + `#2E6F40`)**:
+    *   `web/index.html`: Hiển thị logo tròn ở giữa cùng 2 Decor Orbs xanh nhạt ở góc giống `login_screen.dart`, đổi `<title>` thành **`Floria`**, tự động gỡ `#loading-indicator` khi sự kiện `flutter-first-frame` kích hoạt.
+    *   `SplashScreen`: Dùng chung nền `#F5F7F3` + 2 Decor Orbs, logo tròn, tên **`Floria`**, dòng mô tả *"Hỗ trợ quản lý chăm sóc cây trồng của bạn"*, hiệu ứng **3 chấm chạy** (`_ThreeDotsLoader`), dòng trạng thái *"Đang vào khu vườn..."* và **`Phiên bản 0.0.1`** ở dưới cùng.
+    *   Cập nhật `MaterialApp.title` trong `main.dart` và `web/manifest.json` từ `my_ai_plant_app` / `AI Plant Disease Scanner` sang **`Floria`**.
+
+### 3. Đóng Gói Google Fonts Cục Bộ (`assets/google_fonts/`)
+*   Tải sẵn 19 tệp `.ttf` (`Outfit`, `Inter`, `PlusJakartaSans`, `BeVietnamPro`, `RobotoMono`) vào `floria_app/assets/google_fonts/` và khai báo trong `pubspec.yaml`.
+*   Gọi `GoogleFonts.pendingFonts([...])` trong `main.dart` trước `runApp()` để chữ hiển thị đúng font ngay lập tức, không bị nhảy font hay phụ thuộc mạng.
+
+### 4. Dọn Sạch Toàn Bộ 86 Cảnh Báo `flutter analyze` (0 Issues)
+*   Khắc phục toàn bộ 86 vấn đề trên 8 tệp (`gemini_service.dart`, `custom_image.dart`, `auth_provider.dart`, `add_plant_to_garden_screen.dart`, `plant_detail_screen.dart`, `profile_screen.dart`, `camera_scanning_screen.dart`, `diagnosis_report_screen.dart`): thay `withOpacity` sang `withValues(alpha: ...)`, nâng cấp `Radio` sang `RadioGroup`, đổi `print` sang `debugPrint`, xử lý `empty_catches`, `curly_braces_in_flow_control_structures`, `prefer_null_aware_operators` và `use_build_context_synchronously`.
+*   **Kết quả `flutter analyze` toàn dự án `floria_app`**: **`No issues found!`** (`0` lỗi, `0` cảnh báo).

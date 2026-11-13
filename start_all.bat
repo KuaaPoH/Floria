@@ -8,6 +8,6 @@ echo 2. Đánh thức Backend (Java Spring Boot)...
 start "Spring Boot (Java)" cmd /k "cd Backend && mvnw.cmd spring-boot:run"
 
 echo 3. Khởi chạy Giao diện App (Flutter Web Preview)...
-start "Flutter App" cmd /k "cd my_ai_plant_app && flutter run -d web-server --web-hostname 0.0.0.0 --web-port 5000"
+start "Flutter App" cmd /k "cd floria_app && flutter run -d web-server --web-hostname 0.0.0.0 --web-port 5000"
 
 echo Xong! Vui long cho vai giay de cac server khoi dong hoan toan.
