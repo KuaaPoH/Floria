@@ -22,13 +22,18 @@ class AppConstants {
   static const String imgbbApiKey = 'fd14b90942ffdd9837b7f62d6ca8dc65';
   static const String imgbbUploadUrl = 'https://api.imgbb.com/1/upload';
 
+  static const String _publicServerRoot = String.fromEnvironment(
+    'API_HOST',
+    defaultValue: 'https://api.floria.id.vn',
+  );
+
   // URL của Spring Boot Backend trung tâm
-  // Tự động nhận diện nền tảng: Web dùng localhost:8080, thiết bị di động dùng IP mạng LAN
+  // Web preview dùng localhost:8080 (hoặc API_HOST nếu truyền vào), thiết bị di động dùng domain HTTPS qua Cloudflare Tunnel
   static String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:8080/api';
     }
-    return 'http://192.168.1.88:8080/api';
+    return '$_publicServerRoot/api';
   }
 
   static String get scanDiseaseUrl => '$baseUrl/scan-disease';
@@ -44,7 +49,7 @@ class AppConstants {
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('blob:')) {
       return trimmed;
     }
-    final serverRoot = kIsWeb ? 'http://localhost:8080' : 'http://192.168.1.88:8080';
+    final serverRoot = kIsWeb ? 'http://localhost:8080' : _publicServerRoot;
     if (trimmed.startsWith('/')) {
       return '$serverRoot$trimmed';
     }

@@ -554,12 +554,16 @@ class _SmartNotificationWidgetState extends State<_SmartNotificationWidget>
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  widget.taskTitle,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                Flexible(
+                                  child: Text(
+                                    widget.taskTitle,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 6),

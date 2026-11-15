@@ -94,12 +94,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          height: 72,
-          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+          height: 64,
+          margin: const EdgeInsets.only(left: 18, right: 18, bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           decoration: BoxDecoration(
             color: c.surface, // Solid color, no glass effect to prevent content bleeding
-            borderRadius: BorderRadius.circular(36), // Bo tron
+            borderRadius: BorderRadius.circular(32), // Bo tron
             boxShadow: [
               BoxShadow(
                 color: (c.isDark ? Colors.black : const Color(0xFF364534)).withValues(alpha: c.isDark ? 0.35 : 0.12),
@@ -138,11 +138,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     curve: Curves.easeOutCubic,
                     left: activeLeft,
                     width: activeWidth,
-                    height: 48,
+                    height: 44,
                     child: Container(
                       decoration: BoxDecoration(
                         color: c.surfaceTint, // Màu nền khi active
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(22),
                       ),
                     ),
                   ),
@@ -176,7 +176,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
         width: isActive ? activeWidth : inactiveWidth,
-        height: 48.0,
+        height: 44.0,
         alignment: Alignment.center,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -190,7 +190,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   isActive ? activeIcon : normalIcon,
                   key: ValueKey<bool>(isActive),
                   color: isActive ? (c.isDark ? c.primaryText : const Color(0xFF364534)) : c.textMuted,
-                  size: isActive ? 22 : 24,
+                  size: isActive ? 20 : 22,
                 ),
               ),
               AnimatedSize(

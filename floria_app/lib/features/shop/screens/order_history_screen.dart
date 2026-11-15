@@ -586,7 +586,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
               // Tổng tiền + Nút thao tác
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,8 +606,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
                       if (order.status == 'pending') ...[
                         OutlinedButton(
                           onPressed: () => _confirmCancelOrder(order, provider),
@@ -750,6 +755,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ),
                       ),
                     ],
+                    ),
                   ),
                 ],
               ),

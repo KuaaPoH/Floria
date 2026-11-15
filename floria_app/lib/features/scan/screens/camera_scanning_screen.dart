@@ -180,9 +180,7 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
                   child: CameraPreview(_controller!),
                 ),
               ),
-            )
-          else
-            const Center(child: CircularProgressIndicator(color: Color(0xFFD6E8CF))),
+            ),
 
           // --- XÓA TOÀN BỘ GIAO DIỆN LOAD CŨ TRÊN CAMERA ---
           // Khi chọn ảnh/chụp xong, Camera chỉ đóng băng hình ảnh hiện tại và nhảy ngay sang trang kết quả.
@@ -247,6 +245,11 @@ class _CameraScanningScreenState extends State<CameraScanningScreen> with Single
                         Positioned(top: 0, right: 0, child: _buildFocusCorner(isTop: true, isLeft: false)),
                         Positioned(bottom: 0, left: 0, child: _buildFocusCorner(isTop: false, isLeft: true)),
                         Positioned(bottom: 0, right: 0, child: _buildFocusCorner(isTop: false, isLeft: false)),
+
+                        if (!_isCameraInitialized)
+                          const Center(
+                            child: CircularProgressIndicator(color: Color(0xFFD6E8CF)),
+                          ),
                         
                         // Scanning Line Animation
                         if (scanProvider.isLoading)

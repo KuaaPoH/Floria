@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/l10n/app_tr.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../garden/providers/garden_provider.dart';
@@ -9,6 +10,7 @@ import '../../home/screens/main_navigation_screen.dart';
 import '../../home/services/handbook_service.dart';
 import '../../home/services/realtime_weather_service.dart';
 import '../../home/services/weather_widget_service.dart';
+import '../widgets/mascot_speed_lines.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,71 +19,179 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  bool _didPrecacheAssets = false;
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+  static const _totalDuration = Duration(milliseconds: 5200);
+  static const _brandLetters = ['F', 'l', 'o', 'r', 'i', 'a'];
+
+  late final AnimationController _mascotController;
+  late final AnimationController _contentController;
+
+  // Chuỗi chuyển động của Mascot (~5.2s): Trái (0-1.2s) -> Giữa (1.2-4.0s) -> Phải (4.0-5.2s)
+  late final Animation<Offset> _mascotSlide;
+  late final Animation<double> _mascotFade;
+
+  // Chuỗi xuất hiện từng ký tự của "Floria" & Slogan
+  late final List<Animation<double>> _letterInProgress;
+  late final Animation<double> _sloganInFade;
+  late final Animation<Offset> _sloganInSlide;
+
+  // Chuỗi biến mất (4.0-5.2s): mờ dần + dịch chuyển nhẹ lên trên
+  late final Animation<double> _brandOutProgress;
+  late final Animation<double> _sloganOutFade;
+  late final Animation<Offset> _sloganOutSlide;
+
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
+
+    _mascotController = AnimationController(vsync: this, duration: _totalDuration);
+    _contentController = AnimationController(vsync: this, duration: _totalDuration);
+
+    // 1. Mascot Animation (0 -> 5200ms)
+    _mascotSlide = TweenSequence<Offset>([
+      TweenSequenceItem(
+        tween: Tween<Offset>(
+          begin: const Offset(-1.6, 0.0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 23.0, // 0 - 1200ms
+      ),
+      TweenSequenceItem(
+        tween: ConstantTween<Offset>(Offset.zero),
+        weight: 54.0, // 1200 - 4000ms
+      ),
+      TweenSequenceItem(
+        tween: Tween<Offset>(
+          begin: Offset.zero,
+          end: const Offset(1.6, 0.0),
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 23.0, // 4000 - 5200ms
+      ),
+    ]).animate(_mascotController);
+
+    _mascotFade = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 17.0, // 0 - 880ms
+      ),
+      TweenSequenceItem(
+        tween: ConstantTween<double>(1.0),
+        weight: 70.0, // 880 - 4520ms
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 13.0, // 4520 - 5200ms
+      ),
+    ]).animate(_mascotController);
+
+    // 2. Content In Animation (1050 - 3200ms => 0.20 - 0.62)
+    // Dùng easeOutQuart + stagger mượt (0.025/ký tự) để sóng chữ "Floria" trôi cực êm
+    _letterInProgress = List.generate(_brandLetters.length, (i) {
+      final start = 0.20 + i * 0.026;
+      final end = (start + 0.24).clamp(0.0, 0.62);
+      return CurvedAnimation(
+        parent: _contentController,
+        curve: Interval(start, end, curve: Curves.easeOutQuart),
+      );
+    });
+
+    _sloganInFade = CurvedAnimation(
+      parent: _contentController,
+      curve: const Interval(0.42, 0.64, curve: Curves.easeOutCubic),
+    );
+    _sloganInSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.35),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _contentController,
+        curve: const Interval(0.42, 0.64, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    // 3. Content Out Animation (4000 - 5200ms => 0.77 - 1.00)
+    _brandOutProgress = CurvedAnimation(
+      parent: _contentController,
+      curve: const Interval(0.77, 0.95, curve: Curves.easeInOutCubic),
+    );
+
+    _sloganOutFade = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _contentController,
+        curve: const Interval(0.81, 0.99, curve: Curves.easeInOutCubic),
+      ),
+    );
+    _sloganOutSlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0.0, -0.22),
+    ).animate(
+      CurvedAnimation(
+        parent: _contentController,
+        curve: const Interval(0.81, 1.00, curve: Curves.easeInOutCubic),
+      ),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _prepareAndNavigate();
+      if (mounted && !_started) {
+        _started = true;
+        _startSplashSequence();
+      }
     });
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_didPrecacheAssets) {
-      _didPrecacheAssets = true;
-      // Nạp & giải mã trước ảnh logo + mascot vào ImageCache để không bị trễ khung hình
-      precacheImage(const AssetImage('assets/images/logo.png'), context).catchError((_) {});
-      precacheImage(const AssetImage('assets/images/mascot_chao_mung.png'), context).catchError((_) {});
-      precacheImage(const AssetImage('assets/images/mascot_huong_dan.png'), context).catchError((_) {});
-    }
+  void dispose() {
+    _mascotController.dispose();
+    _contentController.dispose();
+    super.dispose();
   }
 
-  Future<void> _prepareAndNavigate() async {
-    // Giữ màn hình chờ tối thiểu 1.5s cho hiệu ứng mượt mà
-    final minDelay = Future<void>.delayed(const Duration(milliseconds: 1500));
+  Future<void> _startSplashSequence() async {
+    // Giải mã trước ảnh Mascot để khung hình đầu tiên không bị giật
+    await precacheImage(const AssetImage('assets/images/mascot_run.png'), context)
+        .catchError((_) {});
+    if (!mounted) return;
 
-    try {
-      if (mounted) {
-        final auth = Provider.of<AuthProvider>(context, listen: false);
-        if (auth.isLoggedIn) {
-          // Nạp trước dữ liệu trang chủ & ảnh nền (tối đa 4.5s để không bị kẹt khi mạng yếu)
-          await Future.wait([
-            minDelay,
-            _preloadHomeData().timeout(
-              const Duration(milliseconds: 4500),
-              onTimeout: () {},
-            ),
-          ]);
-        } else {
-          // Đảm bảo ảnh màn hình chào mừng (LoginScreen) đã giải mã xong trước khi chuyển trang
-          await Future.wait([
-            Future<void>.delayed(const Duration(milliseconds: 1800)),
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final Future<void> preloadTask = auth.isLoggedIn
+        ? _preloadHomeData().timeout(
+            const Duration(milliseconds: 5500),
+            onTimeout: () {},
+          )
+        : Future.wait([
             precacheImage(const AssetImage('assets/images/mascot_chao_mung.png'), context)
-                .timeout(const Duration(milliseconds: 2500), onTimeout: () {})
+                .timeout(const Duration(milliseconds: 3000), onTimeout: () {})
+                .catchError((_) {}),
+            precacheImage(const AssetImage('assets/images/google_logo.png'), context)
+                .timeout(const Duration(milliseconds: 3000), onTimeout: () {})
                 .catchError((_) {}),
           ]);
-        }
-      }
+
+    try {
+      await Future.wait([
+        _mascotController.forward().orCancel,
+        _contentController.forward().orCancel,
+        preloadTask,
+      ]);
+    } on TickerCanceled {
+      return;
     } catch (e) {
-      debugPrint('Splash preload error: $e');
-      await minDelay;
+      debugPrint('Splash sequence error: $e');
     }
 
     if (!mounted) return;
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final targetScreen = auth.isLoggedIn ? const MainNavigationScreen() : const LoginScreen();
+
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            auth.isLoggedIn ? const MainNavigationScreen() : const LoginScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 450),
+        transitionDuration: const Duration(milliseconds: 250),
       ),
     );
   }
@@ -91,11 +201,8 @@ class _SplashScreenState extends State<SplashScreen> {
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
 
     final List<Future<void>> tasks = [
-      // 1. Chờ dữ liệu khu vườn & cây trồng từ Firestore
       _waitForGardenProvider(gardenProvider),
-      // 2. Nạp trước thời tiết thực tế vào bộ nhớ đệm
       RealtimeWeatherService.fetchCurrentWeather().then((_) {}).catchError((_) {}),
-      // 3. Nạp cấu hình widget thời tiết & precache ảnh nền hero
       WeatherWidgetService.streamConfigs().first.then((configs) async {
         if (!mounted) return;
         final cfg = WeatherWidgetService.getConfigForHour(configs, DateTime.now().hour);
@@ -103,7 +210,6 @@ class _SplashScreenState extends State<SplashScreen> {
           await precacheImage(NetworkImage(cfg.heroImageUrl), context).catchError((_) {});
         }
       }).catchError((_) {}),
-      // 4. Nạp danh sách cẩm nang & precache ảnh bìa đầu tiên
       HandbookService.streamArticles().first.then((articles) async {
         if (!mounted) return;
         await Future.wait(
@@ -116,7 +222,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
     await Future.wait(tasks);
 
-    // Precache nhanh một vài ảnh cây trong vườn nếu đã tải xong
     if (mounted && gardenProvider.allUserPlants.isNotEmpty) {
       await Future.wait(
         gardenProvider.allUserPlants
@@ -152,7 +257,7 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: bgColor,
       body: Stack(
         children: [
-          // Background Decor Orbs đồng nhất với login_screen.dart và web/index.html
+          // Background Decor Orbs đồng nhất 1:1 với web/index.html & login_screen.dart
           Positioned(
             top: -150,
             right: -150,
@@ -182,80 +287,95 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ),
 
-          // Nội dung chính ở giữa màn hình
+          // Khu vực chính: Mascot + Tên ứng dụng Stagger Animation
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 116,
-                    height: 116,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      border: Border.all(
-                        color: const Color(0xFFE0EAE1),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF17231A).withValues(alpha: 0.06),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
+                  // 1. Mascot chạy từ trái -> giữa -> phải kèm vệt tốc độ phía sau
+                  MascotWithSpeedLines(
+                    controller: _mascotController,
+                    mascotSlide: _mascotSlide,
+                    mascotFade: _mascotFade,
+                    child: SizedBox(
+                      height: 235,
                       child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 116,
-                        height: 116,
-                        fit: BoxFit.cover,
+                        'assets/images/mascot_run.png',
+                        fit: BoxFit.contain,
                         gaplessPlayback: true,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/logo.jpg',
-                            width: 116,
-                            height: 116,
-                            fit: BoxFit.cover,
-                          );
-                        },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Floria',
-                    style: GoogleFonts.outfit(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      color: primaryGreen,
-                      letterSpacing: 1.5,
-                    ),
+                  const SizedBox(height: 16),
+
+                  // 2. Tên ứng dụng (sóng từng chữ mượt mà) + Fade Out êm
+                  AnimatedBuilder(
+                    animation: _contentController,
+                    builder: (context, _) {
+                      final outT = _brandOutProgress.value;
+                      return Transform.translate(
+                        offset: Offset(0.0, -14.0 * outT),
+                        child: Opacity(
+                          opacity: (1.0 - outT).clamp(0.0, 1.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(_brandLetters.length, (i) {
+                              final t = _letterInProgress[i].value;
+                              final dy = 20.0 * (1.0 - t);
+                              final scale = 0.92 + 0.08 * t;
+                              return Transform.translate(
+                                offset: Offset(0.0, dy),
+                                child: Transform.scale(
+                                  scale: scale,
+                                  child: Opacity(
+                                    opacity: t.clamp(0.0, 1.0),
+                                    child: Text(
+                                      _brandLetters[i],
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 44,
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryGreen,
+                                        letterSpacing: 1.0,
+                                        height: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Hỗ trợ quản lý chăm sóc cây trồng của bạn',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 14.5,
-                      color: textSecondary,
-                      letterSpacing: 0.2,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  const _ThreeDotsLoader(),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Đang vào khu vườn...',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: primaryGreen.withValues(alpha: 0.85),
-                      letterSpacing: 0.4,
+                  const SizedBox(height: 10),
+
+                  // 3. Slogan xuất hiện nối tiếp và biến mất sau tên thương hiệu
+                  SlideTransition(
+                    position: _sloganOutSlide,
+                    child: FadeTransition(
+                      opacity: _sloganOutFade,
+                      child: SlideTransition(
+                        position: _sloganInSlide,
+                        child: FadeTransition(
+                          opacity: _sloganInFade,
+                          child: Text(
+                            context.tr(
+                              'Hỗ trợ quản lý chăm sóc cây trồng của bạn',
+                              'Your smart companion for plant care',
+                            ),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14.5,
+                              color: textSecondary,
+                              letterSpacing: 0.2,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -272,7 +392,7 @@ class _SplashScreenState extends State<SplashScreen> {
               top: false,
               child: Center(
                 child: Text(
-                  'Phiên bản 0.0.1',
+                  context.tr('Phiên bản 0.0.1', 'Version 0.0.1'),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: textMuted,
@@ -284,75 +404,6 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ThreeDotsLoader extends StatefulWidget {
-  const _ThreeDotsLoader();
-
-  @override
-  State<_ThreeDotsLoader> createState() => _ThreeDotsLoaderState();
-}
-
-class _ThreeDotsLoaderState extends State<_ThreeDotsLoader> with SingleTickerProviderStateMixin {
-  late final AnimationController _dotsController;
-
-  @override
-  void initState() {
-    super.initState();
-    _dotsController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _dotsController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _dotsController,
-      builder: (context, _) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (index) {
-            final delay = index * 0.18;
-            final t = (_dotsController.value - delay) % 1.0;
-            // Sóng nảy mượt trong khoảng t thuộc [0, 0.6]
-            double wave = 0.0;
-            if (t >= 0.0 && t <= 0.6) {
-              wave = (t <= 0.3) ? (t / 0.3) : (1.0 - (t - 0.3) / 0.3);
-              wave = Curves.easeInOut.transform(wave);
-            }
-            final scale = 0.75 + 0.33 * wave;
-            final opacity = 0.38 + 0.62 * wave;
-            final dy = -6.0 * wave;
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4.5),
-              child: Transform.translate(
-                offset: Offset(0, dy),
-                child: Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    width: 9,
-                    height: 9,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF2E6F40).withValues(alpha: opacity),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        );
-      },
     );
   }
 }

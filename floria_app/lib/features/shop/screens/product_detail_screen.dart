@@ -367,7 +367,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
 
       // Thanh Bottom Bar đặt mua
-      bottomSheet: Container(
+      bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: c.surface,
@@ -380,6 +380,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ],
         ),
         child: SafeArea(
+          top: false,
+          maintainBottomViewPadding: true,
           child: Row(
             children: [
               // 1. Bộ chọn số lượng (màu sắc rõ nét, tương phản cao)

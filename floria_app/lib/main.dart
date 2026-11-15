@@ -78,10 +78,33 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) {
-        // Khoá cứng tỷ lệ chữ ở mức 1.0, không bị phóng to theo cài đặt hệ thống
-        final mediaQueryData = MediaQuery.of(context);
+        const double designWidth = 430.0;
+        final mq = MediaQuery.of(context);
+        if (mq.size.width > 0 && mq.size.width < 600) {
+          final double scale = mq.size.width / designWidth;
+          final Size scaledSize = Size(designWidth, mq.size.height / scale);
+          return FittedBox(
+            fit: BoxFit.fill,
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: scaledSize.width,
+              height: scaledSize.height,
+              child: MediaQuery(
+                data: mq.copyWith(
+                  size: scaledSize,
+                  textScaler: const TextScaler.linear(1.0),
+                  padding: mq.padding / scale,
+                  viewPadding: mq.viewPadding / scale,
+                  viewInsets: mq.viewInsets / scale,
+                  systemGestureInsets: mq.systemGestureInsets / scale,
+                ),
+                child: child!,
+              ),
+            ),
+          );
+        }
         return MediaQuery(
-          data: mediaQueryData.copyWith(
+          data: mq.copyWith(
             textScaler: const TextScaler.linear(1.0),
           ),
           child: child!,

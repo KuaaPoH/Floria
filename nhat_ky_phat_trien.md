@@ -1275,3 +1275,35 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 ### 4. Dọn Sạch Toàn Bộ 86 Cảnh Báo `flutter analyze` (0 Issues)
 *   Khắc phục toàn bộ 86 vấn đề trên 8 tệp (`gemini_service.dart`, `custom_image.dart`, `auth_provider.dart`, `add_plant_to_garden_screen.dart`, `plant_detail_screen.dart`, `profile_screen.dart`, `camera_scanning_screen.dart`, `diagnosis_report_screen.dart`): thay `withOpacity` sang `withValues(alpha: ...)`, nâng cấp `Radio` sang `RadioGroup`, đổi `print` sang `debugPrint`, xử lý `empty_catches`, `curly_braces_in_flow_control_structures`, `prefer_null_aware_operators` và `use_build_context_synchronously`.
 *   **Kết quả `flutter analyze` toàn dự án `floria_app`**: **`No issues found!`** (`0` lỗi, `0` cảnh báo).
+
+---
+
+## 9. Ca làm việc ngày 15–16/11/2026: Sửa Giao Diện Android, Tối Ưu Build APK & Đưa Backend Ra Internet Qua `api.floria.id.vn`
+
+### 1. Sửa Giao Diện Mobile Android & Responsive (`floria_app`)
+*   **Chuẩn hóa tỷ lệ hiển thị (`main.dart`)**: Áp dụng cơ chế scale theo chiều rộng chuẩn `430.0` cho các thiết bị di động (`< 600dp`) để kích thước chữ, thẻ và thanh menu trên Android hiển thị cân đối giống bản mẫu iPhone 16 Pro Max.
+*   **Tinh chỉnh UI & Xử lý lỗi tràn pixel (`RenderFlex overflow`)**:
+    *   Thu gọn chiều cao, lề và kích thước icon của thanh điều hướng đáy (`main_navigation_screen.dart`).
+    *   Bọc `SafeArea` cho các thanh đáy và bottom sheet ở `home_screen.dart` và `product_detail_screen.dart` để không bị thanh điều hướng Android che khuất.
+    *   Căn giữa vòng xoay tải (`CircularProgressIndicator`) trong `camera_scanning_screen.dart`.
+    *   Khắc phục lỗi tràn pixel theo chiều ngang ở `order_history_screen.dart` và `notification_service.dart`.
+*   **Đồng bộ tên ứng dụng & Splash Screen**:
+    *   Đổi `android:label` trong `AndroidManifest.xml` sang **`Floria`**.
+    *   Loại bỏ màn hình splash mặc định Android 12+ (`values-v31/styles.xml`, `drawable/launch_icon_empty.xml`) và cập nhật hiệu ứng linh vật chạy (`mascot_run.png`, `splash_screen.dart`, `web/index.html`).
+
+### 2. Khắc Phục Lỗi Build Android & Dọn Bộ Nhớ Đệm
+*   **Nâng cấp cấu hình Gradle & Dependencies**:
+    *   Cập nhật `permission_handler: ^12.0.1` (`pubspec.yaml`), bật `isCoreLibraryDesugaringEnabled = true` với `desugar_jdk_libs:2.1.4` (`android/app/build.gradle.kts`).
+    *   Tối ưu `android/gradle.properties` (`-Xmx4G`, `org.gradle.parallel=true`, `org.gradle.caching=true`).
+*   **Giải phóng ổ đĩa & Xử lý lỗi Gradle Cache**:
+    *   Dọn `Temp`, `.gradle\caches`, `npm-cache`, `.p2` và cache trình duyệt Brave, tăng dung lượng trống ổ C từ `0.50 GB` lên `6.88 GB` (khắc phục lỗi đầy đĩa `app.dill` errno 112).
+    *   Xử lý dứt điểm thư mục transform bị lỗi đường dẫn dài trên Windows (`46b5779ba8a1bc0c0db367fb86f2d97d`) và build thành công `flutter build apk --debug` (`app-debug.apk`).
+
+### 3. Đưa Backend Ra Internet Bằng Tên Miền Riêng & Cloudflare Tunnel
+*   **Tên miền & DNS**: Đăng ký tên miền **`floria.id.vn`** và trỏ Nameserver về Cloudflare.
+*   **Cloudflare Tunnel (`cloudflared` v2026.11.0)**:
+    *   Tạo tunnel cố định `floria-backend` (`b1c40a41-621e-40ba-a8d7-df5fb03251a6`), định tuyến bản ghi CNAME **`https://api.floria.id.vn`** $\rightarrow$ `http://localhost:8080`.
+    *   Tích hợp bước khởi chạy Cloudflare Tunnel tự động vào **`start_all.bat`**.
+*   **Cập nhật kết nối trên App (`floria_app/lib/core/constants/app_constants.dart`)**:
+    *   Thay thế toàn bộ địa chỉ IP mạng LAN cũ (`192.168.x.x`) bằng **`https://api.floria.id.vn`** cho thiết bị di động (hỗ trợ ghi đè linh hoạt qua `--dart-define=API_HOST=...`), giúp điện thoại kết nối được từ bất kỳ mạng 4G/5G hoặc Wi-Fi nào khi máy chủ chạy `start_all.bat`.
+    *   Kiểm tra `dart analyze lib/core/constants/app_constants.dart` đạt **`No issues found!`**.
