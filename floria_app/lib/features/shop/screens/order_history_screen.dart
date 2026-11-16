@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/order_model.dart';
@@ -39,73 +40,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   void _showToast(String message, {bool isError = false, VoidCallback? onViewCart}) {
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        margin: const EdgeInsets.only(bottom: 20, left: 16, right: 16),
-        duration: const Duration(seconds: 3),
-        content: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isError ? const Color(0xFF2D1618) : const Color(0xFF1E2D22),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: (isError ? const Color(0xFFFF6B6B) : const Color(0xFF66BB6A))
-                      .withValues(alpha: 0.35),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isError ? Icons.error_outline_rounded : Icons.check_circle_rounded,
-                    color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      message,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  if (onViewCart != null) ...[
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () {
-                        messenger.hideCurrentSnackBar();
-                        onViewCart();
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFF3E8055),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: Text(
-                        context.tr('Xem giỏ', 'View Cart'),
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+    AppToast.show(
+      context,
+      message,
+      isError: isError,
+      actionLabel: onViewCart != null ? context.tr('Xem giỏ', 'View Cart') : null,
+      onAction: onViewCart,
     );
   }
 
@@ -584,169 +524,64 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               Divider(height: 1, color: c.border),
               const SizedBox(height: 10),
 
-              // Tổng tiền + Nút thao tác
+              // Tổng tiền (1 hàng riêng thoáng mắt) + Hàng nút thao tác bên dưới
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${context.tr("Tổng thanh toán", "Total Payment")} (${order.totalItemsCount} ${context.tr("món", "items")})',
-                        style: GoogleFonts.inter(fontSize: 11.5, color: c.textMuted),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        order.formattedTotal,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: c.primary,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    '${context.tr("Tổng thanh toán", "Total Payment")} (${order.totalItemsCount} ${context.tr("món", "items")})',
+                    style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                      if (order.status == 'pending') ...[
-                        OutlinedButton(
-                          onPressed: () => _confirmCancelOrder(order, provider),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFBA1A1A),
-                            side: const BorderSide(color: Color(0xFFFFB4AB)),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: Text(
-                            context.tr('Hủy đơn', 'Cancel'),
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
+                  Text(
+                    order.formattedTotal,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: c.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (order.status == 'pending') ...[
+                      OutlinedButton(
+                        onPressed: () => _confirmCancelOrder(order, provider),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFBA1A1A),
+                          side: const BorderSide(color: Color(0xFFFFB4AB)),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            final msg = context.tr('Đơn #${order.orderCode} đã hoàn tất! Bạn có thể đánh giá ngay.', 'Order #${order.orderCode} completed! You can review now.');
-                            await provider.updateOrderStatus(order.id, 'completed');
-                            _showToast(msg);
-                          },
-                          icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
-                          label: Text(
-                            context.tr('Nhận hàng', 'Received'),
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: c.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                        child: Text(
+                          context.tr('Hủy đơn', 'Cancel'),
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(width: 8),
-                      ],
-                      if (order.status == 'shipping') ...[
-                        ElevatedButton(
-                          onPressed: () async {
-                            final msg = context.tr('Cảm ơn bạn đã xác nhận nhận hàng!', 'Thank you for confirming receipt!');
-                            await provider.updateOrderStatus(order.id, 'completed');
-                            _showToast(msg);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: c.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: Text(
-                            context.tr('Đã nhận hàng', 'Received'),
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      if (order.status == 'completed') ...[
-                        if (order.isReviewed) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: c.isDark ? const Color(0xFF38290E) : const Color(0xFFFFF9E6),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFFFD54F)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.star_rounded, size: 14, color: Color(0xFFE6A100)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${order.rating ?? 5}★ ${context.tr("Đã đánh giá", "Reviewed")}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: c.isDark ? const Color(0xFFFFD54F) : const Color(0xFF9E6500),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ] else ...[
-                          OutlinedButton.icon(
-                            onPressed: () => _showReviewBottomSheet(order, provider),
-                            icon: const Icon(Icons.star_outline_rounded, size: 14, color: Color(0xFFE6A100)),
-                            label: Text(
-                              context.tr('Đánh giá', 'Review'),
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFB26A00),
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: c.isDark ? const Color(0xFF38290E) : const Color(0xFFFFF9E6),
-                              side: const BorderSide(color: Color(0xFFFFD54F)),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                      ],
+                      ),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          final added = provider.reorderFromOrder(order);
-                          _showToast(
-                            context.tr('Đã thêm lại $added sản phẩm vào giỏ hàng!', 'Added $added item(s) back to cart!'),
-                            onViewCart: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const CartScreen()),
-                              );
-                            },
-                          );
+                        onPressed: () async {
+                          final msg = context.tr('Đơn #${order.orderCode} đã hoàn tất! Bạn có thể đánh giá ngay.', 'Order #${order.orderCode} completed! You can review now.');
+                          await provider.updateOrderStatus(order.id, 'completed');
+                          _showToast(msg);
                         },
-                        icon: const Icon(Icons.replay_rounded, size: 15),
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
                         label: Text(
-                          context.tr('Mua lại', 'Reorder'),
+                          context.tr('Nhận hàng', 'Received'),
                           style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: c.surfaceTint,
-                          foregroundColor: c.primary,
+                          backgroundColor: c.primary,
+                          foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           minimumSize: Size.zero,
@@ -755,9 +590,104 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ),
                       ),
                     ],
+                    if (order.status == 'shipping')
+                      ElevatedButton(
+                        onPressed: () async {
+                          final msg = context.tr('Cảm ơn bạn đã xác nhận nhận hàng!', 'Thank you for confirming receipt!');
+                          await provider.updateOrderStatus(order.id, 'completed');
+                          _showToast(msg);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: c.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          context.tr('Đã nhận hàng', 'Received'),
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    if (order.status == 'completed') ...[
+                      if (order.isReviewed)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: c.isDark ? const Color(0xFF38290E) : const Color(0xFFFFF9E6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFFD54F)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star_rounded, size: 14, color: Color(0xFFE6A100)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${order.rating ?? 5}★ ${context.tr("Đã đánh giá", "Reviewed")}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.isDark ? const Color(0xFFFFD54F) : const Color(0xFF9E6500),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        OutlinedButton.icon(
+                          onPressed: () => _showReviewBottomSheet(order, provider),
+                          icon: const Icon(Icons.star_outline_rounded, size: 14, color: Color(0xFFE6A100)),
+                          label: Text(
+                            context.tr('Đánh giá', 'Review'),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFB26A00),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: c.isDark ? const Color(0xFF38290E) : const Color(0xFFFFF9E6),
+                            side: const BorderSide(color: Color(0xFFFFD54F)),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                    ],
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final added = provider.reorderFromOrder(order);
+                        _showToast(
+                          context.tr('Đã thêm lại $added sản phẩm vào giỏ hàng!', 'Added $added item(s) back to cart!'),
+                          onViewCart: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const CartScreen()),
+                            );
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.replay_rounded, size: 14),
+                      label: Text(
+                        context.tr('Mua lại', 'Reorder'),
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: c.surfaceTint,
+                        foregroundColor: c.primary,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -876,7 +806,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               Divider(height: 1, color: c.border),
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.paddingOf(ctx).bottom),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1651,7 +1581,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                     : (authProvider.userEmail?.split('@').first ?? 'Khách hàng Floria');
                                 final userAvatar = authProvider.effectivePhotoUrl ?? '';
 
-                                final okMsg = context.tr('Cảm ơn bạn đã gửi đánh giá sản phẩm! ⭐', 'Thank you for your review! ⭐');
+                                final okMsg = context.tr('Cảm ơn bạn đã gửi đánh giá sản phẩm!', 'Thank you for your review!');
                                 final failMsg = context.tr('Có lỗi xảy ra, vui lòng thử lại sau.', 'An error occurred, please try again later.');
 
                                 final success = await provider.submitOrderReview(

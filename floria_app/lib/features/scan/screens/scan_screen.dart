@@ -133,7 +133,7 @@ class _ScanScreenState extends State<ScanScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr('Floria AI có thể nhận diện', 'What Floria AI Recognizes'),
+            context.tr('Floria có thể nhận diện', 'What Floria Recognizes'),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -228,7 +228,7 @@ class _ScanScreenState extends State<ScanScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr('Để nhận diện tốt nhất', 'For Best AI Recognition'),
+            context.tr('Để nhận diện tốt nhất', 'For Best Recognition'),
             style: GoogleFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -381,8 +381,8 @@ class _ScanScreenState extends State<ScanScreen> {
                           ),
                           Text(
                             context.tr(
-                              'Giữ chắc tay để AI nhận diện chính xác.',
-                              'Hold steady for accurate AI diagnosis.',
+                              'Giữ chắc tay để nhận diện chính xác.',
+                              'Hold steady for accurate diagnosis.',
                             ),
                             style: GoogleFonts.inter(
                               fontSize: 13,

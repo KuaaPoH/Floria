@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/app_settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -27,10 +28,11 @@ void main() async {
     debugPrint('Firebase init error: $e');
   }
 
-  // Đọc sẵn cài đặt Giao diện tối & Ngôn ngữ + nạp trước Google Fonts để không bị nhảy font
+  // Đọc sẵn cài đặt Giao diện tối & Ngôn ngữ + nạp trước Google Fonts + phiên bản app
   final appSettings = AppSettingsProvider();
   await Future.wait([
     appSettings.load(),
+    AppConstants.loadAppVersion(),
     GoogleFonts.pendingFonts([
       GoogleFonts.outfit(fontWeight: FontWeight.bold),
       GoogleFonts.inter(fontWeight: FontWeight.w400),

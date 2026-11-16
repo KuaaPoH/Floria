@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
@@ -392,7 +393,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               top: false,
               child: Center(
                 child: Text(
-                  context.tr('Phiên bản 0.0.1', 'Version 0.0.1'),
+                  context.tr('Phiên bản ${AppConstants.appVersion}', 'Version ${AppConstants.appVersion}'),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: textMuted,

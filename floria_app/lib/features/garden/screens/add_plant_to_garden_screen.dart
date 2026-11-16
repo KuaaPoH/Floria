@@ -460,7 +460,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                 left: 20,
                 right: 20,
                 top: 16,
-                bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+                bottom: MediaQuery.of(modalContext).viewInsets.bottom + MediaQuery.paddingOf(modalContext).bottom + 24,
               ),
               decoration: BoxDecoration(
                 color: c.surface,

@@ -6,6 +6,7 @@ import '../providers/scan_provider.dart';
 import '../../home/screens/main_navigation_screen.dart';
 import 'package:dio/dio.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/app_toast.dart';
 import 'plant_wiki_screen.dart';
 import 'dart:ui';
 import 'dart:async';
@@ -1395,104 +1396,112 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
       );
     }
 
+    final bool canShowPlantActions = scanProvider.errorMessage == null &&
+        docId.isNotEmpty &&
+        scanProvider.scanResult?['is_valid_plant'] != false;
+
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => _showAddToGardenModal(context, scanProvider, docId, data),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: c.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 8,
-                  shadowColor: c.primary.withValues(alpha: 0.4),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                child: Text(context.tr("Lưu vào vườn", "Save to Garden"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PlantWikiScreen(
-                        docId: docId, 
-                        data: data ?? {},
-                        imagePath: scanProvider.selectedImage?.path,
-                        webImageBytes: scanProvider.webImageBytes,
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: c.surfaceTint,
-                  foregroundColor: c.primary,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                child: Text(context.tr("Chi tiết", "Details"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              final plantName = data?['name_vi'] ?? docId.replaceAll('_', ' ');
-              final sciName = data?['scientific_name'] ?? docId.replaceAll('_', ' ');
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AiAssistantScreen(
-                    plantNameVi: plantName,
-                    scientificName: sciName,
-                    diseaseContext: "Tôi vừa nhận diện được cây $plantName ($sciName). Hãy hướng dẫn tôi cách chăm sóc, lượng nước tưới, vị trí đặt phù hợp và những lưu ý quan trọng để cây luôn khỏe mạnh!",
+        if (canShowPlantActions) ...[
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _showAddToGardenModal(context, scanProvider, docId, data),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 8,
+                    shadowColor: c.primary.withValues(alpha: 0.4),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
+                  child: Text(context.tr("Lưu vào vườn", "Save to Garden"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: c.primary,
-              foregroundColor: const Color(0xFFFFD700),
-              elevation: 4,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            ),
-            icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
-            label: Text(
-              context.tr("Hỏi Trợ lý Floria về cây này", "Ask Floria AI about this plant"),
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlantWikiScreen(
+                          docId: docId, 
+                          data: data ?? {},
+                          imagePath: scanProvider.selectedImage?.path,
+                          webImageBytes: scanProvider.webImageBytes,
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.surfaceTint,
+                    foregroundColor: c.primary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: Text(context.tr("Chi tiết", "Details"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                final plantName = data?['name_vi'] ?? docId.replaceAll('_', ' ');
+                final sciName = data?['scientific_name'] ?? docId.replaceAll('_', ' ');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AiAssistantScreen(
+                      plantNameVi: plantName,
+                      scientificName: sciName,
+                      diseaseContext: "Tôi vừa nhận diện được cây $plantName ($sciName). Hãy hướng dẫn tôi cách chăm sóc, lượng nước tưới, vị trí đặt phù hợp và những lưu ý quan trọng để cây luôn khỏe mạnh!",
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: c.primary,
+                foregroundColor: const Color(0xFFFFD700),
+                elevation: 4,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+              icon: const Icon(Icons.auto_awesome, size: 18, color: Color(0xFFFFD700)),
+              label: Text(
+                context.tr("Hỏi Trợ lý Floria về cây này", "Ask Floria AI about this plant"),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         Row(
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  Provider.of<ScanProvider>(context, listen: false).reset();
-                  Navigator.pop(context);
-                },
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: c.surface,
-                  foregroundColor: c.textPrimary,
-                  side: BorderSide(color: c.border),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            if (canShowPlantActions) ...[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Provider.of<ScanProvider>(context, listen: false).reset();
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: c.surface,
+                    foregroundColor: c.textPrimary,
+                    side: BorderSide(color: c.border),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: Text(context.tr("Quét lại", "Scan Again"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
-                child: Text(context.tr("Quét lại", "Scan Again"), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: OutlinedButton(
                 onPressed: () {
@@ -1906,28 +1915,17 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
             opacity: _fadeAnimation,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E3320), // Xanh lá đậm sang trọng
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-                border: Border.all(color: const Color(0xFF38573C), width: 1.2),
-              ),
+              decoration: AppToast.decoration(context, radius: 20),
               child: Row(
                 children: [
                   Container(
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4E8CE).withValues(alpha: 0.2),
+                      color: AppToast.accentColor(context).withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_circle, color: Color(0xFF8CE095), size: 22),
+                    child: Icon(Icons.check_circle, color: AppToast.accentColor(context), size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1936,11 +1934,11 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          context.tr("Đã lưu vào Khu Vườn! 🌱", "Saved to Garden! 🌱"),
+                          context.tr("Đã lưu vào Khu Vườn!", "Saved to Garden!"),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white, // Chữ trắng 100%
+                            color: AppToast.textColor(context),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -1949,7 +1947,7 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.9), // Chữ trắng sáng
+                            color: AppToast.textColor(context).withValues(alpha: 0.78),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1964,20 +1962,20 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                       widget.onGoToGarden();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF1E3320),
+                      backgroundColor: AppToast.accentColor(context).withValues(alpha: 0.14),
+                      foregroundColor: AppToast.accentColor(context),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 2,
+                      elevation: 0,
                     ),
                     child: Text(
                       context.tr("ĐẾN VƯỜN", "TO GARDEN"),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E3320), // Chữ xanh sẫm trên nền trắng
+                        color: AppToast.accentColor(context),
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -1990,7 +1988,7 @@ class _TopNotificationCardState extends State<_TopNotificationCard>
                       child: Icon(
                         Icons.close,
                         size: 18,
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: AppToast.textColor(context).withValues(alpha: 0.6),
                       ),
                     ),
                   ),

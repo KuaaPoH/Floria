@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../models/shop_product.dart';
 import '../screens/cart_screen.dart';
@@ -58,6 +59,8 @@ class CartAnimationHelper {
     int quantity = 1,
     bool showViewCartButton = true,
   }) {
+    final accent = AppToast.accentColor(context);
+    final textColor = AppToast.textColor(context);
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
     messenger.showSnackBar(
@@ -72,21 +75,7 @@ class CartAnimationHelper {
             constraints: const BoxConstraints(maxWidth: 400),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E2D22),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: const Color(0xFF66BB6A).withValues(alpha: 0.4),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.22),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
+              decoration: AppToast.decoration(context, radius: 18),
               child: Row(
                 children: [
                   ClipRRect(
@@ -97,8 +86,8 @@ class CartAnimationHelper {
                       child: product.imageUrl.isNotEmpty
                           ? CustomImage(imageUrl: product.imageUrl, fit: BoxFit.cover)
                           : Container(
-                              color: const Color(0xFF2E6F40),
-                              child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 18),
+                              color: accent.withValues(alpha: 0.14),
+                              child: Icon(Icons.shopping_bag_rounded, color: accent, size: 18),
                             ),
                     ),
                   ),
@@ -110,14 +99,14 @@ class CartAnimationHelper {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.check_circle_rounded, color: Color(0xFF81C784), size: 14),
+                            Icon(Icons.check_circle_rounded, color: accent, size: 14),
                             const SizedBox(width: 5),
                             Text(
                               'Đã lưu vào giỏ hàng',
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF81C784),
+                                color: accent,
                               ),
                             ),
                           ],
@@ -130,7 +119,7 @@ class CartAnimationHelper {
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: textColor,
                           ),
                         ),
                       ],
@@ -147,8 +136,8 @@ class CartAnimationHelper {
                         );
                       },
                       style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFF3E8055),
-                        foregroundColor: Colors.white,
+                        backgroundColor: accent.withValues(alpha: 0.14),
+                        foregroundColor: accent,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,

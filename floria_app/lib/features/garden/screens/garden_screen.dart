@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import 'plant_detail_screen.dart';
 import 'create_garden_screen.dart';
 import 'add_plant_to_garden_screen.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../providers/garden_provider.dart';
@@ -297,49 +298,52 @@ class _GardenScreenState extends State<GardenScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               behavior: SnackBarBehavior.floating,
-                              backgroundColor: const Color(0xFF1E3A24),
-                              elevation: 8,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
                               margin: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              content: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.15),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.water_drop_rounded, color: Color(0xFF38BDF8), size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "${context.tr('Đã tưới nước cho', 'Watered')} '${plant.nickname}'! 💧",
-                                          style: GoogleFonts.inter(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13.5,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          "${context.tr('Lần tưới tiếp theo: sau', 'Next watering in')} ${plant.waterFrequencyDays} ${context.tr('ngày.', 'days.')}",
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFFB4F4C2),
-                                            fontSize: 11.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
                               duration: const Duration(seconds: 3),
+                              content: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                                decoration: AppToast.decoration(context),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(7),
+                                      decoration: BoxDecoration(
+                                        color: AppToast.accentColor(context).withValues(alpha: 0.14),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(Icons.water_drop_rounded, color: AppToast.accentColor(context), size: 18),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "${context.tr('Đã tưới nước cho', 'Watered')} '${plant.nickname}'!",
+                                            style: GoogleFonts.inter(
+                                              color: AppToast.textColor(context),
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            "${context.tr('Lần tưới tiếp theo: sau', 'Next watering in')} ${plant.waterFrequencyDays} ${context.tr('ngày.', 'days.')}",
+                                            style: GoogleFonts.inter(
+                                              color: AppToast.accentColor(context),
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         }

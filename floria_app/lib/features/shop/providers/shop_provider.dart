@@ -22,6 +22,7 @@ class ShopProvider extends ChangeNotifier {
 
   // Giỏ hàng (lưu bền vững qua SharedPreferences + Firestore Users/{uid})
   final Map<String, CartItem> _cart = {};
+  final Set<String> _selectedCartIds = {};
   int _cartPulseTick = 0;
 
   // Đơn hàng của người dùng
@@ -42,6 +43,49 @@ class ShopProvider extends ChangeNotifier {
   int get cartTotalAmount =>
       _cart.values.fold(0, (total, item) => total + item.totalPrice);
   int get cartPulseTick => _cartPulseTick;
+
+  List<CartItem> get selectedCartItems =>
+      _cart.values.where((item) => _selectedCartIds.contains(item.product.id)).toList();
+  int get selectedCartCount =>
+      selectedCartItems.fold(0, (total, item) => total + item.quantity);
+  int get selectedTotalAmount =>
+      selectedCartItems.fold(0, (total, item) => total + item.totalPrice);
+  bool get isAllCartSelected =>
+      _cart.isNotEmpty && _cart.keys.every((id) => _selectedCartIds.contains(id));
+
+  bool isCartItemSelected(String productId) => _selectedCartIds.contains(productId);
+
+  String get formattedSelectedTotal {
+    final s = selectedTotalAmount.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i != 0) buffer.write('.');
+    }
+    return '${buffer.toString().split('').reversed.join('')}đ';
+  }
+
+  void toggleCartItemSelection(String productId) {
+    if (_selectedCartIds.contains(productId)) {
+      _selectedCartIds.remove(productId);
+    } else if (_cart.containsKey(productId)) {
+      _selectedCartIds.add(productId);
+    }
+    notifyListeners();
+  }
+
+  void toggleSelectAllCart(bool selectAll) {
+    if (selectAll) {
+      _selectedCartIds
+        ..clear()
+        ..addAll(_cart.keys);
+    } else {
+      _selectedCartIds.clear();
+    }
+    notifyListeners();
+  }
 
   List<OrderModel> get orders => _orders;
   bool get isOrdersLoading => _isOrdersLoading;
@@ -147,6 +191,9 @@ class ShopProvider extends ChangeNotifier {
       _cart
         ..clear()
         ..addAll(loaded);
+      _selectedCartIds
+        ..clear()
+        ..addAll(loaded.keys);
       _refreshCartProductsWithCatalog();
       notifyListeners();
     } catch (e) {
@@ -244,6 +291,7 @@ class ShopProvider extends ChangeNotifier {
     } else {
       _cart[product.id] = CartItem(product: product, quantity: quantity);
     }
+    _selectedCartIds.add(product.id);
     _cartPulseTick++;
     notifyListeners();
     unawaited(_persistCart());
@@ -255,6 +303,7 @@ class ShopProvider extends ChangeNotifier {
       _cart[productId]!.quantity -= 1;
     } else {
       _cart.remove(productId);
+      _selectedCartIds.remove(productId);
     }
     notifyListeners();
     unawaited(_persistCart());
@@ -262,12 +311,14 @@ class ShopProvider extends ChangeNotifier {
 
   void removeFromCart(String productId) {
     _cart.remove(productId);
+    _selectedCartIds.remove(productId);
     notifyListeners();
     unawaited(_persistCart());
   }
 
   void clearCart() {
     _cart.clear();
+    _selectedCartIds.clear();
     notifyListeners();
     unawaited(_persistCart());
   }
@@ -310,18 +361,81 @@ class ShopProvider extends ChangeNotifier {
     return 'FLR-$datePart-$randPart';
   }
 
-  /// Tạo đơn hàng mới trên Firestore và làm trống giỏ hàng
+  /// Kiểm tra mã giảm giá thực tế từ Firestore (`Vouchers` collection)
+  Future<Map<String, dynamic>?> validateVoucher(String rawCode, int subtotal) async {
+    final code = rawCode.trim().toUpperCase();
+    if (code.isEmpty) return null;
+
+    try {
+      final doc = await _firestore.collection('Vouchers').doc(code).get();
+      if (!doc.exists || doc.data() == null) return null;
+      final data = doc.data()!;
+      if (data['isActive'] == false) return null;
+
+      final minOrder = (data['minOrderAmount'] as num?)?.toInt() ?? 0;
+      if (subtotal < minOrder) {
+        return {
+          'valid': false,
+          'reason': 'Đơn tối thiểu ${formatCurrency(minOrder)} để áp dụng mã này.',
+        };
+      }
+
+      final discountType = data['discountType']?.toString() ?? 'fixed';
+      final discountValue = (data['discountValue'] as num?)?.toInt() ?? 0;
+      final maxDiscount = (data['maxDiscount'] as num?)?.toInt() ?? 0;
+
+      int discountAmount = discountType == 'percent'
+          ? ((subtotal * discountValue) / 100).round()
+          : discountValue;
+
+      if (maxDiscount > 0 && discountAmount > maxDiscount) {
+        discountAmount = maxDiscount;
+      }
+      if (discountAmount > subtotal) {
+        discountAmount = subtotal;
+      }
+
+      return {
+        'valid': true,
+        'code': code,
+        'discountAmount': discountAmount,
+        'description': data['description']?.toString() ?? 'Áp dụng mã giảm giá $code',
+      };
+    } catch (e) {
+      debugPrint('Lỗi kiểm tra voucher: $e');
+      return null;
+    }
+  }
+
+  String formatCurrency(int amount) {
+    final s = amount.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i != 0) buffer.write('.');
+    }
+    return '${buffer.toString().split('').reversed.join('')}đ';
+  }
+
+  /// Tạo đơn hàng mới trên Firestore và xóa các sản phẩm đã đặt khỏi giỏ hàng
   Future<OrderModel?> placeOrder({
     required ShippingAddress address,
-    required String paymentMethod, // 'cod' hoặc 'card'
+    required String paymentMethod, // 'cod' hoặc 'zalopay'
     required String paymentLabel,
+    List<CartItem>? itemsToOrder,
+    int discountAmount = 0,
   }) async {
-    if (_cart.isEmpty) return null;
+    final sourceItems = (itemsToOrder != null && itemsToOrder.isNotEmpty)
+        ? itemsToOrder
+        : _cart.values.toList();
+    if (sourceItems.isEmpty) return null;
     final uid = _auth.currentUser?.uid ?? 'guest';
     final now = DateTime.now();
     final orderCode = _generateOrderCode();
 
-    final orderItems = _cart.values
+    final orderItems = sourceItems
         .map((ci) => OrderItem(
               productId: ci.product.id,
               name: ci.product.name,
@@ -332,7 +446,8 @@ class ShopProvider extends ChangeNotifier {
             ))
         .toList();
 
-    final total = cartTotalAmount;
+    final subtotal = sourceItems.fold<int>(0, (total, item) => total + item.totalPrice);
+    final total = max(0, subtotal - discountAmount);
     final docRef = _firestore.collection('Orders').doc();
 
     final order = OrderModel(
@@ -371,8 +486,13 @@ class ShopProvider extends ChangeNotifier {
       } catch (_) {}
     }
 
-    // Sau khi tạo đơn thành công -> dọn sạch giỏ hàng
-    clearCart();
+    // Sau khi tạo đơn thành công -> xóa các món đã đặt khỏi giỏ hàng
+    for (final item in orderItems) {
+      _cart.remove(item.productId);
+      _selectedCartIds.remove(item.productId);
+    }
+    notifyListeners();
+    unawaited(_persistCart());
     return order;
   }
 

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../garden/providers/garden_provider.dart';
@@ -34,73 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showModernToast(String message, {bool isError = false}) {
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-        duration: const Duration(seconds: 3),
-        content: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isError ? const Color(0xFF2D1618) : const Color(0xFF1E2D22),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isError
-                      ? const Color(0xFFFF6B6B).withValues(alpha: 0.35)
-                      : const Color(0xFF66BB6A).withValues(alpha: 0.35),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isError
-                          ? const Color(0xFFFF6B6B).withValues(alpha: 0.18)
-                          : const Color(0xFF4CAF50).withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isError ? Icons.error_outline_rounded : Icons.check_rounded,
-                      color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      message,
-                      style: GoogleFonts.inter(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    AppToast.show(context, message, isError: isError, margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16));
   }
 
   Future<void> _pickAndUploadAvatar(ImageSource source) async {
@@ -137,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        padding: EdgeInsets.fromLTRB(20, 24, 20, 24 + MediaQuery.paddingOf(ctx).bottom),
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -236,39 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _pickAndUploadAvatar(ImageSource.gallery);
               },
             ),
-            if (authProvider.hasCustomAvatar)
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.restore, color: Colors.orange),
-                ),
-                title: Text(
-                  context.tr("Dùng Avatar mặc định Floria", "Use default Floria avatar"),
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: c.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  context.tr("Quay về ảnh đại diện thực vật khởi đầu", "Revert to initial plant avatar"),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: c.textMuted,
-                  ),
-                ),
-                onTap: () async {
-                  final msg = context.tr("Đã chuyển về Avatar mặc định Floria!", "Reverted to default Floria avatar!");
-                  Navigator.pop(ctx);
-                  await authProvider.resetToDefaultAvatar();
-                  if (!mounted) return;
-                  _showModernToast(msg);
-                },
-              ),
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -569,7 +471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 return InkWell(
                   onTap: () async {
-                    final msg = context.tr("Đã chọn Avatar: ${preset.name}! 🌱", "Selected avatar: ${preset.name}! 🌱");
+                    final msg = context.tr("Đã chọn Avatar: ${preset.name}!", "Selected avatar: ${preset.name}!");
                     Navigator.pop(ctx);
                     final ok = await authProvider.selectPresetAvatar(preset.id);
                     if (ok && mounted) {
@@ -922,7 +824,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildShortcutRow(
                     context: context,
                     icon: Icons.local_shipping_outlined,
-                    title: context.tr('Địa chỉ & Thanh toán', 'Address & Payment'),
+                    title: context.tr('Địa chỉ nhận hàng', 'Shipping Addresses'),
                     desc: context.tr('Sổ địa chỉ nhận hàng và thẻ ngân hàng đã lưu.', 'Shipping addresses and saved cards.'),
                     onTap: () {
                       Navigator.push(

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../../core/providers/app_settings_provider.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -168,7 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _divider(),
             _buildValueTile(
               title: context.tr('Phiên bản ứng dụng', 'App version'),
-              valueText: 'v2.4.1',
+              valueText: 'v${AppConstants.appVersion}',
             ),
           ]),
         ],
@@ -406,47 +408,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showToast(String message, {bool isError = false}) {
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        duration: const Duration(seconds: 4),
-        content: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isError ? const Color(0xFF2D1618) : const Color(0xFF1E2D22),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: (isError ? const Color(0xFFFF6B6B) : const Color(0xFF66BB6A)).withValues(alpha: 0.35),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isError ? Icons.error_outline_rounded : Icons.mark_email_read_outlined,
-                    color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      message,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+    AppToast.show(
+      context,
+      message,
+      isError: isError,
+      icon: isError ? Icons.error_outline_rounded : Icons.mark_email_read_outlined,
+      duration: const Duration(seconds: 4),
     );
   }
 

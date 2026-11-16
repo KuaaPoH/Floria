@@ -23,7 +23,7 @@ class AuthProvider extends ChangeNotifier {
   String? _userEmail;
   String? _userPhone;
   String? _userAddress;
-  String _paymentMethod = 'vnpay'; // 'vnpay' hoặc 'cod'
+  String _paymentMethod = 'cod'; // 'zalopay' hoặc 'cod'
   List<ShippingAddress> _addresses = [];
   List<SavedPaymentCard> _savedCards = [];
   String? _googlePhotoUrl;
@@ -176,18 +176,10 @@ class AuthProvider extends ChangeNotifier {
         if (data['savedCards'] is List) {
           _savedCards = (data['savedCards'] as List)
               .map((item) => SavedPaymentCard.fromMap(Map<String, dynamic>.from(item as Map)))
+              .where((card) => card.id != 'card_ncb_sandbox')
               .toList();
         } else {
-          _savedCards = [
-            SavedPaymentCard(
-              id: 'card_ncb_sandbox',
-              bankName: 'NCB Bank (VNPay Sandbox)',
-              cardNumber: '9704198526191432198',
-              cardHolder: 'NGUYEN VAN A',
-              issueDate: '07/15',
-              isDefault: true,
-            ),
-          ];
+          _savedCards = [];
         }
 
         if (data['bio'] != null && (data['bio'] as String).trim().isNotEmpty) {
@@ -196,15 +188,7 @@ class AuthProvider extends ChangeNotifier {
           _bio = 'Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.';
         }
       } else {
-        final defaultSandboxCard = SavedPaymentCard(
-          id: 'card_ncb_sandbox',
-          bankName: 'NCB Bank (VNPay Sandbox)',
-          cardNumber: '9704198526191432198',
-          cardHolder: 'NGUYEN VAN A',
-          issueDate: '07/15',
-          isDefault: true,
-        );
-        _savedCards = [defaultSandboxCard];
+        _savedCards = [];
         // Document chưa tồn tại, khởi tạo hồ sơ người dùng trên Firestore
         _firestore.collection('Users').doc(uid).set({
           'uid': uid,
@@ -212,9 +196,9 @@ class AuthProvider extends ChangeNotifier {
           'email': user.email ?? "",
           'phone': user.phoneNumber ?? "",
           'address': "",
-          'paymentMethod': 'vnpay',
+          'paymentMethod': 'cod',
           'addresses': [],
-          'savedCards': [defaultSandboxCard.toMap()],
+          'savedCards': [],
           'googlePhotoUrl': user.photoURL ?? "",
           'customPhotoUrl': null,
           'bio': 'Chăm cây trong nhà theo nhịp nhẹ, đều và đẹp mắt.',

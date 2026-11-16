@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/widgets/app_toast.dart';
 
 /// Thông tin liên hệ hỗ trợ
 class SupportContactInfo {
@@ -138,21 +139,11 @@ class SupportCenterScreen extends StatelessWidget {
 
   void _copy(BuildContext context, String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    final c = context.colors;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: c.surface,
-          duration: const Duration(seconds: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          content: Text(
-            "${context.tr('Đã sao chép', 'Copied')} $label: $text",
-            style: GoogleFonts.inter(color: c.textPrimary, fontWeight: FontWeight.w600),
-          ),
-        ),
-      );
+    AppToast.show(
+      context,
+      "${context.tr('Đã sao chép', 'Copied')} $label: $text",
+      duration: const Duration(seconds: 2),
+    );
   }
 
   @override
@@ -173,21 +164,24 @@ class SupportCenterScreen extends StatelessWidget {
           style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w600, color: c.textPrimary),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-        children: [
-          _buildAssistantBanner(context),
-          const SizedBox(height: 24),
-          for (final group in _faqGroups) ...[
-            _buildGroupTitle(context, group),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+          children: [
+            _buildAssistantBanner(context),
+            const SizedBox(height: 24),
+            for (final group in _faqGroups) ...[
+              _buildGroupTitle(context, group),
+              const SizedBox(height: 8),
+              _buildFaqCard(context, group),
+              const SizedBox(height: 20),
+            ],
+            _buildGroupTitleText(context, context.tr('LIÊN HỆ VỚI CHÚNG TÔI', 'CONTACT US')),
             const SizedBox(height: 8),
-            _buildFaqCard(context, group),
-            const SizedBox(height: 20),
+            _buildContactCard(context),
           ],
-          _buildGroupTitleText(context, context.tr('LIÊN HỆ VỚI CHÚNG TÔI', 'CONTACT US')),
-          const SizedBox(height: 8),
-          _buildContactCard(context),
-        ],
+        ),
       ),
     );
   }

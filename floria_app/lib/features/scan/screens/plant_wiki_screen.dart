@@ -234,7 +234,7 @@ class _PlantWikiScreenState extends State<PlantWikiScreen> {
 
           // Floating Action Bar
           Positioned(
-            bottom: 24,
+            bottom: 24 + MediaQuery.paddingOf(context).bottom,
             left: 20,
             right: 20,
             child: ElevatedButton.icon(

@@ -8,6 +8,7 @@ import '../../garden/models/garden_plant.dart';
 import '../../garden/providers/garden_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/widgets/app_toast.dart';
 
 /// Loại công việc chăm sóc đến hạn
 enum _CareTaskType { water, fertilize, clean }
@@ -206,49 +207,8 @@ class _WateringRemindersScreenState extends State<WateringRemindersScreen> with 
   }
 
   void _showToast(String message, {bool isError = false}) {
-    final c = context.colors;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        duration: const Duration(seconds: 2),
-        content: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isError ? c.errorBg : c.surfaceMuted,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isError ? const Color(0xFFFF6B6B).withValues(alpha: 0.35) : c.border,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isError ? Icons.error_outline_rounded : Icons.check_circle_rounded,
-                    color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      message,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: c.textPrimary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    if (!mounted) return;
+    AppToast.show(context, message, isError: isError, duration: const Duration(seconds: 2));
   }
 
   // ======================= GIAO DIỆN =======================

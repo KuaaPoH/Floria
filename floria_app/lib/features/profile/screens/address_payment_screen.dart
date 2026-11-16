@@ -8,6 +8,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../models/user_checkout_models.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/widgets/app_toast.dart';
 
 class _AdminUnit {
   final String id;
@@ -92,74 +93,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
 
   void _showModernToast(String message, {bool isError = false}) {
     if (!mounted) return;
-    final c = context.colors;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-        duration: const Duration(seconds: 3),
-        content: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isError ? c.errorBg : c.surfaceMuted,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isError
-                      ? const Color(0xFFFF6B6B).withValues(alpha: 0.35)
-                      : c.border,
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: c.shadow,
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isError
-                          ? const Color(0xFFFF6B6B).withValues(alpha: 0.18)
-                          : c.primary.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isError ? Icons.error_outline_rounded : Icons.check_rounded,
-                      color: isError ? const Color(0xFFFF8A80) : const Color(0xFF81C784),
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      message,
-                      style: GoogleFonts.inter(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: c.textPrimary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    AppToast.show(context, message, isError: isError, margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16));
   }
 
   Future<List<_AdminUnit>> _fetchAdminUnits(int level, String parentId) async {
@@ -655,201 +589,6 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
     );
   }
 
-  void _showAddCardDialog(AuthProvider authProvider) {
-    final c = context.colors;
-    final bankCtrl = TextEditingController();
-    final numberCtrl = TextEditingController();
-    final holderCtrl = TextEditingController();
-    final dateCtrl = TextEditingController();
-    bool isDefault = authProvider.savedCards.isEmpty;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => AlertDialog(
-          backgroundColor: c.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: c.surfaceTint,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.add_card_rounded, color: c.primary, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  context.tr("Thêm thẻ thanh toán", "Add Payment Card"),
-                  style: GoogleFonts.inter(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: c.textPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: 420,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      bankCtrl.text = "NCB Bank";
-                      numberCtrl.text = "9704198526191432198";
-                      holderCtrl.text = "NGUYEN VAN A";
-                      dateCtrl.text = "07/15";
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: c.surfaceTint,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: c.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.bolt_rounded, color: c.primary, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.tr("Điền nhanh Thẻ NCB mẫu", "Fill Sample NCB Card"),
-                              style: GoogleFonts.inter(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                color: c.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: bankCtrl,
-                    style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
-                    decoration: _inputDecoration(
-                      context,
-                      context.tr("Tên Ngân hàng", "Bank Name"),
-                      Icons.account_balance_outlined,
-                      hint: "VD: Vietcombank, MB Bank, NCB Bank...",
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: numberCtrl,
-                    keyboardType: TextInputType.number,
-                    style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
-                    decoration: _inputDecoration(
-                      context,
-                      context.tr("Số thẻ ATM / Ngân hàng", "Card Number"),
-                      Icons.credit_card_rounded,
-                      hint: "VD: 9704198526191432198",
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: holderCtrl,
-                          textCapitalization: TextCapitalization.characters,
-                          style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
-                          decoration: _inputDecoration(
-                            context,
-                            context.tr("Tên chủ thẻ (Không dấu)", "Cardholder Name"),
-                            Icons.badge_outlined,
-                            hint: "NGUYEN VAN A",
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: dateCtrl,
-                          style: GoogleFonts.inter(color: c.textPrimary, fontSize: 14),
-                          decoration: _inputDecoration(
-                            context,
-                            context.tr("Ngày cấp", "Issue Date"),
-                            Icons.calendar_today_outlined,
-                            hint: "07/15",
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCircularCheckOption(
-                    context: context,
-                    label: context.tr("Đặt làm thẻ thanh toán mặc định", "Set as default payment card"),
-                    value: isDefault,
-                    onChanged: (val) => setModalState(() => isDefault = val),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                context.tr("Hủy", "Cancel"),
-                style: GoogleFonts.inter(color: c.textMuted, fontWeight: FontWeight.w600),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: c.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () async {
-                if (bankCtrl.text.trim().isEmpty ||
-                    numberCtrl.text.trim().isEmpty ||
-                    holderCtrl.text.trim().isEmpty) {
-                  _showModernToast(
-                    context.tr(
-                      "Vui lòng nhập đầy đủ tên ngân hàng, số thẻ và chủ thẻ!",
-                      "Please fill in bank name, card number and holder name!",
-                    ),
-                    isError: true,
-                  );
-                  return;
-                }
-                final card = SavedPaymentCard(
-                  id: 'card_${DateTime.now().millisecondsSinceEpoch}',
-                  bankName: bankCtrl.text.trim(),
-                  cardNumber: numberCtrl.text.trim(),
-                  cardHolder: holderCtrl.text.trim().toUpperCase(),
-                  issueDate: dateCtrl.text.trim().isNotEmpty ? dateCtrl.text.trim() : "07/15",
-                  isDefault: isDefault,
-                );
-                final successMsg = context.tr("Đã lưu thẻ ngân hàng thành công!", "Saved bank card successfully!");
-                await authProvider.savePaymentCard(card);
-                if (ctx.mounted) Navigator.pop(ctx);
-                _showModernToast(successMsg);
-              },
-              child: Text(
-                context.tr("Lưu thẻ", "Save card"),
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCircularCheckOption({
     required BuildContext context,
     required String label,
@@ -938,7 +677,6 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
     final c = context.colors;
     final authProvider = Provider.of<AuthProvider>(context);
     final addresses = authProvider.addresses;
-    final cards = authProvider.savedCards;
 
     return Scaffold(
       backgroundColor: c.background,
@@ -951,7 +689,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          context.tr("Địa chỉ & Thẻ thanh toán", "Addresses & Payment Cards"),
+          context.tr("Địa chỉ nhận hàng", "Shipping Addresses"),
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -1217,200 +955,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                     ),
                   )),
 
-            const SizedBox(height: 24),
-
-            // ================= 2. THẺ NGÂN HÀNG ĐÃ LƯU =================
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.credit_card_rounded, color: c.primary, size: 20),
-                    const SizedBox(width: 6),
-                    Text(
-                      context.tr("THẺ NGÂN HÀNG ĐÃ LƯU", "SAVED BANK CARDS"),
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                        color: c.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                TextButton.icon(
-                  onPressed: () => _showAddCardDialog(authProvider),
-                  icon: Icon(Icons.add_rounded, size: 18, color: c.primary),
-                  label: Text(
-                    context.tr("Thêm thẻ", "Add card"),
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: c.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (cards.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: c.border),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      context.tr("Chưa có thẻ ngân hàng nào được lưu", "No bank cards saved yet"),
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: c.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: c.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: () => _showAddCardDialog(authProvider),
-                      icon: const Icon(Icons.add_card_rounded, color: Colors.white, size: 18),
-                      label: Text(
-                        context.tr("Liên kết thẻ ngân hàng", "Link bank card"),
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              ...cards.map((card) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0F3443), Color(0xFF1E5631)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F3443).withValues(alpha: 0.2),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.account_balance_rounded, color: Colors.white70, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                card.bankName.replaceAll('(VNPay Sandbox)', '').trim().toUpperCase(),
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            if (card.isDefault)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  context.tr("Mặc định", "Default"),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              )
-                            else
-                              GestureDetector(
-                                onTap: () async {
-                                  final msg = context.tr("Đã đặt thẻ làm mặc định!", "Set card as default!");
-                                  await authProvider.setDefaultPaymentCard(card.id);
-                                  _showModernToast(msg);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.white38),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    context.tr("Đặt mặc định", "Set default"),
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () async {
-                                final msg = context.tr("Đã xóa thẻ thanh toán!", "Payment card deleted!");
-                                await authProvider.deletePaymentCard(card.id);
-                                _showModernToast(msg);
-                              },
-                              child: const Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 18),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          card.cardNumber,
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.8,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              context.tr("CHỦ THẺ: ${card.cardHolder}", "CARD HOLDER: ${card.cardHolder}"),
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            Text(
-                              context.tr("PHÁT HÀNH: ${card.issueDate}", "ISSUED: ${card.issueDate}"),
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )),
-
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1424,8 +969,8 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
                   Expanded(
                     child: Text(
                       context.tr(
-                        "Khi vào Giỏ hàng để đặt mua vật tư, bạn có thể chọn nhanh các địa chỉ & thẻ đã lưu ở trên, hoặc chọn Thanh toán khi nhận hàng (COD).",
-                        "When in the Cart to purchase supplies, you can quickly choose from your saved addresses and cards above, or choose Cash on Delivery (COD).",
+                        "Địa chỉ mặc định ở trên sẽ được tự động chọn khi bạn đặt mua vật tư chăm sóc cây.",
+                        "Your default address above will be selected automatically when placing an order.",
                       ),
                       style: GoogleFonts.inter(
                         fontSize: 12,

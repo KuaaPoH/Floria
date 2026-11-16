@@ -1307,3 +1307,37 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 *   **Cập nhật kết nối trên App (`floria_app/lib/core/constants/app_constants.dart`)**:
     *   Thay thế toàn bộ địa chỉ IP mạng LAN cũ (`192.168.x.x`) bằng **`https://api.floria.id.vn`** cho thiết bị di động (hỗ trợ ghi đè linh hoạt qua `--dart-define=API_HOST=...`), giúp điện thoại kết nối được từ bất kỳ mạng 4G/5G hoặc Wi-Fi nào khi máy chủ chạy `start_all.bat`.
     *   Kiểm tra `dart analyze lib/core/constants/app_constants.dart` đạt **`No issues found!`**.
+
+
+---
+
+## 10. Ca làm việc tối ngày 16/11/2026: Tinh Chỉnh UI/UX Android, Đồng Nhất Phiên Bản `0.0.1`, Chuẩn Hóa `AppToast` & Chuyển Đổi Thanh Toán ZaloPay Sandbox
+
+### 1. Giao Diện Native & Responsive Trên Thiết Bị Android (`floria_app`)
+*   **Nền Splash Screen Android 12+**: Cập nhật `splash_color` trong [colors.xml](file:///d:/Plan/utrasupervip/floria_app/android/app/src/main/res/values/colors.xml#L3) từ `#151E16` sang màu trắng **`#FFFFFF`**.
+*   **Khắc phục thanh điều hướng Android che nút & nội dung đáy**:
+    *   Bọc `SafeArea(top: false)` hoặc cộng thêm `MediaQuery.paddingOf(context).bottom` tại: [support_center_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/support_center_screen.dart), BottomSheet ảnh đại diện trong [profile_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/profile_screen.dart), nút *"Thêm vào vườn"* trong [plant_wiki_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/plant_wiki_screen.dart), Modal Chi tiết & Modal Quét bệnh trong [plant_detail_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/plant_detail_screen.dart), Modal Xác nhận thêm cây trong [add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/add_plant_to_garden_screen.dart), và BottomSheet Chi tiết đơn hàng trong [order_history_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/order_history_screen.dart).
+*   **Dọn dẹp & Tinh chỉnh UI**:
+    *   Xóa nút *"Dùng Avatar mặc định Floria"* trong BottomSheet ảnh đại diện ([profile_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/profile_screen.dart)).
+    *   Khi CLIP phát hiện ảnh không phải thực vật hoặc không nhận diện được ([diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/diagnosis_report_screen.dart)): ẩn các nút *"Lưu vào vườn"*, *"Chi tiết"*, *"Hỏi Trợ lý Floria về cây này"* và nút *"Quét lại"* trùng lặp, chỉ giữ nút *"Chụp lại ảnh khác"* và *"Trang chủ"*.
+    *   Bố cục lại phần tổng tiền và cụm nút **Hủy đơn / Nhận hàng / Mua lại** trong [order_history_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/order_history_screen.dart) thành 2 hàng thẳng thớm, gọn đẹp.
+
+### 2. Đồng Nhất Phiên Bản Động `0.0.1`
+*   Cập nhật `version: 0.0.1+1` trong [pubspec.yaml](file:///d:/Plan/utrasupervip/floria_app/pubspec.yaml#L19) và tích hợp gói **`package_info_plus`** (`^10.2.2`).
+*   Thêm `AppConstants.loadAppVersion()` ([app_constants.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/constants/app_constants.dart)) gọi trong [main.dart](file:///d:/Plan/utrasupervip/floria_app/lib/main.dart) để tự động đồng bộ phiên bản từ `pubspec.yaml` sang cả [splash_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/splash/screens/splash_screen.dart) và [settings_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/settings_screen.dart).
+
+### 3. Chuẩn Hóa `AppToast` Màu Dịu & Loại Bỏ Emoji
+*   Tạo helper dùng chung [app_toast.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/widgets/app_toast.dart) với bảng màu pastel dịu mắt đồng bộ Light Mode (`#EEF6F0` / `#FDF2F2`) và Dark Mode (`#1F2B22` / `#2E1E20`).
+*   Áp dụng đồng bộ trên toàn bộ màn hình Hồ sơ, Địa chỉ, Cài đặt, Cửa hàng, Đơn hàng, Khu vườn, Chi tiết cây và Báo cáo chẩn đoán; xóa toàn bộ emoji khỏi các chuỗi thông báo toast/banner.
+
+### 4. Tái Thiết Kế Luồng Giỏ Hàng → Thanh Toán & Tích Hợp ZaloPay Sandbox
+*   **Giỏ hàng ([cart_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/cart_screen.dart) & [shop_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/providers/shop_provider.dart))**:
+    *   Thêm nút radio tròn chọn từng mặt hàng muốn mua và nút **"Chọn tất cả sản phẩm"**; tổng thanh toán tự động cập nhật theo các món được chọn.
+    *   Bấm vào tên hoặc ảnh mặt hàng trong giỏ sẽ mở thẳng trang chi tiết sản phẩm (`ProductDetailScreen`).
+*   **Trang Thanh toán ([checkout_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/checkout_screen.dart))**:
+    *   Tách thành màn hình riêng gồm: Địa chỉ nhận hàng, danh sách sản phẩm đã chọn, **Form nhập mã giảm giá** (kiểm tra từ Firestore collection `Vouchers`), và **Phương thức thanh toán** (**ZaloPay** / **COD**).
+*   **Cổng thanh toán ZaloPay Sandbox ([zalopay_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/services/zalopay_service.dart) & [zalopay_payment_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/zalopay_payment_screen.dart))**:
+    *   Thay thế hoàn toàn VNPay Sandbox (đã ngưng) bằng **ZaloPay Sandbox OpenAPI v2** (`app_id: 2554`, `https://sb-openapi.zalopay.vn/v2/create` & `/v2/query`, ký `HMAC-SHA256`), mở thẳng WebView cổng thanh toán thật của ZaloPay kèm nút kiểm tra trạng thái giao dịch.
+*   **Dọn dẹp dữ liệu mock & phần lưu thẻ ngân hàng**:
+    *   Xóa bỏ thẻ mock `NCB Bank (VNPay Sandbox)` trong [auth_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/auth/providers/auth_provider.dart), xóa `vnpay_service.dart` và `vnpay_payment_screen.dart`.
+    *   Xóa bỏ phần lưu thẻ ngân hàng khỏi Hồ sơ & Màn hình Địa chỉ, đổi tên mục thành **"Địa chỉ nhận hàng"** ([profile_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/profile_screen.dart), [address_payment_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/address_payment_screen.dart)).

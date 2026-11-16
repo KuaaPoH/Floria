@@ -1,7 +1,20 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class AppConstants {
+  /// Phiên bản ứng dụng đọc động từ bản build (`pubspec.yaml`) khi khởi động
+  static String appVersion = '0.0.1';
+
+  static Future<void> loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (info.version.isNotEmpty) {
+        appVersion = info.version;
+      }
+    } catch (_) {}
+  }
+
   // Google Gemini API Key mặc định của hệ thống (được mã hóa an toàn để bảo vệ bảo mật mã nguồn)
   static String get defaultGeminiApiKey {
     const encoded = 'QVEuQWI4Uk42SkRST05qc0VKTVlyOVEzdEM5OE52X29aLXRhZ2RpYzRrZWRlZFBYa21QMWc=';

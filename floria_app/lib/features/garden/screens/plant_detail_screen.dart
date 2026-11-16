@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'plant_diary_screen.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
@@ -149,53 +150,12 @@ class PlantDetailScreen extends StatelessWidget {
                       await gardenProvider.waterPlant(currentPlant.id);
                       NotificationService.silenceForToday(currentPlant.id, 'water');
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).clearSnackBars();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: const Color(0xFF1E3A24),
-                            elevation: 8,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            content: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.water_drop_rounded, color: Color(0xFF38BDF8), size: 20),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${context.tr("Đã tưới nước cho", "Watered")} '${currentPlant.nickname}'! 💧",
-                                        style: GoogleFonts.inter(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        "${context.tr("Lần tưới tiếp theo: sau", "Next watering in")} ${currentPlant.waterFrequencyDays} ${context.tr("ngày", "days")}.",
-                                        style: GoogleFonts.inter(
-                                          color: const Color(0xFFB4F4C2),
-                                          fontSize: 11.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            duration: const Duration(seconds: 3),
-                          ),
+                        _showActionToast(
+                          context,
+                          title: "${context.tr("Đã tưới nước cho", "Watered")} '${currentPlant.nickname}'!",
+                          subtitle: "${context.tr("Lần tưới tiếp theo: sau", "Next watering in")} ${currentPlant.waterFrequencyDays} ${context.tr("ngày", "days")}.",
+                          icon: Icons.water_drop_rounded,
+                          iconColor: AppToast.accentColor(context),
                         );
                       }
                     } else if (val == 'delete') {
@@ -234,19 +194,12 @@ class PlantDetailScreen extends StatelessWidget {
                         ),
                       );
                       if (confirm == true && context.mounted) {
+                        final deletedMsg = "${context.tr("Đã xóa", "Deleted")} '${currentPlant.nickname}' ${context.tr("khỏi khu vườn.", "from garden.")}";
+                        final rootContext = Navigator.of(context).context;
                         await gardenProvider.removePlant(currentPlant.id);
                         if (context.mounted) {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "${context.tr("Đã xóa", "Deleted")} '${currentPlant.nickname}' ${context.tr("khỏi khu vườn.", "from garden.")}",
-                                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
-                              ),
-                              backgroundColor: const Color(0xFF364534),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          AppToast.show(rootContext, deletedMsg, icon: Icons.delete_outline_rounded);
                         }
                       }
                     }
@@ -699,7 +652,7 @@ class PlantDetailScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: EdgeInsets.fromLTRB(24, 20, 24, 20 + MediaQuery.paddingOf(ctx).bottom),
           decoration: BoxDecoration(
             color: c.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -1088,7 +1041,7 @@ class PlantDetailScreen extends StatelessWidget {
                   if (!isWaterNeeded) {
                     _showActionToast(
                       context,
-                      title: "${context.tr("Cây", "Plant")} '${currentPlant.nickname}' ${context.tr("chưa đến hạn tưới! 🌱", "does not need water yet! 🌱")}",
+                      title: "${context.tr("Cây", "Plant")} '${currentPlant.nickname}' ${context.tr("chưa đến hạn tưới!", "does not need water yet!")}",
                       subtitle: "${context.tr("Độ ẩm đất vẫn tốt. Còn", "Soil moisture is good. Still")} ${currentPlant.daysUntilWater} ${context.tr("ngày nữa mới cần tưới tiếp.", "days until next watering.")}",
                       icon: Icons.info_outline_rounded,
                       iconColor: const Color(0xFF38BDF8),
@@ -1100,7 +1053,7 @@ class PlantDetailScreen extends StatelessWidget {
                   if (context.mounted) {
                     _showActionToast(
                       context,
-                      title: "${context.tr("Đã tưới nước cho", "Watered")} '${currentPlant.nickname}'! 💧",
+                      title: "${context.tr("Đã tưới nước cho", "Watered")} '${currentPlant.nickname}'!",
                       subtitle: "${context.tr("Lần tưới tiếp theo: sau", "Next watering in")} ${currentPlant.waterFrequencyDays} ${context.tr("ngày.", "days.")}",
                       icon: Icons.water_drop_rounded,
                       iconColor: const Color(0xFF38BDF8),
@@ -1129,7 +1082,7 @@ class PlantDetailScreen extends StatelessWidget {
                     if (!isFertNeeded) {
                       _showActionToast(
                         context,
-                        title: context.tr("Cây đã nạp đủ dưỡng chất! 🧪", "Plant already well fertilized! 🧪"),
+                        title: context.tr("Cây đã nạp đủ dưỡng chất!", "Plant already well fertilized!"),
                         subtitle: "${context.tr("Tránh bón quá liều gây sót rễ. Còn", "Avoid overfeeding. In")} ${currentPlant.daysUntilFertilizer} ${context.tr("ngày nữa mới cần bón tiếp.", "days until next fertilization.")}",
                         icon: Icons.info_outline_rounded,
                         iconColor: const Color(0xFFF59E0B),
@@ -1141,7 +1094,7 @@ class PlantDetailScreen extends StatelessWidget {
                     if (context.mounted) {
                       _showActionToast(
                         context,
-                        title: "${context.tr("Đã bón phân cho", "Fertilized")} '${currentPlant.nickname}'! 🧪",
+                        title: "${context.tr("Đã bón phân cho", "Fertilized")} '${currentPlant.nickname}'!",
                         subtitle: "${context.tr("Cây đã nạp đủ vi lượng. Lần tới: sau", "Nutrients added. Next:")} ${currentPlant.fertilizeFrequencyDays} ${context.tr("ngày.", "days.")}",
                         icon: Icons.science_rounded,
                         iconColor: const Color(0xFFF59E0B),
@@ -1169,7 +1122,7 @@ class PlantDetailScreen extends StatelessWidget {
                   if (!isCleanNeeded) {
                     _showActionToast(
                       context,
-                      title: context.tr("Mặt lá vẫn sạch sẽ! 🍃", "Leaves are clean! 🍃"),
+                      title: context.tr("Mặt lá vẫn sạch sẽ!", "Leaves are clean!"),
                       subtitle: "${context.tr("Đã kiểm tra gần đây. Còn", "Checked recently. Still")} ${currentPlant.daysUntilCheckPest} ${context.tr("ngày nữa đến lượt kiểm tra tiếp theo.", "days until next inspection.")}",
                       icon: Icons.info_outline_rounded,
                       iconColor: const Color(0xFF4ADE80),
@@ -1181,7 +1134,7 @@ class PlantDetailScreen extends StatelessWidget {
                   if (context.mounted) {
                     _showActionToast(
                       context,
-                      title: context.tr("Đã kiểm tra & lau sạch lá cho cây! 🍃", "Inspected & cleaned plant leaves! 🍃"),
+                      title: context.tr("Đã kiểm tra & lau sạch lá cho cây!", "Inspected & cleaned plant leaves!"),
                       subtitle: context.tr("Bề mặt lá sạch bụi giúp cây quang hợp tối đa.", "Dust-free leaves optimize photosynthesis."),
                       icon: Icons.eco_rounded,
                       iconColor: const Color(0xFF4ADE80),
@@ -1220,7 +1173,7 @@ class PlantDetailScreen extends StatelessWidget {
                     if (context.mounted) {
                       _showActionToast(
                         context,
-                        title: context.tr("Tuyệt vời! Đã chu toàn mọi việc hôm nay! 🌟", "Awesome! All tasks finished today! 🌟"),
+                        title: context.tr("Tuyệt vời! Đã chu toàn mọi việc hôm nay!", "Awesome! All tasks finished today!"),
                         subtitle: "${context.tr("Mọi tác vụ đến hạn của", "All due tasks for")} '${currentPlant.nickname}' ${context.tr("đã được xử lý xong.", "are completed.")}",
                         icon: Icons.task_alt_rounded,
                         iconColor: const Color(0xFF4ADE80),
@@ -1264,52 +1217,58 @@ class PlantDetailScreen extends StatelessWidget {
     required IconData icon,
     required Color iconColor,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final accent = AppToast.accentColor(context);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E3A24),
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFB4F4C2),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.only(bottom: 20, left: 16, right: 16),
+        content: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: AppToast.decoration(context),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: accent, size: 19),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        color: AppToast.textColor(context),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        color: accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2022,7 +1981,7 @@ class PlantDetailScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 28),
+          padding: EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 28 + MediaQuery.paddingOf(ctx).bottom),
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
