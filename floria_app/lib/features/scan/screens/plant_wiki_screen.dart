@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
 
@@ -257,12 +258,25 @@ class _PlantWikiScreenState extends State<PlantWikiScreen> {
   }
 
   Widget _buildImage() {
+    final rawNetworkUrl = (widget.data['wiki_image'] ??
+            widget.data['image'] ??
+            widget.data['imageUrl'] ??
+            widget.data['image_url'] ??
+            '')
+        .toString()
+        .trim();
+    final formattedUrl = AppConstants.formatImageUrl(rawNetworkUrl);
+
     if (widget.webImageBytes != null) {
       return Image.memory(widget.webImageBytes!, fit: BoxFit.cover);
     } else if (widget.imagePath != null && !kIsWeb) {
       return Image.file(File(widget.imagePath!), fit: BoxFit.cover);
-    } else if (widget.data['wiki_image'] != null) {
-      return Image.network(widget.data['wiki_image'], fit: BoxFit.cover);
+    } else if (formattedUrl.isNotEmpty) {
+      return Image.network(
+        formattedUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Center(child: Icon(Icons.eco, size: 100, color: Colors.white30)),
+      );
     } else {
       return const Center(child: Icon(Icons.eco, size: 100, color: Colors.white30));
     }

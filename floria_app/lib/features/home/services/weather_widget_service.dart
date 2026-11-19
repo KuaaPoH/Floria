@@ -6,27 +6,47 @@ class WeatherWidgetService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String collectionName = 'HomeWeatherWidgets';
 
-  /// Stream danh sách Ảnh nền & Câu thoại biên tập từ Firestore
+  /// Stream danh sách Ảnh nền & Câu thoại biên tập đang bật từ Firestore
   static Stream<List<WeatherWidgetConfig>> streamConfigs() {
     return _firestore.collection(collectionName).snapshots().map((snapshot) {
       if (snapshot.docs.isEmpty) {
         seedDefaultConfigsIfNeeded();
         return defaultConfigs;
       }
-      return snapshot.docs.map((doc) => WeatherWidgetConfig.fromFirestore(doc)).toList();
+      final activeList = snapshot.docs
+          .map((doc) => WeatherWidgetConfig.fromFirestore(doc))
+          .where((cfg) => cfg.active)
+          .toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
+      return activeList;
     });
   }
 
-  /// Lấy ảnh và câu thoại phù hợp theo giờ (ưu tiên Firestore, có fallback nếu mất mạng)
+  static bool _matchesHour(WeatherWidgetConfig cfg, int hour) {
+    if (cfg.startHour == cfg.endHour) return true;
+    if (cfg.startHour < cfg.endHour) {
+      return hour >= cfg.startHour && hour < cfg.endHour;
+    }
+    return hour >= cfg.startHour || hour < cfg.endHour;
+  }
+
+  /// Trả về banner đang hoạt động phù hợp theo giờ; trả null nếu Admin đã tắt hết hoặc tắt khung giờ này
+  static WeatherWidgetConfig? findActiveConfigForHour(List<WeatherWidgetConfig>? liveConfigs, int hour) {
+    if (liveConfigs == null) {
+      return getConfigForHour(null, hour);
+    }
+    if (liveConfigs.isEmpty) return null;
+    for (final cfg in liveConfigs) {
+      if (_matchesHour(cfg, hour)) return cfg;
+    }
+    return null;
+  }
+
+  /// Lấy ảnh và câu thoại phù hợp theo giờ (có fallback mặc định cho splash precache)
   static WeatherWidgetConfig getConfigForHour(List<WeatherWidgetConfig>? liveConfigs, int hour) {
     final configs = (liveConfigs != null && liveConfigs.isNotEmpty) ? liveConfigs : defaultConfigs;
     for (final cfg in configs) {
-      if (cfg.startHour <= cfg.endHour) {
-        if (hour >= cfg.startHour && hour < cfg.endHour) return cfg;
-      } else {
-        // Khung giờ qua đêm (ví dụ: từ 18h đến 5h sáng hôm sau)
-        if (hour >= cfg.startHour || hour < cfg.endHour) return cfg;
-      }
+      if (_matchesHour(cfg, hour)) return cfg;
     }
     return configs.first;
   }

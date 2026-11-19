@@ -277,10 +277,14 @@ Qua phân tích đặc thù 40 loài cây cảnh trong hệ thống (Monstera, B
 5.  **`Powdery_Mildew` (Bệnh Phấn Trắng)**: Lớp phấn bột trắng xóa phủ bề mặt lá non (xuất hiện trên Hoa sứ, Hoa giấy, Begonia).
 
 ### Nguồn Dữ Liệu Gom Dataset
-Không cần cào thủ công trên mạng, hệ thống tổng hợp từ các bộ dataset chuẩn mực đã được gán nhãn chuyên nghiệp:
-*   **PlantDoc Dataset (Kaggle)**: [https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset](https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset) (Ảnh chụp đời thực in-the-wild, ánh sáng tự nhiên).
-*   **Indoor Plant Disease Dataset by Nishad (Roboflow Universe)**: [https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74](https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74) (Chuyên cây cảnh trong nhà: Lưỡi hổ, Kim tiền, Trầu bà).
-*   **Mango Leaf Disease Dataset (Kaggle)**: [https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset](https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset) (Mẫu bệnh Thán thư & Phấn trắng lá to sắc nét).
+*   **Dataset Nhận Diện 40 Loài Cây Cảnh (`traincay.ipynb` / `dataset_sach.zip`)**:
+    *   **Nguồn thu thập**: Sưu tầm tổng hợp từ nhiều nguồn trên Internet bằng công cụ thu thập/cào ảnh tự động phân loại theo từng thư mục loài cây, sau đó lọc sạch và tăng cường dữ liệu (Augmentation).
+    *   **Quy mô**: Tổng cộng **77.252 ảnh** (gồm ảnh gốc và ảnh Augmentation), chia theo tỷ lệ Stratified Split 80/10/10 (**Train:** 61.801 ảnh, **Val:** 7.725 ảnh, **Test:** 7.726 ảnh).
+*   **Dataset Chẩn Đoán 5 Nhóm Bệnh Lá (`trainbenh.ipynb`)**:
+    *   Tổng hợp từ các bộ dataset chuẩn mực đã được gán nhãn chuyên nghiệp:
+        *   **PlantDoc Dataset (Kaggle)**: [https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset](https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset) (Ảnh chụp đời thực in-the-wild, ánh sáng tự nhiên).
+        *   **Indoor Plant Disease Dataset by Nishad (Roboflow Universe)**: [https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74](https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74) (Chuyên cây cảnh trong nhà: Lưỡi hổ, Kim tiền, Trầu bà).
+        *   **Mango Leaf Disease Dataset (Kaggle)**: [https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset](https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset) (Mẫu bệnh Thán thư & Phấn trắng lá to sắc nét).
 
 ### Kế Hoạch Huấn Luyện & Tích Hợp AI Engine
 *   **Bộ dữ liệu cục bộ**: Đã tải và gom thành công hơn 2.100 ảnh vào [AI_Engine/dataset/](file:///d:/Plan/utrasupervip/AI_Engine/dataset) (gồm `train` và `val` của 5 nhóm bệnh).
@@ -1341,3 +1345,54 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 *   **Dọn dẹp dữ liệu mock & phần lưu thẻ ngân hàng**:
     *   Xóa bỏ thẻ mock `NCB Bank (VNPay Sandbox)` trong [auth_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/auth/providers/auth_provider.dart), xóa `vnpay_service.dart` và `vnpay_payment_screen.dart`.
     *   Xóa bỏ phần lưu thẻ ngân hàng khỏi Hồ sơ & Màn hình Địa chỉ, đổi tên mục thành **"Địa chỉ nhận hàng"** ([profile_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/profile_screen.dart), [address_payment_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/address_payment_screen.dart)).
+
+### 5. Đóng Gói Hoàn Tất Tệp Cài Đặt Release APK Cho Tester
+*   Kiểm tra toàn bộ phân tích tĩnh dự án bằng `flutter analyze`: **`No issues found!`**.
+*   Biên dịch và đóng gói thành công bản **Release APK**:
+    *   Lệnh thực thi: `flutter build apk --release` (tự động tối ưu hóa nén icon font tree-shaking 98%, ProGuard/R8 minification `classes.dex`, ký nhị phân sẵn sàng cài đặt).
+    *   Đường dẫn tệp gốc: `floria_app/build/app/outputs/flutter-apk/app-release.apk` (Dung lượng: **68.8 MB**).
+    *   Bản sao chép tiện dụng tại thư mục gốc: **`Floria_v0.0.1_Release.apk`**.
+    *   Cấu hình backend mặc định: Kết nối an toàn đến máy chủ đám mây qua Cloudflare Tunnel **`https://api.floria.id.vn`** (tester có thể cài đặt và sử dụng được qua Wi-Fi / 4G / 5G bất kỳ).
+
+
+---
+
+## Ngày 20/11/2026: Xây Dựng Web Admin (`floria_web`), Đồng Bộ Hai Chiều Với `floria_app` & Tối Ưu AI Quét Cây/Bệnh
+
+### 1. Chuyển Giao & Nối Dữ Liệu Thật Cho Web Admin (`floria_web`)
+*   **Kiến trúc & Định tuyến**: Di chuyển giao diện Admin vào `floria_web` dưới nhánh `/admin/*`, tách biệt với trang chủ `/` dành cho User Web sau này.
+*   **Xác thực Firebase & Phân quyền (`AdminAccounts`)**: Tích hợp `firebase` + `firebase-admin`, xác thực qua Firebase Auth + Firestore `AdminAccounts` (với cache TTL 2 phút trong `admin-auth.ts`).
+*   **Kết nối Firestore thực tế cho các phân hệ**:
+    *   **Tổng quan & Sức khỏe hệ thống**: `/api/admin/overview`, `/api/admin/health` (kiểm tra Cloud Firestore, AI Engine `:8000/docs`, Spring Boot `:8080/api/ping`, giãn chu kỳ poll lên 15 phút và cache server 60s).
+    *   **Người dùng & Khu vườn**: `/api/admin/users`, `/api/admin/users/[id]`, hiển thị avatar (hỗ trợ cả `preset:*`), `UserGardens`, `MyGarden`, `ScanHistory`, `Orders`.
+    *   **Thực vật & Sâu bệnh**: `/api/admin/plants` (`plants_info`, đồng bộ trường `image`, `imageUrl`, `wiki_image`), `/api/admin/diseases` (`DiseasesInfo`), `/api/admin/ai-classes`.
+    *   **Thương mại, Kho hàng, Đánh giá & Voucher**: `/api/admin/products` (`ShopProducts`), `/api/admin/orders` (`Orders`), `/api/admin/inventory-transactions` (`InventoryTransactions`), `/api/admin/reviews` (`ProductReviews` có ảnh & phản hồi), `/api/admin/vouchers` (`Vouchers`, chuẩn hóa `expiresAt` về cuối ngày).
+    *   **Nội dung & Upload Cloudinary**: `/api/admin/articles` (`PlantHandbook`), `/api/admin/banners` (`HomeWeatherWidgets` với `startHour`/`endHour`), chuẩn hóa `ImageUploader` tải ảnh trực tiếp lên Cloudinary (`vbiltn75` / `ml_default`).
+*   **Tối ưu hiệu năng & Quota Firestore**: Tăng `staleTime` lên 15 phút, `gcTime` 30 phút, tắt auto-retry trong `providers.tsx`, thêm cache server 60s cho `/api/admin/overview` và `/api/admin/users`, và tắt `devIndicators` trong `next.config.mjs`.
+
+### 2. Đồng Bộ Hai Chiều & Sửa Lỗi Trên `floria_app`
+*   **Modal Thêm cây từ kết quả quét Camera ([diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/diagnosis_report_screen.dart))**:
+    *   Bổ sung đầy đủ lựa chọn giống màn hình thêm cây từ Khu vườn: chọn khu vườn (`UserGardens` + tạo vườn mới), biệt danh, sức khỏe ban đầu, chỗ đặt cây gợi ý theo môi trường, lịch tưới, bón phân, kiểm tra sâu bệnh, giờ nhắc nhở, ghi chú.
+    *   Cố định nút **"Xác nhận thêm vào vườn"** phía trên thanh điều hướng hệ thống (`viewPadding.bottom` / `viewInsets.bottom`).
+    *   Tự động upload ảnh quét lên **Cloudinary** (`StorageService.uploadPlantPhoto`) trước khi lưu `MyGarden.imageUrl` (thay vì lưu `/api/images/...`).
+*   **Hiển thị ảnh đồng bộ ([home_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/screens/home_screen.dart), [plant_wiki_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/plant_wiki_screen.dart))**:
+    *   Chuẩn hóa URL ảnh bằng `AppConstants.formatImageUrl(...)`, fallback sang `wiki_image` / `image` / `imageUrl` và sửa khung placeholder lỗi.
+*   **Đồng bộ Cửa hàng, Kho hàng, Đánh giá & Voucher**:
+    *   [shop_product.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/models/shop_product.dart), [shop_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/providers/shop_provider.dart), [shop_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/shop_screen.dart), [product_detail_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/product_detail_screen.dart), [cart_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/cart_screen.dart), [checkout_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/screens/checkout_screen.dart):
+    *   Ẩn sản phẩm có `visible == false`; lọc bỏ đánh giá `hidden`/`rejected` và hiển thị **Phản hồi từ Floria** (`reply`).
+    *   Hiển thị tồn kho (`stock`), chặn vượt tồn kho khi thêm giỏ/thanh toán; dùng **Firestore Transaction** khi đặt hàng để trừ `stock`, tăng `soldCount`, ghi phiếu xuất kho `InventoryTransactions` (`type: "out"`) và tăng lượt dùng voucher (`used`).
+    *   Hỗ trợ đầy đủ voucher tạo từ Admin (kiểm tra hạn dùng, lượt tối đa, đơn tối thiểu) và hiển thị chip gợi ý voucher đang hoạt động.
+*   **Ẩn/hiện Cẩm nang & Widget Banner**:
+    *   [handbook_article.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/models/handbook_article.dart), [handbook_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/services/handbook_service.dart): lọc bài `draft`/`visible == false`, hỗ trợ parse `createdAt` dạng `Timestamp` lẫn ISO String và render thêm block `heading`, `quote`, `warning`, `bullets`, `numbered`.
+    *   [weather_widget_config.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/models/weather_widget_config.dart), [weather_widget_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/services/weather_widget_service.dart): lọc banner `active != false` theo `order` và khung giờ (`findActiveConfigForHour`).
+*   **Hồ sơ cá nhân ([profile_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/profile_screen.dart))**:
+    *   Xoá badge `+120 điểm` / ưu đãi giảm giá mock ở khối **Tóm tắt tuần này**, thay bằng số liệu thật trong 7 ngày qua từ `GardenProvider` và `HistoryProvider.allItems`.
+
+### 3. Nâng Cấp AI Quét Cây / Quét Bệnh & Luồng Báo Cáo (`PlantRequests`)
+*   **Đồng bộ 2 luồng quét cây** ([scan_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/providers/scan_provider.dart), [add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/add_plant_to_garden_screen.dart)): ưu tiên **Google Gemini Multimodal** trước để nhận diện chính xác cả cây trong và ngoài 40 loài (tránh Softmax ONNX đoán nhầm cây ngoài danh mục), fallback về AI Engine nội bộ khi không có key hoặc Gemini lỗi.
+*   **Tích hợp chẩn đoán bệnh ngoài 5 loại** ([gemini_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/services/gemini_service.dart), [AI_Engine/main.py](file:///d:/Plan/utrasupervip/AI_Engine/main.py)):
+    *   Thêm `GeminiService.diagnoseDiseaseWithImage(...)`; với bệnh ngoài 5 loại chuẩn chỉ hiển thị tên bệnh và độ tin cậy, các trường chi tiết hiển thị `"Đang cập nhật..."`.
+    *   Nới lỏng CLIP Gatekeeper trong `AI_Engine/main.py` (`probs[1] > 0.70`, mở rộng prompt thực vật) và thêm `is_in_database` cho `/diagnose-disease`.
+*   **Báo cáo / Yêu cầu cập nhật loài cây & bệnh mới (`PlantRequests`)**:
+    *   Thêm nút & modal báo cáo ở cuối màn hình kết quả quét ([diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/diagnosis_report_screen.dart)), tự upload ảnh lên Cloudinary và lưu vào Firestore collection `PlantRequests`.
+    *   Gỡ bỏ dòng thông báo thừa `"Chưa có thông tin bách khoa..."` và phần hiển thị Top 3 khỏi màn hình kết quả quét.

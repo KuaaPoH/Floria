@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -197,154 +198,170 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
     });
 
     try {
+      // 1. Ưu tiên Google Gemini Multimodal để nhận diện chính xác cả cây trong và ngoài 40 loài
       if (_hasGeminiKey) {
-        // --- 1. SỬ DỤNG GOOGLE GEMINI MULTIMODAL ---
-        final geminiRes = await GeminiService.identifyPlantWithHint(
-          imageBytes: _imageBytes!,
-          userHint: _aiHintNotesCtrl.text.trim(),
-        );
-
-        if (!geminiRes.isPlant) {
-          throw Exception(
-            geminiRes.rejectReason ?? "Hệ thống phát hiện đây không phải là thực vật. Vui lòng chụp rõ lại cây cảnh!",
+        try {
+          final geminiRes = await GeminiService.identifyPlantWithHint(
+            imageBytes: _imageBytes!,
+            userHint: _aiHintNotesCtrl.text.trim(),
           );
-        }
 
-        Map<String, dynamic> plantWikiData = {};
+          if (!geminiRes.isPlant) {
+            throw Exception(
+              geminiRes.rejectReason ??
+                  "Hệ thống phát hiện đây không phải là thực vật. Vui lòng chụp rõ lại cây cảnh!",
+            );
+          }
 
-        if (geminiRes.matchedDatabase) {
-          // Khớp 1 trong 40 cây CSDL -> Tra cứu Firestore plants_info để lấy đủ thông số
-          try {
-            final doc = await FirebaseFirestore.instance
-                .collection("plants_info")
-                .doc(geminiRes.scientificName)
-                .get();
-            if (doc.exists && doc.data() != null) {
-              plantWikiData = Map<String, dynamic>.from(doc.data()!);
-            }
-          } catch (_) {}
-        } else {
-          // LÀ CÂY, NHƯNG NGOÀI 40 CÂY CSDL -> Các ô khác hiển thị 'Đang cập nhật...'
-          plantWikiData = {
-            'name_vi': geminiRes.nameVi,
-            'scientific_name': geminiRes.scientificName,
-            'light': 'Đang cập nhật...',
-            'water_frequency': 'Đang cập nhật...',
-            'difficulty': 'Đang cập nhật...',
-            'plant_type': 'Đang cập nhật...',
-            'family': 'Đang cập nhật...',
-            'origin': 'Đang cập nhật...',
-            'short_desc': geminiRes.shortDesc.isNotEmpty ? geminiRes.shortDesc : 'Đang cập nhật...',
-          };
-        }
+          Map<String, dynamic> plantWikiData = {};
+          if (geminiRes.matchedDatabase) {
+            try {
+              final doc = await FirebaseFirestore.instance
+                  .collection("plants_info")
+                  .doc(geminiRes.scientificName)
+                  .get();
+              if (doc.exists && doc.data() != null) {
+                plantWikiData = Map<String, dynamic>.from(doc.data()!);
+              }
+            } catch (_) {}
+          } else {
+            plantWikiData = {
+              'name_vi': geminiRes.nameVi,
+              'scientific_name': geminiRes.scientificName,
+              'light': 'Đang cập nhật...',
+              'water_frequency': 'Đang cập nhật...',
+              'difficulty': 'Đang cập nhật...',
+              'plant_type': 'Đang cập nhật...',
+              'family': 'Đang cập nhật...',
+              'origin': 'Đang cập nhật...',
+              'short_desc': geminiRes.shortDesc.isNotEmpty ? geminiRes.shortDesc : 'Đang cập nhật...',
+            };
+          }
 
-        final int freqDays = _extractWaterFrequencyDays(plantWikiData['water_frequency']);
-        final String plantType = plantWikiData['plant_type'] ?? 'Đang cập nhật...';
+          final int freqDays = _extractWaterFrequencyDays(plantWikiData['water_frequency']);
+          final String plantType = plantWikiData['plant_type'] ?? 'Đang cập nhật...';
 
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _statusText = null;
-        });
+          if (!mounted) return;
+          setState(() {
+            _isLoading = false;
+            _statusText = null;
+          });
 
-        _showSaveToGardenBottomSheet(
-          nameVi: geminiRes.nameVi,
-          scientificName: geminiRes.scientificName,
-          confidence: geminiRes.confidence,
-          plantType: plantType,
-          freqDays: freqDays,
-          wikiData: plantWikiData,
-        );
-      } else {
-        // --- 2. FALLBACK SANG BACKEND SPRING BOOT + CLIP / AI ENGINE ---
-        final dio = Dio();
-        final multipartFile = MultipartFile.fromBytes(
-          _imageBytes!,
-          filename: _selectedImage!.name,
-        );
-        final formData = FormData.fromMap({
-          'file': multipartFile,
-          'userHint': _aiHintNotesCtrl.text.trim(),
-        });
-
-        final response = await dio.post(
-          "${AppConstants.scanDiseaseUrl}?model=efficientnetb0",
-          data: formData,
-          options: Options(headers: {'Accept': 'application/json'}),
-        );
-
-        if (response.statusCode != 200 || response.data == null) {
-          throw Exception("Server phản hồi mã: ${response.statusCode}");
-        }
-
-        final Map<String, dynamic> result = Map<String, dynamic>.from(response.data);
-        if (result['image_url'] != null) {
-          _uploadedImageUrl = result['image_url'].toString();
-        }
-
-        // Kiểm tra xem có phải thực vật không (bảo vệ bởi CLIP Gatekeeper)
-        final bool isValidPlant = result['is_valid_plant'] == true;
-        if (!isValidPlant) {
-          throw Exception(
-            result['message'] ?? "Hệ thống phát hiện đây không phải là thực vật. Vui lòng chụp ảnh lá cây hoặc cây cảnh!",
+          _showSaveToGardenBottomSheet(
+            nameVi: geminiRes.nameVi,
+            scientificName: geminiRes.scientificName,
+            confidence: geminiRes.confidence,
+            plantType: plantType,
+            freqDays: freqDays,
+            wikiData: plantWikiData,
           );
+          return;
+        } catch (e) {
+          // Nếu Gemini phát hiện không phải thực vật thì dừng luôn, chỉ fallback nếu lỗi mạng/quota
+          if (e.toString().contains("không phải là thực vật")) {
+            rethrow;
+          }
+          debugPrint("Gemini lỗi, chuyển sang AI Engine nội bộ: $e");
         }
+      }
 
-        final String prediction = result['prediction'] ?? 'Cây cảnh';
-        final String nameVi = result['name_vi'] ?? prediction;
-        final double confidence = (result['confidence'] as num?)?.toDouble() ?? 88.0;
+      // 2. Fallback sang AI Engine nội bộ (ONNX + CLIP)
+      final user = FirebaseAuth.instance.currentUser;
+      String? token;
+      try {
+        token = await user?.getIdToken();
+      } catch (_) {}
 
-        // Tra cứu từ điển thực vật trong kết quả
-        Map<String, dynamic> plantWikiData = {};
-        if (result['plants_map'] is Map && result['plants_map'][prediction] != null) {
-          plantWikiData = Map<String, dynamic>.from(result['plants_map'][prediction]);
-        }
+      final dio = Dio();
+      final multipartFile = MultipartFile.fromBytes(
+        _imageBytes!,
+        filename: _selectedImage!.name,
+      );
+      final formData = FormData.fromMap({
+        'file': multipartFile,
+        'user_id': user?.uid ?? 'guest',
+        'userHint': _aiHintNotesCtrl.text.trim(),
+      });
+      final headers = <String, dynamic>{
+        'Accept': 'application/json',
+        'X-User-Id': user?.uid ?? 'guest',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      };
 
-        // Nếu không có trong từ điển 40 cây -> Đặt các ô khác thành 'Đang cập nhật...'
-        if (plantWikiData.isEmpty) {
-          plantWikiData = {
-            'name_vi': nameVi,
-            'scientific_name': prediction,
-            'light': 'Đang cập nhật...',
-            'water_frequency': 'Đang cập nhật...',
-            'difficulty': 'Đang cập nhật...',
-            'plant_type': 'Đang cập nhật...',
-            'family': 'Đang cập nhật...',
-            'short_desc': 'Đang cập nhật...',
-          };
-        }
+      final response = await dio.post(
+        "${AppConstants.scanDiseaseUrl}?model=floria_vision",
+        data: formData,
+        options: Options(headers: headers),
+      );
 
-        final int freqDays = _extractWaterFrequencyDays(plantWikiData['water_frequency']);
-        final String plantType = plantWikiData['plant_type'] ?? 'Đang cập nhật...';
+      if (response.statusCode != 200 || response.data == null) {
+        throw Exception("Server phản hồi mã: ${response.statusCode}");
+      }
 
-        if (!mounted) return;
+      final Map<String, dynamic> result = Map<String, dynamic>.from(response.data);
+      if (result['image_url'] != null) {
+        _uploadedImageUrl = result['image_url'].toString();
+      }
 
-        setState(() {
-          _isLoading = false;
-          _statusText = null;
-        });
-
-        // Kích hoạt upload ảnh cây lên Cloudinary Cloud ngầm ngay trong lúc người dùng xem thông tin và chọn phòng
-        if (_imageBytes != null && (_uploadedImageUrl == null || _uploadedImageUrl!.isEmpty)) {
-          StorageService.uploadPlantPhoto(
-            bytes: _imageBytes!,
-            plantName: nameVi,
-          ).then((url) {
-            if (url != null && url.isNotEmpty && mounted) {
-              _uploadedImageUrl = url;
-            }
-          }).catchError((_) {});
-        }
-
-        _showSaveToGardenBottomSheet(
-          nameVi: nameVi,
-          scientificName: prediction,
-          confidence: confidence,
-          plantType: plantType,
-          freqDays: freqDays,
-          wikiData: plantWikiData,
+      if (result['is_valid_plant'] == false) {
+        throw Exception(
+          result['message'] ??
+              "Hệ thống phát hiện đây không phải là thực vật. Vui lòng chụp ảnh lá cây hoặc cây cảnh!",
         );
       }
+
+      final String rawPred = (result['prediction'] ?? 'Cây cảnh').toString();
+      final String prediction = rawPred.contains('___')
+          ? rawPred.split('___').last.replaceAll('_', ' ').trim()
+          : rawPred.replaceAll('_', ' ').trim();
+      final double aiConf = (result['confidence'] as num?)?.toDouble() ?? 88.0;
+
+      Map<String, dynamic> plantWikiData = {};
+      if (result['plants_map'] is Map && result['plants_map'][prediction] != null) {
+        plantWikiData = Map<String, dynamic>.from(result['plants_map'][prediction]);
+      } else if (result['plant_details'] is Map) {
+        plantWikiData = Map<String, dynamic>.from(result['plant_details']);
+      }
+
+      final String nameVi = (plantWikiData['name_vi'] ?? result['name_vi'] ?? prediction).toString();
+      if (plantWikiData.isEmpty) {
+        plantWikiData = {
+          'name_vi': nameVi,
+          'scientific_name': prediction,
+          'light': 'Đang cập nhật...',
+          'water_frequency': 'Đang cập nhật...',
+          'difficulty': 'Đang cập nhật...',
+          'plant_type': 'Đang cập nhật...',
+          'family': 'Đang cập nhật...',
+          'short_desc': 'Đang cập nhật...',
+        };
+      }
+
+      final int freqDays = _extractWaterFrequencyDays(plantWikiData['water_frequency']);
+      final String plantType = plantWikiData['plant_type'] ?? 'Đang cập nhật...';
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _statusText = null;
+      });
+
+      if (_imageBytes != null && (_uploadedImageUrl == null || _uploadedImageUrl!.isEmpty)) {
+        StorageService.uploadPlantPhoto(bytes: _imageBytes!, plantName: nameVi).then((url) {
+          if (url != null && url.isNotEmpty && mounted) {
+            _uploadedImageUrl = url;
+          }
+        }).catchError((_) {});
+      }
+
+      _showSaveToGardenBottomSheet(
+        nameVi: nameVi,
+        scientificName: prediction,
+        confidence: aiConf,
+        plantType: plantType,
+        freqDays: freqDays,
+        wikiData: plantWikiData,
+      );
     } catch (e) {
       if (mounted) {
         setState(() {

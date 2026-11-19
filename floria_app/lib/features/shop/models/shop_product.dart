@@ -15,6 +15,8 @@ class ShopProduct {
   final int soldCount;
   final int reviewCount;
   final bool inStock;
+  final int stock;
+  final bool visible;
 
   ShopProduct({
     required this.id,
@@ -33,9 +35,16 @@ class ShopProduct {
     this.soldCount = 0,
     this.reviewCount = 0,
     this.inStock = true,
+    this.stock = 25,
+    this.visible = true,
   });
 
+  bool get isOutOfStock => !inStock || stock <= 0;
+
   factory ShopProduct.fromFirestore(Map<String, dynamic> data, String docId) {
+    final parsedInStock = data['inStock'] != false;
+    final parsedStock = (data['stock'] as num?)?.toInt() ?? (parsedInStock ? 25 : 0);
+
     return ShopProduct(
       id: docId,
       name: data['name'] ?? '',
@@ -55,7 +64,9 @@ class ShopProduct {
       rating: (data['rating'] as num?)?.toDouble() ?? 5.0,
       soldCount: (data['soldCount'] as num?)?.toInt() ?? 0,
       reviewCount: (data['reviewCount'] as num?)?.toInt() ?? 0,
-      inStock: data['inStock'] ?? true,
+      inStock: parsedInStock && parsedStock > 0,
+      stock: parsedStock,
+      visible: data['visible'] != false,
     );
   }
 
@@ -76,6 +87,8 @@ class ShopProduct {
     int? soldCount,
     int? reviewCount,
     bool? inStock,
+    int? stock,
+    bool? visible,
   }) {
     return ShopProduct(
       id: id ?? this.id,
@@ -94,6 +107,8 @@ class ShopProduct {
       soldCount: soldCount ?? this.soldCount,
       reviewCount: reviewCount ?? this.reviewCount,
       inStock: inStock ?? this.inStock,
+      stock: stock ?? this.stock,
+      visible: visible ?? this.visible,
     );
   }
 
@@ -140,6 +155,8 @@ class ShopProduct {
       'soldCount': soldCount,
       'reviewCount': reviewCount,
       'inStock': inStock,
+      'stock': stock,
+      'visible': visible,
     };
   }
 

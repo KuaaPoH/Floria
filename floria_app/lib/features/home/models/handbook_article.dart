@@ -1,21 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+DateTime _parseFlexibleHandbookDate(dynamic raw) {
+  if (raw is Timestamp) return raw.toDate();
+  if (raw is DateTime) return raw;
+  if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
+  if (raw is String && raw.trim().isNotEmpty) {
+    return DateTime.tryParse(raw.trim()) ?? DateTime.now();
+  }
+  return DateTime.now();
+}
+
 class HandbookBlock {
-  final String type; // 'text', 'image', 'tip'
+  final String type; // 'text', 'image', 'tip', 'heading', 'quote', 'warning', 'bullets', 'numbered'
   final String value;
   final String? caption;
+  final List<String> items;
 
   HandbookBlock({
     required this.type,
     required this.value,
     this.caption,
+    this.items = const [],
   });
 
   factory HandbookBlock.fromMap(Map<String, dynamic> map) {
     return HandbookBlock(
-      type: map['type'] ?? 'text',
-      value: map['value'] ?? '',
-      caption: map['caption'],
+      type: (map['type'] ?? 'text').toString(),
+      value: (map['value'] ?? map['text'] ?? map['src'] ?? '').toString(),
+      caption: map['caption']?.toString(),
+      items: (map['items'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 
@@ -24,6 +37,7 @@ class HandbookBlock {
       'type': type,
       'value': value,
       if (caption != null) 'caption': caption,
+      if (items.isNotEmpty) 'items': items,
     };
   }
 }
@@ -38,6 +52,8 @@ class HandbookArticle {
   final String summary;
   final List<HandbookBlock> blocks;
   final DateTime createdAt;
+  final String status;
+  final bool visible;
 
   HandbookArticle({
     required this.id,
@@ -49,7 +65,11 @@ class HandbookArticle {
     required this.summary,
     required this.blocks,
     required this.createdAt,
+    this.status = 'published',
+    this.visible = true,
   });
+
+  bool get isPublished => status != 'draft' && visible;
 
   factory HandbookArticle.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -57,16 +77,19 @@ class HandbookArticle {
 
     return HandbookArticle(
       id: doc.id,
-      title: data['title'] ?? '',
-      category: data['category'] ?? 'Mẹo chăm cây',
-      readTime: data['readTime'] ?? '3 phút đọc',
-      author: data['author'] ?? 'Ban biên tập Floria',
-      coverImage: data['coverImage'] ?? '',
-      summary: data['summary'] ?? '',
+      title: (data['title'] ?? '').toString(),
+      category: (data['category'] ?? 'Mẹo chăm cây').toString(),
+      readTime: (data['readTime'] ?? '3 phút đọc').toString(),
+      author: (data['author'] ?? 'Ban biên tập Floria').toString(),
+      coverImage: (data['coverImage'] ?? data['cover'] ?? '').toString(),
+      summary: (data['summary'] ?? data['excerpt'] ?? '').toString(),
       blocks: rawBlocks
+          .whereType<Map>()
           .map((b) => HandbookBlock.fromMap(Map<String, dynamic>.from(b)))
           .toList(),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: _parseFlexibleHandbookDate(data['createdAt'] ?? data['publishedAt']),
+      status: (data['status'] ?? 'published').toString(),
+      visible: data['visible'] != false,
     );
   }
 
@@ -80,6 +103,8 @@ class HandbookArticle {
       'summary': summary,
       'blocks': blocks.map((b) => b.toMap()).toList(),
       'createdAt': Timestamp.fromDate(createdAt),
+      'status': status,
+      'visible': visible,
     };
   }
 }

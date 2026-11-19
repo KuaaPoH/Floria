@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
@@ -39,6 +40,55 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedGardenFilterId;
   late Future<CurrentWeatherData> _weatherFuture;
   bool _isHomeReady = false;
+
+  String _resolvePlantImageUrl(GardenPlant plant) {
+    final primary = plant.imageUrl?.trim() ?? '';
+    if (primary.isNotEmpty) {
+      return AppConstants.formatImageUrl(primary);
+    }
+    final wiki = (plant.wikiData['imageUrl'] ?? plant.wikiData['image_url'] ?? '').toString().trim();
+    return wiki.isNotEmpty ? AppConstants.formatImageUrl(wiki) : '';
+  }
+
+  Widget _buildPlantThumbnail(
+    BuildContext context,
+    GardenPlant plant, {
+    double? width,
+    required double height,
+    required BorderRadius borderRadius,
+    required double iconSize,
+  }) {
+    final c = context.colors;
+    final resolvedUrl = _resolvePlantImageUrl(plant);
+
+    Widget buildPlaceholder() => Container(
+          width: width,
+          height: height,
+          color: c.surfaceTint,
+          child: Icon(Icons.local_florist, color: c.primaryText, size: iconSize),
+        );
+
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: resolvedUrl.isNotEmpty
+          ? Image.network(
+              resolvedUrl,
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
+              loadingBuilder: (ctx, child, progress) {
+                if (progress == null) return child;
+                return ShimmerLoading(
+                  width: width ?? double.infinity,
+                  height: height,
+                  borderRadius: borderRadius,
+                );
+              },
+              errorBuilder: (ctx, err, stack) => buildPlaceholder(),
+            )
+          : buildPlaceholder(),
+    );
+  }
 
   @override
   void initState() {
@@ -430,9 +480,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return StreamBuilder<List<WeatherWidgetConfig>>(
       stream: WeatherWidgetService.streamConfigs(),
       builder: (context, snapshot) {
-        final config = WeatherWidgetService.getConfigForHour(snapshot.data, hour);
+        final config = WeatherWidgetService.findActiveConfigForHour(snapshot.data, hour);
+        if (config == null) {
+          return const SizedBox.shrink();
+        }
         // 1. Ảnh nền và câu thoại biên tập tùy biến lưu từ Firestore
-        final heroImage = config.heroImageUrl;
+        final heroImage = AppConstants.formatImageUrl(config.heroImageUrl);
         final mainTitle = config.mainTitle;
 
         return FutureBuilder<CurrentWeatherData>(
@@ -464,10 +517,12 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF2B382C),
                 borderRadius: BorderRadius.circular(24),
-                image: DecorationImage(
-                  image: NetworkImage(heroImage),
-                  fit: BoxFit.cover,
-                ),
+                image: heroImage.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(heroImage),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF364534).withValues(alpha: 0.18),
@@ -863,35 +918,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     children: [
                       // Thumbnail ảnh cây
-                      ClipRRect(
+                      _buildPlantThumbnail(
+                        context,
+                        plant,
+                        width: 50,
+                        height: 50,
                         borderRadius: BorderRadius.circular(12),
-                        child: plant.imageUrl != null && plant.imageUrl!.isNotEmpty
-                            ? Image.network(
-                                plant.imageUrl!,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (ctx, child, progress) {
-                                  if (progress == null) return child;
-                                  return const ShimmerLoading(
-                                    width: 50,
-                                    height: 50,
-                                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                                  );
-                                },
-                                errorBuilder: (ctx, err, stack) => Container(
-                                  width: 50,
-                                  height: 50,
-                                  color: c.surfaceTint,
-                                  child: Icon(Icons.local_florist, color: c.primaryText, size: 24),
-                                ),
-                              )
-                            : Container(
-                                width: 50,
-                                height: 50,
-                                color: c.surfaceTint,
-                                child: Icon(Icons.local_florist, color: c.primaryText, size: 24),
-                              ),
+                        iconSize: 24,
                       ),
                       const SizedBox(width: 12),
 
@@ -1168,33 +1201,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Ảnh chậu cây + Chip tình trạng sức khỏe (DUY NHẤT TÌNH TRẠNG SỨC KHỎE)
                         Stack(
                           children: [
-                            ClipRRect(
+                            _buildPlantThumbnail(
+                              context,
+                              plant,
+                              width: double.infinity,
+                              height: 125,
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
-                              child: plant.imageUrl != null && plant.imageUrl!.isNotEmpty
-                                  ? Image.network(
-                                      plant.imageUrl!,
-                                      height: 125,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      loadingBuilder: (ctx, child, progress) {
-                                        if (progress == null) return child;
-                                        return const ShimmerLoading(
-                                          width: double.infinity,
-                                          height: 125,
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(17)),
-                                        );
-                                      },
-                                      errorBuilder: (ctx, err, stack) => Container(
-                                        height: 125,
-                                        color: c.surfaceTint,
-                                        child: Icon(Icons.local_florist, color: c.primaryText, size: 36),
-                                      ),
-                                    )
-                                  : Container(
-                                      height: 125,
-                                      color: c.surfaceTint,
-                                      child: Icon(Icons.local_florist, color: c.primaryText, size: 36),
-                                    ),
+                              iconSize: 36,
                             ),
                             Positioned(
                               top: 8,
@@ -1345,11 +1358,40 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Stream danh sách bài viết từ CSDL Firestore
+        // Stream danh sách bài viết từ CSDL Firestore (chỉ hiển thị bài đang xuất bản)
         StreamBuilder<List<HandbookArticle>>(
           stream: HandbookService.streamArticles(),
           builder: (context, snapshot) {
-            final articles = snapshot.data ?? HandbookService.defaultSampleArticles;
+            final articles = snapshot.hasData
+                ? snapshot.data!
+                : HandbookService.defaultSampleArticles;
+
+            if (articles.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.border),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.menu_book_outlined, color: c.textMuted, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        context.tr(
+                          "Hiện chưa có bài viết cẩm nang nào được xuất bản.",
+                          "No handbook articles are currently published.",
+                        ),
+                        style: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -1382,7 +1424,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Stack(
                               children: [
                                 Image.network(
-                                  article.coverImage,
+                                  AppConstants.formatImageUrl(article.coverImage),
                                   height: 130,
                                   width: double.infinity,
                                   fit: BoxFit.cover,
@@ -1600,7 +1642,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.network(
-                          article.coverImage,
+                          AppConstants.formatImageUrl(article.coverImage),
                           width: double.infinity,
                           height: 200,
                           fit: BoxFit.cover,
@@ -1638,36 +1680,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.network(
-                                    block.value,
-                                    width: double.infinity,
-                                    height: 180,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (ctx, err, stack) => Container(
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.network(
+                                      AppConstants.formatImageUrl(block.value),
                                       width: double.infinity,
-                                      height: 140,
-                                      color: c.surfaceTint,
-                                      child: Icon(Icons.image_not_supported_outlined, color: c.textMuted),
+                                      height: 180,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (ctx, err, stack) => Container(
+                                        width: double.infinity,
+                                        height: 140,
+                                        color: c.surfaceTint,
+                                        child: Icon(Icons.image_not_supported_outlined, color: c.textMuted),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (block.caption != null && block.caption!.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    block.caption!,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11.5,
-                                      fontStyle: FontStyle.italic,
-                                      color: c.textMuted,
+                                  if (block.caption != null && block.caption!.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      block.caption!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontStyle: FontStyle.italic,
+                                        color: c.textMuted,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          );
-                        } else if (block.type == 'tip') {
+                              ),
+                            );
+                        } else if (block.type == 'tip' || block.type == 'info') {
                           // Khối mẹo hay nổi bật
                           return Container(
                             margin: const EdgeInsets.only(bottom: 14),
@@ -1685,6 +1727,77 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: c.isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
                                 height: 1.45,
                               ),
+                            ),
+                          );
+                        } else if (block.type == 'warning') {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2).withValues(alpha: c.isDark ? 0.2 : 1.0),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFFCA5A5).withValues(alpha: 0.6)),
+                            ),
+                            child: Text(
+                              block.value,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: c.isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
+                                height: 1.45,
+                              ),
+                            ),
+                          );
+                        } else if (block.type == 'heading') {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6, bottom: 10),
+                            child: Text(
+                              block.value,
+                              style: GoogleFonts.inter(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w800,
+                                color: c.textPrimary,
+                                height: 1.35,
+                              ),
+                            ),
+                          );
+                        } else if (block.type == 'quote') {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              border: Border(left: BorderSide(color: c.primary, width: 3.5)),
+                              color: c.surfaceMuted,
+                            ),
+                            child: Text(
+                              block.value,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontStyle: FontStyle.italic,
+                                color: c.textSecondary,
+                                height: 1.5,
+                              ),
+                            ),
+                          );
+                        } else if ((block.type == 'bullets' || block.type == 'numbered') && block.items.isNotEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: List.generate(block.items.length, (idx) {
+                                final prefix = block.type == 'numbered' ? '${idx + 1}. ' : '• ';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 5),
+                                  child: Text(
+                                    '$prefix${block.items[idx]}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: c.textSecondary,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                );
+                              }),
                             ),
                           );
                         } else {

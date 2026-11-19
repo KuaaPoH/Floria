@@ -13,6 +13,7 @@ import 'address_payment_screen.dart';
 import 'settings_screen.dart';
 import 'support_center_screen.dart';
 import 'watering_reminders_screen.dart';
+import '../../history/providers/history_provider.dart';
 import '../../history/screens/history_screen.dart';
 import '../../shop/screens/order_history_screen.dart';
 import '../models/floria_avatar_preset.dart';
@@ -784,34 +785,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: c.isDark ? c.surfaceTint : const Color(0xFFE5F4EA),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            context.tr('+120 điểm', '+120 pts'),
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: c.primaryText,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      context.tr(
-                        'Bạn đã hoàn thành 5 lần tưới đúng giờ, 2 lần quét lá và được tặng thêm điểm để đổi ưu đãi giảm giá.',
-                        'You completed 5 on-time waterings, 2 plant scans and earned reward points for discounts.',
-                      ),
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: c.textMuted,
-                        height: 1.5,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final weekStart = DateTime.now().subtract(const Duration(days: 7));
+                        final wateredThisWeek = gardenProvider.plants
+                            .where((p) => p.lastWatered.isAfter(weekStart))
+                            .length;
+                        final scansThisWeek = Provider.of<HistoryProvider>(context)
+                            .allItems
+                            .where((h) => h.timestamp.isAfter(weekStart))
+                            .length;
+                        return Text(
+                          context.tr(
+                            'Bạn đã hoàn thành $wateredThisWeek lần tưới cây và $scansThisWeek lần quét kiểm tra lá trong 7 ngày qua.',
+                            'You completed $wateredThisWeek waterings and $scansThisWeek leaf scans in the last 7 days.',
+                          ),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: c.textMuted,
+                            height: 1.5,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

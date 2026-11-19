@@ -1,29 +1,32 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
-import "./globals.css";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
-  subsets: ["latin", "vietnamese"],
-});
+import type { ReactNode } from "react";
+import "@/styles.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Floria — Hệ sinh thái Chăm sóc Cây trồng AI",
-  description: "Nền tảng nhận diện cây trồng, chẩn đoán bệnh lá và quản trị Floria.",
+  title: {
+    default: "Floria Admin — Botanical Management Platform",
+    template: "%s — Floria Admin",
+  },
+  description: "Floria Admin: quản trị AI nhận diện cây, chẩn đoán bệnh, từ điển thực vật và cửa hàng làm vườn.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="vi"
-      className={`${plusJakartaSans.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        {children}
+    <html lang="vi">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        />
+      </head>
+      <body>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -9,6 +9,8 @@ class WeatherWidgetConfig {
   final String heroImageUrl; // Đường dẫn ảnh nền chất lượng cao
   final int startHour; // Giờ bắt đầu áp dụng
   final int endHour; // Giờ kết thúc
+  final bool active; // Cho phép Admin bật/tắt hiển thị ngoài app
+  final int order;
 
   const WeatherWidgetConfig({
     required this.id,
@@ -18,18 +20,24 @@ class WeatherWidgetConfig {
     required this.heroImageUrl,
     required this.startHour,
     required this.endHour,
+    this.active = true,
+    this.order = 0,
   });
 
   factory WeatherWidgetConfig.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
+    final parsedStart = (data['startHour'] as num?)?.toInt() ?? 0;
+    final parsedEnd = (data['endHour'] as num?)?.toInt() ?? 24;
     return WeatherWidgetConfig(
       id: doc.id,
-      badgeText: data['badgeText'] ?? '',
-      mainTitle: data['mainTitle'] ?? '',
-      advice: data['advice'] ?? '',
-      heroImageUrl: data['heroImageUrl'] ?? '',
-      startHour: data['startHour'] ?? 0,
-      endHour: data['endHour'] ?? 24,
+      badgeText: (data['badgeText'] ?? '').toString(),
+      mainTitle: (data['mainTitle'] ?? '').toString(),
+      advice: (data['advice'] ?? '').toString(),
+      heroImageUrl: (data['heroImageUrl'] ?? '').toString(),
+      startHour: parsedStart,
+      endHour: parsedEnd,
+      active: data['active'] != false,
+      order: (data['order'] as num?)?.toInt() ?? parsedStart,
     );
   }
 
@@ -42,6 +50,8 @@ class WeatherWidgetConfig {
       'heroImageUrl': heroImageUrl,
       'startHour': startHour,
       'endHour': endHour,
+      'active': active,
+      'order': order,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }

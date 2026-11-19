@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../models/shop_product.dart';
@@ -31,6 +32,25 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _triggerAddToCart(ShopProduct product, ShopProvider provider) {
+    if (product.isOutOfStock) {
+      AppToast.show(
+        context,
+        context.tr('Sản phẩm tạm hết hàng.', 'This product is out of stock.'),
+        isError: true,
+      );
+      return;
+    }
+
+    final added = provider.addToCart(product);
+    if (!added) {
+      AppToast.show(
+        context,
+        context.tr('Đã đạt số lượng tối đa trong kho (${product.stock}).', 'Reached max stock (${product.stock}).'),
+        isError: true,
+      );
+      return;
+    }
+
     final sourceKey = _keyForProduct(product.id);
     setState(() => _justAddedIds.add(product.id));
     Future.delayed(const Duration(milliseconds: 900), () {
@@ -50,8 +70,6 @@ class _ShopScreenState extends State<ShopScreen> {
         });
       },
     );
-
-    provider.addToCart(product);
   }
 
   List<Map<String, String>> _getCategories(BuildContext context) => [
@@ -522,6 +540,26 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ),
                   ),
+                if (product.isOutOfStock)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFB91C1C).withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        context.tr('HẾT HÀNG', 'OUT OF STOCK'),
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
 
@@ -570,11 +608,18 @@ class _ShopScreenState extends State<ShopScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          '${context.tr('• Đã bán ', '• Sold ')}${product.soldCount}',
-                          style: GoogleFonts.inter(
-                            fontSize: 10.5,
-                            color: c.textMuted,
+                        Expanded(
+                          child: Text(
+                            product.isOutOfStock
+                                ? context.tr('• Hết hàng', '• Out of stock')
+                                : '${context.tr('• Đã bán ', '• Sold ')}${product.soldCount} · ${context.tr('Còn ', '')}${product.stock}',
+                            style: GoogleFonts.inter(
+                              fontSize: 10.5,
+                              fontWeight: product.isOutOfStock ? FontWeight.w600 : FontWeight.w400,
+                              color: product.isOutOfStock ? const Color(0xFFBA1A1A) : c.textMuted,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -619,19 +664,25 @@ class _ShopScreenState extends State<ShopScreen> {
                             duration: const Duration(milliseconds: 220),
                             padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
-                              color: _justAddedIds.contains(product.id)
-                                  ? const Color(0xFF2E6F40)
-                                  : c.surfaceTint,
+                              color: product.isOutOfStock
+                                  ? c.surfaceMuted
+                                  : _justAddedIds.contains(product.id)
+                                      ? const Color(0xFF2E6F40)
+                                      : c.surfaceTint,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              _justAddedIds.contains(product.id)
-                                  ? Icons.check_rounded
-                                  : Icons.add_shopping_cart_rounded,
+                              product.isOutOfStock
+                                  ? Icons.remove_shopping_cart_outlined
+                                  : _justAddedIds.contains(product.id)
+                                      ? Icons.check_rounded
+                                      : Icons.add_shopping_cart_rounded,
                               size: 16,
-                              color: _justAddedIds.contains(product.id)
-                                  ? Colors.white
-                                  : c.primaryText,
+                              color: product.isOutOfStock
+                                  ? c.textMuted
+                                  : _justAddedIds.contains(product.id)
+                                      ? Colors.white
+                                      : c.primaryText,
                             ),
                           ),
                         ),

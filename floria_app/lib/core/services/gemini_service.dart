@@ -27,6 +27,30 @@ class GeminiPlantResult {
   });
 }
 
+class GeminiDiseaseResult {
+  final bool isPlant;
+  final bool matchedDatabase;
+  final String prediction;
+  final String predictionVi;
+  final double confidence;
+  final String severity;
+  final String cause;
+  final List<String> treatmentSteps;
+  final String? rejectReason;
+
+  const GeminiDiseaseResult({
+    required this.isPlant,
+    required this.matchedDatabase,
+    required this.prediction,
+    required this.predictionVi,
+    required this.confidence,
+    required this.severity,
+    required this.cause,
+    required this.treatmentSteps,
+    this.rejectReason,
+  });
+}
+
 class GeminiService {
   static const String _prefKey = 'floria_gemini_api_key';
   static const String _prefModelKey = 'floria_gemini_model_name';
@@ -116,6 +140,133 @@ class GeminiService {
   static Future<bool> hasApiKey() async {
     final key = await getApiKey();
     return key != null && key.isNotEmpty;
+  }
+
+  /// Chẩn đoán bệnh lá cây bằng Google Gemini Multimodal (hỗ trợ cả 5 bệnh chuẩn & bệnh ngoài 5 loại)
+  static Future<GeminiDiseaseResult> diagnoseDiseaseWithImage({
+    required Uint8List imageBytes,
+    String? plantName,
+  }) async {
+    final apiKey = await getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception("Chưa cấu hình Google Gemini API Key.");
+    }
+
+    final modelName = await getModelName();
+    final promptText = '''
+Bạn là bác sĩ bệnh học cây trồng của ứng dụng Floria.
+${plantName != null && plantName.trim().isNotEmpty ? 'Cây đang được kiểm tra là: "$plantName".' : ''}
+Hãy quan sát kỹ ảnh lá/thân cây được cung cấp và thực hiện:
+
+1. KIỂM DUYỆT THỰC VẬT:
+- Nếu ảnh không phải thực vật (người, động vật, đồ vật, ảnh đen/mờ):
+Trả về JSON:
+{
+  "is_plant": false,
+  "reason": "Ảnh không phải thực vật"
+}
+
+2. NẾU LÀ THỰC VẬT:
+Đối chiếu triệu chứng với 5 nhóm chuẩn trong CSDL:
+- Healthy (Lá khỏe mạnh)
+- Anthracnose (Bệnh thán thư)
+- Bacterial_Blight (Bệnh cháy bìa lá / héo rũ vi khuẩn)
+- Leaf_Spot (Bệnh đốm lá)
+- Powdery_Mildew (Bệnh phấn trắng)
+
+- Nếu khớp 1 trong 5 nhóm trên: đặt "matched_database": true và "prediction" đúng tên tiếng Anh trong 5 nhóm trên.
+- Nếu là bệnh khác ngoài 5 nhóm trên (ví dụ: rỉ sắt, rệp sáp, nhện đỏ, vàng lá sinh lý, thiếu dinh dưỡng, thối nhũn...): đặt "matched_database": false và "prediction" là tên bệnh ngắn gọn.
+
+Trả về duy nhất một khối JSON hợp lệ:
+{
+  "is_plant": true,
+  "matched_database": true hoặc false,
+  "prediction": "<Tên chuẩn trong 5 nhóm hoặc tên bệnh thực tế>",
+  "prediction_vi": "<Tên bệnh bằng tiếng Việt>",
+  "confidence": <số từ 75 đến 98>,
+  "severity": "<Bình thường | Cảnh báo | Nguy hiểm>",
+  "cause": "<Nguyên nhân ngắn gọn 1-2 câu>",
+  "treatment_steps": ["<Bước 1>", "<Bước 2>", "<Bước 3>"]
+}
+''';
+
+    final content = [
+      Content.multi([
+        TextPart(promptText),
+        DataPart('image/jpeg', imageBytes),
+      ]),
+    ];
+
+    String text = '';
+    final modelsToTry = [
+      modelName,
+      ...fallbackModels.where((m) => m != modelName),
+    ];
+
+    dynamic lastError;
+    for (final mName in modelsToTry) {
+      try {
+        final model = GenerativeModel(
+          model: mName,
+          apiKey: apiKey,
+          generationConfig: GenerationConfig(
+            temperature: 0.15,
+            topK: 32,
+            topP: 0.9,
+          ),
+        );
+        final response = await model.generateContent(content);
+        if (response.text != null && response.text!.trim().isNotEmpty) {
+          text = response.text!.trim();
+          break;
+        }
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (text.isEmpty) {
+      throw Exception("Không thể kết nối Gemini để chẩn đoán bệnh: $lastError");
+    }
+
+    String jsonStr = text;
+    if (jsonStr.contains('```json')) {
+      jsonStr = jsonStr.split('```json')[1].split('```')[0].trim();
+    } else if (jsonStr.contains('```')) {
+      jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
+    }
+
+    final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+    final bool isPlant = decoded['is_plant'] != false;
+    if (!isPlant) {
+      return GeminiDiseaseResult(
+        isPlant: false,
+        matchedDatabase: false,
+        prediction: 'Không phải cây',
+        predictionVi: 'Không phải cây',
+        confidence: 0,
+        severity: 'Cảnh báo',
+        cause: '',
+        treatmentSteps: const [],
+        rejectReason: decoded['reason']?.toString(),
+      );
+    }
+
+    final rawSteps = decoded['treatment_steps'];
+    final List<String> steps = rawSteps is List
+        ? rawSteps.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList()
+        : const [];
+
+    return GeminiDiseaseResult(
+      isPlant: true,
+      matchedDatabase: decoded['matched_database'] == true,
+      prediction: (decoded['prediction'] ?? 'Unknown').toString(),
+      predictionVi: (decoded['prediction_vi'] ?? decoded['prediction'] ?? 'Đang cập nhật').toString(),
+      confidence: (decoded['confidence'] as num?)?.toDouble() ?? 88.0,
+      severity: (decoded['severity'] ?? 'Cảnh báo').toString(),
+      cause: (decoded['cause'] ?? '').toString(),
+      treatmentSteps: steps,
+    );
   }
 
   /// Nhận diện cây bằng hình ảnh + Miêu tả nhận dạng của người dùng

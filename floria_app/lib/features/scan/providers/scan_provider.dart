@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/gemini_service.dart';
 
 class ScanProvider extends ChangeNotifier {
   final Dio _dio = Dio();
-  
+
   bool _isLoading = false;
   String? _errorMessage;
   Map<String, dynamic>? _scanResult;
@@ -79,7 +80,44 @@ class ScanProvider extends ChangeNotifier {
         token = await user.getIdToken();
       } catch (_) {}
 
-      // Chuyen doi anh sang MultipartFile tu mang bytes (hoat dong tren moi nen tang Web/Mobile)
+      // 1. Ưu tiên nhận diện bằng Google Gemini Multimodal để tránh đoán nhầm cây ngoài 40 loài
+      if (await GeminiService.hasApiKey()) {
+        try {
+          final geminiRes = await GeminiService.identifyPlantWithHint(
+            imageBytes: _webImageBytes!,
+            userHint: '',
+          );
+          if (!geminiRes.isPlant) {
+            _scanResult = {
+              'model_used': 'gemini-multimodal',
+              'prediction': 'Không phải cây',
+              'confidence': 0.0,
+              'top_3': [],
+              'is_valid_plant': false,
+              'is_in_database': false,
+              'message': geminiRes.rejectReason ??
+                  'Hệ thống phát hiện đây không phải là thực vật. Vui lòng chụp ảnh lá cây hoặc cây cảnh!',
+            };
+          } else {
+            _scanResult = {
+              'model_used': 'gemini-multimodal',
+              'prediction': geminiRes.scientificName,
+              'name_vi': geminiRes.nameVi,
+              'confidence': geminiRes.confidence,
+              'is_valid_plant': true,
+              'is_in_database': geminiRes.matchedDatabase,
+              'short_desc': geminiRes.shortDesc,
+            };
+          }
+          _isLoading = false;
+          notifyListeners();
+          return;
+        } catch (e) {
+          debugPrint('LLM lỗi, chuyển sang AI Engine nội bộ: $e');
+        }
+      }
+
+      // 2. Fallback sang Spring Boot + AI Engine (ONNX + CLIP) nếu không có key hoặc Gemini lỗi
       final MultipartFile multipartFile = MultipartFile.fromBytes(
         _webImageBytes!,
         filename: _selectedImage!.name,
@@ -116,7 +154,8 @@ class ScanProvider extends ChangeNotifier {
     } catch (e) {
       if (e is DioException) {
         // Xóa Mock Data để hiển thị LỖI THẬT
-        _errorMessage = "Lỗi kết nối từ App: ${e.message} - Chi tiết: ${e.response?.data}";
+        _errorMessage =
+            "Lỗi kết nối từ App: ${e.message} - Chi tiết: ${e.response?.data}";
       } else {
         _errorMessage = "Loi: $e";
       }
@@ -159,6 +198,55 @@ class ScanProvider extends ChangeNotifier {
         } catch (_) {}
       }
 
+      // 1. Ưu tiên chẩn đoán bằng Google Gemini Multimodal (nhận diện được cả bệnh ngoài 5 loại)
+      if (await GeminiService.hasApiKey()) {
+        try {
+          final geminiRes = await GeminiService.diagnoseDiseaseWithImage(
+            imageBytes: _webImageBytes!,
+            plantName: plantName,
+          );
+          if (!geminiRes.isPlant) {
+            _scanResult = {
+              'model_used': 'gemini-multimodal',
+              'prediction': 'Không phải cây',
+              'prediction_vi': 'Không phải thực vật',
+              'confidence': 0.0,
+              'top_3': [],
+              'is_valid_plant': false,
+              'is_in_database': false,
+              'message': geminiRes.rejectReason ??
+                  'Hệ thống phát hiện đây không phải là thực vật!',
+            };
+          } else {
+            _scanResult = {
+              'model_used': 'gemini-multimodal',
+              'prediction': geminiRes.prediction,
+              'prediction_vi': geminiRes.predictionVi,
+              'confidence': geminiRes.confidence,
+              if (geminiRes.matchedDatabase) 'severity': geminiRes.severity,
+              if (geminiRes.matchedDatabase) 'severity_vi': geminiRes.severity,
+              if (geminiRes.matchedDatabase) 'cause': geminiRes.cause,
+              if (geminiRes.matchedDatabase) 'treatment_steps': geminiRes.treatmentSteps,
+              'is_valid_plant': true,
+              'is_in_database': geminiRes.matchedDatabase,
+              'top_3': [
+                {
+                  'class': geminiRes.prediction,
+                  'name_vi': geminiRes.predictionVi,
+                  'confidence': geminiRes.confidence,
+                },
+              ],
+            };
+          }
+          _isLoading = false;
+          notifyListeners();
+          return;
+        } catch (e) {
+          debugPrint('Gemini chẩn đoán bệnh lỗi, chuyển sang AI Engine: $e');
+        }
+      }
+
+      // 2. Fallback sang Spring Boot + AI Engine (/api/diagnose-disease)
       final MultipartFile multipartFile = MultipartFile.fromBytes(
         _webImageBytes!,
         filename: _selectedImage!.name,
@@ -192,13 +280,56 @@ class ScanProvider extends ChangeNotifier {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        _scanResult = Map<String, dynamic>.from(response.data);
+        final result = Map<String, dynamic>.from(response.data);
+        final bool isValidPlant = result['is_valid_plant'] != false;
+        final double conf = (result['confidence'] as num?)?.toDouble() ?? 0.0;
+        final bool isInDb = result['is_in_database'] != false && conf >= 70.0;
+
+        // Chỉ fallback sang Gemini khi AI Engine xác nhận là cây nhưng độ tin cậy < 50% (ngoài 40 loài)
+        if (isValidPlant && !isInDb && _webImageBytes != null) {
+          try {
+            if (await GeminiService.hasApiKey()) {
+              final geminiRes = await GeminiService.identifyPlantWithHint(
+                imageBytes: _webImageBytes!,
+                userHint: '',
+              );
+              if (!geminiRes.isPlant) {
+                result['is_valid_plant'] = false;
+                result['message'] =
+                    geminiRes.rejectReason ??
+                    'Hệ thống phát hiện đây không phải là thực vật.';
+              } else {
+                result['prediction'] = geminiRes.scientificName;
+                result['name_vi'] = geminiRes.nameVi;
+                result['confidence'] = geminiRes.confidence;
+                result['is_in_database'] = geminiRes.matchedDatabase;
+                result['short_desc'] = geminiRes.shortDesc;
+                result['top_3'] = [
+                  {
+                    'class': geminiRes.scientificName,
+                    'name_vi': geminiRes.nameVi,
+                    'confidence': geminiRes.confidence,
+                  },
+                ];
+                if (!geminiRes.matchedDatabase) {
+                  result.remove('plant_details');
+                  result.remove('plants_map');
+                }
+              }
+            }
+          } catch (e) {
+            debugPrint('Lỗi fallback Gemini khi quét cây < 50%: $e');
+          }
+        }
+
+        _scanResult = result;
       } else {
         _errorMessage = "Lỗi phản hồi máy chủ: Mã ${response.statusCode}";
       }
     } catch (e) {
       if (e is DioException) {
-        _errorMessage = "Lỗi kết nối từ App: ${e.message} - Chi tiết: ${e.response?.data}";
+        _errorMessage =
+            "Lỗi kết nối từ App: ${e.message} - Chi tiết: ${e.response?.data}";
       } else {
         _errorMessage = "Lỗi chẩn đoán bệnh: $e";
       }

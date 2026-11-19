@@ -30,8 +30,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isPlacingOrder = false;
 
   String? _appliedVoucherCode;
+  String? _appliedVoucherDocId;
   String? _appliedVoucherDesc;
   int _discountAmount = 0;
+  List<Map<String, dynamic>> _availableVouchers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVouchers();
+  }
+
+  Future<void> _loadVouchers() async {
+    final sp = Provider.of<ShopProvider>(context, listen: false);
+    final list = await sp.fetchActiveVouchers();
+    if (mounted) {
+      setState(() => _availableVouchers = list);
+    }
+  }
 
   @override
   void dispose() {
@@ -80,6 +96,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     setState(() {
       _appliedVoucherCode = res['code']?.toString();
+      _appliedVoucherDocId = res['voucherDocId']?.toString();
       _appliedVoucherDesc = res['description']?.toString();
       _discountAmount = (res['discountAmount'] as int?) ?? 0;
     });
@@ -92,6 +109,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _removeVoucher() {
     setState(() {
       _appliedVoucherCode = null;
+      _appliedVoucherDocId = null;
       _appliedVoucherDesc = null;
       _discountAmount = 0;
       _voucherCtrl.clear();
@@ -152,6 +170,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         paymentLabel: paymentLabel,
         itemsToOrder: widget.selectedItems,
         discountAmount: _discountAmount,
+        voucherCode: _appliedVoucherCode,
+        voucherDocId: _appliedVoucherDocId,
       );
       if (!mounted) return;
       setState(() => _isPlacingOrder = false);
@@ -159,7 +179,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (createdOrder == null) {
         AppToast.show(
           context,
-          context.tr('Không thể tạo đơn hàng. Vui lòng thử lại!', 'Could not create order. Please try again!'),
+          shopProvider.errorMessage ??
+              context.tr('Không thể tạo đơn hàng. Vui lòng thử lại!', 'Could not create order. Please try again!'),
           isError: true,
         );
         return;
@@ -585,6 +606,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           ],
                         ),
+                      if (_appliedVoucherCode == null && _availableVouchers.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: _availableVouchers.map((v) {
+                            final code = v['code']?.toString() ?? '';
+                            final value = (v['value'] as int?) ?? 0;
+                            final type = v['type']?.toString() ?? 'fixed';
+                            final badgeText = type == 'percent'
+                                ? '$code (-$value%)'
+                                : '$code (-${shopProvider.formatCurrency(value)})';
+                            return ActionChip(
+                              avatar: Icon(Icons.local_offer_rounded, size: 14, color: c.primary),
+                              label: Text(
+                                badgeText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.primaryText,
+                                ),
+                              ),
+                              backgroundColor: c.surfaceTint,
+                              side: BorderSide(color: c.primary.withValues(alpha: 0.25)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              onPressed: _isCheckingVoucher
+                                  ? null
+                                  : () {
+                                      _voucherCtrl.text = code;
+                                      _applyVoucher(shopProvider);
+                                    },
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ],
                   ),
                 ),

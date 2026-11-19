@@ -6,19 +6,20 @@ class HandbookService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String collectionName = 'PlantHandbook';
 
-  /// Stream danh sách bài viết cẩm nang từ Firestore
+  /// Stream danh sách bài viết cẩm nang đang xuất bản từ Firestore
   static Stream<List<HandbookArticle>> streamArticles() {
-    return _firestore
-        .collection(collectionName)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
+    return _firestore.collection(collectionName).snapshots().map((snapshot) {
       if (snapshot.docs.isEmpty) {
         // Tự động seed dữ liệu mẫu vào Firestore nếu chưa có
         seedSampleArticlesIfNeeded();
         return defaultSampleArticles;
       }
-      return snapshot.docs.map((doc) => HandbookArticle.fromFirestore(doc)).toList();
+      final published = snapshot.docs
+          .map((doc) => HandbookArticle.fromFirestore(doc))
+          .where((article) => article.isPublished)
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return published;
     });
   }
 

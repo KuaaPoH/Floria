@@ -60,7 +60,10 @@ try:
     clip_model.eval()
     
     # Ma hoa san (cache) dac trung van ban 1 lan duy nhat khi khoi dong
-    clip_prompts = ["a photo of a plant, leaf, tree, or flower", "a photo of an animal, human, or random object"]
+    clip_prompts = [
+        "a photo of a plant, leaf, tree, flower, crop, foliage, or potted plant",
+        "a photo of an animal, human, or random object",
+    ]
     text_inputs = clip_processor(text=clip_prompts, return_tensors="pt", padding=True)
     with torch.inference_mode():
         t_out = clip_model.get_text_features(**text_inputs)
@@ -148,8 +151,8 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("tf_effic
                 logits = logit_scale * (image_features @ cached_text_features.T)
                 probs = logits.softmax(dim=-1).cpu().numpy()[0]
             
-            # Neu xac suat cua "animal, human, or random object" (index 1) lon hon "plant" (index 0)
-            if probs[1] > 0.5:
+            # Chỉ chặn khi CLIP chắc chắn (> 70%) không phải thực vật, tránh lọc nhầm cây có nền phức tạp
+            if probs[1] > 0.70:
                 return {
                     "model_used": model_name,
                     "prediction": "Không phải cây",
@@ -184,9 +187,9 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("tf_effic
         predicted_class = top3_results[0]["class"]
         top_confidence = top3_results[0]["confidence"]
         
-        # Neu do tin cay >= 50%: thuoc 40 loai trong CSDL
-        # Neu < 50%: CLIP da xac nhan day la cay, nhung loai cay nay nam ngoai 40 loai CSDL
-        is_in_database = top_confidence >= 50.0
+        # Neu do tin cay >= 70%: thuoc 40 loai trong CSDL
+        # Neu < 70%: CLIP da xac nhan day la cay, nhung kha nang cao nam ngoai 40 loai CSDL
+        is_in_database = top_confidence >= 70.0
         
         return {
             "model_used": model_name,
@@ -352,6 +355,7 @@ async def predict_disease(file: UploadFile = File(...)):
             "cause": meta["cause"],
             "treatment_steps": meta["treatment"],
             "is_valid_plant": True,
+            "is_in_database": pred_conf >= 50.0,
             "success": True,
             "message": "Chẩn đoán bệnh thành công"
         }

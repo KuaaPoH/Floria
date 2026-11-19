@@ -283,7 +283,18 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                         ),
                                         InkWell(
-                                          onTap: () => shopProvider.addToCart(p, quantity: 1),
+                                          onTap: () {
+                                            final added = shopProvider.addToCart(p, quantity: 1);
+                                            if (!added) {
+                                              AppToast.show(
+                                                context,
+                                                p.isOutOfStock
+                                                    ? context.tr('Sản phẩm hiện đã hết hàng.', 'This product is out of stock.')
+                                                    : context.tr('Đã đạt số lượng tối đa còn trong kho (${p.stock}).', 'Reached maximum stock (${p.stock}).'),
+                                                isError: true,
+                                              );
+                                            }
+                                          },
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                             child: Icon(Icons.add, size: 16, color: c.textPrimary),

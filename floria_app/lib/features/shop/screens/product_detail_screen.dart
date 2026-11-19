@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../models/shop_product.dart';
 import '../providers/shop_provider.dart';
@@ -244,6 +245,44 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ],
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  // Trạng thái tồn kho thực tế
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: p.isOutOfStock
+                          ? const Color(0xFFFEE2E2)
+                          : (p.stock <= 5 ? const Color(0xFFFEF3C7) : c.surfaceTint),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          p.isOutOfStock ? Icons.inventory_2_outlined : Icons.inventory_2_rounded,
+                          size: 14,
+                          color: p.isOutOfStock
+                              ? const Color(0xFFB91C1C)
+                              : (p.stock <= 5 ? const Color(0xFFB45309) : c.primary),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          p.isOutOfStock
+                              ? context.tr("Tạm hết hàng", "Out of stock")
+                              : p.stock <= 5
+                                  ? context.tr("Sắp hết hàng (còn ${p.stock} sản phẩm)", "Low stock (${p.stock} left)")
+                                  : context.tr("Còn ${p.stock} sản phẩm trong kho", "${p.stock} in stock"),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: p.isOutOfStock
+                                ? const Color(0xFFB91C1C)
+                                : (p.stock <= 5 ? const Color(0xFFB45309) : c.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Divider(color: c.border),
                   const SizedBox(height: 16),
@@ -420,9 +459,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       icon: Icon(Icons.add_rounded, size: 18, color: c.primary),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       constraints: const BoxConstraints(),
-                      onPressed: () {
-                        setState(() => _quantity++);
-                      },
+                      onPressed: p.isOutOfStock
+                          ? null
+                          : () {
+                              if (_quantity >= p.stock) {
+                                AppToast.show(
+                                  context,
+                                  context.tr('Số lượng tối đa còn trong kho là ${p.stock}.', 'Maximum stock available is ${p.stock}.'),
+                                  isError: true,
+                                );
+                                return;
+                              }
+                              setState(() => _quantity++);
+                            },
                     ),
                   ],
                 ),
@@ -431,10 +480,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
               // 2. Nút nhỏ: Thêm vào giỏ hàng (kèm hiệu ứng bay vào giỏ)
               Tooltip(
-                message: context.tr('Thêm vào giỏ hàng', 'Add to cart'),
+                message: p.isOutOfStock
+                    ? context.tr('Tạm hết hàng', 'Out of stock')
+                    : context.tr('Thêm vào giỏ hàng', 'Add to cart'),
                 child: InkWell(
                   key: _addButtonKey,
                   onTap: () {
+                    if (p.isOutOfStock) {
+                      AppToast.show(
+                        context,
+                        context.tr('Sản phẩm hiện đã hết hàng.', 'This product is out of stock.'),
+                        isError: true,
+                      );
+                      return;
+                    }
+                    final added = shopProvider.addToCart(p, quantity: _quantity);
+                    if (!added) {
+                      AppToast.show(
+                        context,
+                        context.tr('Giỏ hàng đã đạt số lượng tối đa trong kho (${p.stock}).', 'Cart reached max available stock (${p.stock}).'),
+                        isError: true,
+                      );
+                      return;
+                    }
+
                     setState(() => _justAdded = true);
                     Future.delayed(const Duration(milliseconds: 900), () {
                       if (mounted) setState(() => _justAdded = false);
@@ -453,8 +522,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         });
                       },
                     );
-
-                    shopProvider.addToCart(p, quantity: _quantity);
                   },
                   borderRadius: BorderRadius.circular(14),
                   child: AnimatedContainer(
@@ -462,17 +529,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: _justAdded ? c.primary : c.surfaceTint,
+                      color: p.isOutOfStock
+                          ? c.surfaceMuted
+                          : (_justAdded ? c.primary : c.surfaceTint),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: _justAdded ? c.primary : c.primary.withValues(alpha: 0.3),
+                        color: p.isOutOfStock
+                            ? c.border
+                            : (_justAdded ? c.primary : c.primary.withValues(alpha: 0.3)),
                         width: 1.2,
                       ),
                     ),
                     child: Center(
                       child: Icon(
-                        _justAdded ? Icons.check_rounded : Icons.add_shopping_cart_rounded,
-                        color: _justAdded ? Colors.white : c.primary,
+                        p.isOutOfStock
+                            ? Icons.remove_shopping_cart_outlined
+                            : (_justAdded ? Icons.check_rounded : Icons.add_shopping_cart_rounded),
+                        color: p.isOutOfStock
+                            ? c.textMuted
+                            : (_justAdded ? Colors.white : c.primary),
                         size: 22,
                       ),
                     ),
@@ -486,16 +561,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: SizedBox(
                   height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      shopProvider.addToCart(p, quantity: _quantity);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const CartScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 20),
+                    onPressed: p.isOutOfStock
+                        ? null
+                        : () {
+                            final added = shopProvider.addToCart(p, quantity: _quantity);
+                            if (!added && !shopProvider.cart.containsKey(p.id)) {
+                              AppToast.show(
+                                context,
+                                context.tr('Sản phẩm không đủ số lượng trong kho.', 'Insufficient stock.'),
+                                isError: true,
+                              );
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const CartScreen()),
+                            );
+                          },
+                    icon: Icon(
+                      p.isOutOfStock ? Icons.block_rounded : Icons.flash_on_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     label: Text(
-                      context.tr("Mua ngay", "Buy Now"),
+                      p.isOutOfStock
+                          ? context.tr("Hết hàng", "Out of Stock")
+                          : context.tr("Mua ngay", "Buy Now"),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -504,6 +595,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.primary,
+                      disabledBackgroundColor: c.textMuted.withValues(alpha: 0.4),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -560,7 +652,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             }
 
             final docs = snapshot.data?.docs ?? [];
-            final sortedDocs = List<QueryDocumentSnapshot>.from(docs)
+            final visibleDocs = docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final status = (data['status'] ?? 'approved').toString().toLowerCase();
+              return status != 'hidden' && status != 'rejected';
+            }).toList();
+
+            final sortedDocs = List<QueryDocumentSnapshot>.from(visibleDocs)
               ..sort((a, b) {
                 final aData = a.data() as Map<String, dynamic>;
                 final bData = b.data() as Map<String, dynamic>;
@@ -786,6 +884,46 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ),
                                   );
                                 },
+                              ),
+                            ),
+                          ],
+                          if ((data['reply'] ?? '').toString().trim().isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: c.surfaceTint,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: c.primary.withValues(alpha: 0.2)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.support_agent_rounded, size: 15, color: c.primary),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        context.tr('Phản hồi từ Floria', 'Reply from Floria'),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: c.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    data['reply'].toString().trim(),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      color: c.textSecondary,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
