@@ -20,6 +20,7 @@ import '../../garden/screens/create_garden_screen.dart';
 import '../../chatbot/screens/ai_assistant_screen.dart';
 import '../models/disease_info.dart';
 import '../services/disease_service.dart';
+import '../../../core/services/ai_config_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -1811,7 +1812,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
             scanProvider,
             result?['prediction']?.toString() ?? '',
             null,
-            highlight: confidence < 50.0 || result?['is_in_database'] == false,
+            highlight:
+                confidence < AiConfigService.diseaseConfidenceThreshold ||
+                result?['is_in_database'] == false,
           ),
         ],
       );
@@ -2082,7 +2085,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
         ) ??
         100.0;
     final bool isMissingOrInvalid = widget.isDiseaseScan
-        ? (conf < 50.0 || scanProvider.scanResult?['is_in_database'] == false)
+        ? (conf < AiConfigService.diseaseConfidenceThreshold ||
+              scanProvider.scanResult?['is_in_database'] == false)
         : (data == null ||
               docId.isEmpty ||
               scanProvider.scanResult?['is_valid_plant'] == false);

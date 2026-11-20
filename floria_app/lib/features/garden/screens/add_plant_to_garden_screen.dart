@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/ai_config_service.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/storage_service.dart';
@@ -198,8 +199,8 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
     });
 
     try {
-      // 1. Ưu tiên Google Gemini Multimodal để nhận diện chính xác cả cây trong và ngoài 40 loài
-      if (_hasGeminiKey) {
+      // 1. Ưu tiên Google Gemini Multimodal (theo cấu hình Web Admin)
+      if (AiConfigService.preferGemini && _hasGeminiKey) {
         try {
           final geminiRes = await GeminiService.identifyPlantWithHint(
             imageBytes: _imageBytes!,

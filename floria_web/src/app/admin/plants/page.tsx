@@ -146,7 +146,7 @@ export default function PlantsPage() {
     <>
       <PageHeader
         title="Từ điển cây"
-        description={`${list.data?.length ?? 0} loài cây · đồng bộ với 40 lớp của mô hình nhận diện.`}
+        description={`${list.data?.length ?? 0} loài cây trong cơ sở dữ liệu Floria (bao gồm mô hình nhận diện & loài bổ sung).`}
         actions={
           canCreate && (
             <Button onClick={() => setEditing(null)}>

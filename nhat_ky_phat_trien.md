@@ -1396,3 +1396,36 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 *   **Báo cáo / Yêu cầu cập nhật loài cây & bệnh mới (`PlantRequests`)**:
     *   Thêm nút & modal báo cáo ở cuối màn hình kết quả quét ([diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/diagnosis_report_screen.dart)), tự upload ảnh lên Cloudinary và lưu vào Firestore collection `PlantRequests`.
     *   Gỡ bỏ dòng thông báo thừa `"Chưa có thông tin bách khoa..."` và phần hiển thị Top 3 khỏi màn hình kết quả quét.
+
+
+---
+
+## Ca làm việc tối 20/11 – rạng sáng 21/11/2026: Khắc Phục Loop Auth, Nối Thật AI Lab & Floria Assistant, Đồng Bộ Hai Chiều Với `AI_Engine` & `floria_app`
+
+### 1. Khắc phục lỗi Infinite Loop `/api/admin/auth/me` trên `floria_web`
+*   **Nguyên nhân**: `useEffect` trong [layout.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/layout.tsx) đặt `session` vào mảng dependencies trong khi `refreshSession()` ở [auth-store.ts](file:///d:/Plan/utrasupervip/floria_web/src/stores/auth-store.ts) luôn gọi `set({ session })` với object reference mới, tạo vòng lặp vô tận gây nguy cơ cháy quota Firestore.
+*   **Giải pháp**: Tách riêng effect chuyển hướng khi chưa đăng nhập và effect gọi `refreshSession()` đúng **1 lần duy nhất** khi mount layout; đồng thời bổ sung shallow equality check trong `useAuthStore` để không cập nhật state nếu thông tin phiên không đổi.
+
+### 2. Nối thật toàn diện phân hệ **AI Lab** (`/admin/ai-lab`) & Đồng bộ cấu hình
+*   **Đồng bộ Cấu hình AI (`SystemConfig/ai_config`)**:
+    *   [AI_Engine/main.py](file:///d:/Plan/utrasupervip/AI_Engine/main.py): Tích hợp đọc `SystemConfig/ai_config` từ Firestore (kèm TTL cache 5 phút trong RAM để tiết kiệm quota) và mở endpoint `POST /config/reload` để cập nhật nóng ngay khi Admin bấm Lưu; trả về thêm `clip_loaded`, `species_classes_count`, `disease_classes_count`, `latency_ms` và xác suất CLIP thật.
+    *   [ai_config_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/services/ai_config_service.dart) & [splash_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/splash/screens/splash_screen.dart): Đọc `SystemConfig/ai_config` 1 lần duy nhất lúc mở app (cache `SharedPreferences`), đồng bộ công tắc `preferGemini` và các ngưỡng `speciesConfidenceThreshold` / `diseaseConfidenceThreshold` sang [scan_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/providers/scan_provider.dart), [add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/add_plant_to_garden_screen.dart) và [diagnosis_report_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/scan/screens/diagnosis_report_screen.dart).
+    *   [ai-config-form.tsx](file:///d:/Plan/utrasupervip/floria_web/src/features/ai-lab/ai-config-form.tsx): Loại bỏ `Top-K`, chuyển các thông số gắn cứng với `.onnx` (`224 × 224 px`, `ImageNet mean/std`, `CPUExecutionProvider`) sang dạng **Read-only**.
+*   **Kiểm thử AI (AI Sandbox)**:
+    *   Nối thật với Python `AI_Engine` qua [ai/sandbox/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/ai/sandbox/route.ts), bổ sung tra cứu tên tiếng Việt từ `plants_info` cho cả kết quả chính và Top 3.
+    *   Thêm tùy chọn `localOnly` cho [image-uploader.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/shared/image-uploader.tsx) để đọc ảnh cục bộ trên trình duyệt, không tải ảnh test tạm lên Cloudinary.
+    *   Xoá các file mock thừa (`simulate.ts`, `model-cards.tsx`).
+*   **Duyệt yêu cầu cây (`PlantRequests`) & Kho ảnh Dataset trên Cloudinary (`TrainingDataset`)**:
+    *   [active-learning.tsx](file:///d:/Plan/utrasupervip/floria_web/src/features/ai-lab/active-learning.tsx) & [use-nav-badges.ts](file:///d:/Plan/utrasupervip/floria_web/src/hooks/use-nav-badges.ts): Nối trực tiếp với `PlantRequests`, tự động ẩn badge trên sidebar khi không có yêu cầu chờ duyệt.
+    *   Khi duyệt yêu cầu cây mới: Mở form điền đầy đủ thông tin `plants_info` (điền sẵn tên khoa học & tên tiếng Việt từ người dùng) và lưu vào Firestore `plants_info`.
+    *   [ai/dataset/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/ai/dataset/route.ts) & [ai/dataset/download/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/ai/dataset/download/route.ts): Lưu chỉ mục ảnh Cloudinary theo từng thư mục loài cây vào Firestore `TrainingDataset` (không lưu file trên ổ cứng), hỗ trợ xem trước ảnh, đổi tên thư mục, xoá ảnh và nén `.zip` tải về theo yêu cầu.
+*   **Phân tích (`ai/analytics/route.ts`)**: Thống kê thực tế từ `ScanHistory` & `PlantRequests` (có server cache 5 phút).
+
+### 3. Nối thật & Nâng cấp **Floria Assistant** (`/admin/assistant`)
+*   **Đồng bộ Cấu hình Trợ lý & Sản phẩm thật (`SystemConfig/assistant_config`)**:
+    *   [assistant/config/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/assistant/config/route.ts): Lưu Tên xưng hô, Giọng điệu, Model LLM mặc định (`defaultModel`), System Prompt, danh sách Guardrails (hỗ trợ thêm, sửa, xoá, bật/tắt) và danh sách `disabledProductIds` (bật/tắt quyền AI kê đơn từng sản phẩm trong `ShopProducts`).
+    *   [gemini_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/services/gemini_service.dart) & [shop_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/shop/providers/shop_provider.dart): Tách rule CSDL làm nguồn chính (fallback về rule local khi offline), đồng bộ danh sách `ShopProducts` thật (tôn trọng `visible`, `stock > 0` và `disabledProductIds`) và `defaultModel` từ Web Admin.
+*   **Kiểm thử trợ lý dạng Hộp thoại đa lượt ([assistant/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/assistant/page.tsx), [assistant/sandbox/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/assistant/sandbox/route.ts))**:
+    *   Hỗ trợ tạo hộp thoại mới, xoá hộp thoại, gửi tin nhắn đa lượt giữ nguyên ngữ cảnh (`history`), lưu lịch sử hộp thoại cục bộ trên trình duyệt.
+    *   Tự động ẩn raw tags `[RECOMMEND_PRODUCT]` / `[CARE_SCHEDULE]`, render thẻ Sản phẩm đề xuất kèm hình ảnh & giá từ `ShopProducts`, hiển thị chuẩn Markdown (`**in đậm**`, `` `code` ``, danh sách) và bỏ hiển thị tên model trong bong bóng chat.
+*   **Việt hoá giao diện**: Chuyển toàn bộ tên tab ở AI Lab và Floria Assistant sang tiếng Việt, cập nhật slogan động cho [plants/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/plants/page.tsx).

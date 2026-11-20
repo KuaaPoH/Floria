@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/gemini_service.dart';
 import '../../profile/models/user_checkout_models.dart';
 import '../models/order_model.dart';
 import '../models/shop_product.dart';
@@ -249,10 +250,7 @@ class ShopProvider extends ChangeNotifier {
             ? min(entry.value.quantity, latest.stock)
             : entry.value.quantity;
         if (clampedQty != entry.value.quantity) cartChanged = true;
-        _cart[entry.key] = CartItem(
-          product: latest,
-          quantity: clampedQty,
-        );
+        _cart[entry.key] = CartItem(product: latest, quantity: clampedQty);
       }
     }
     if (cartChanged) {
@@ -272,6 +270,7 @@ class ShopProvider extends ChangeNotifier {
           .map((doc) => ShopProduct.fromFirestore(doc.data(), doc.id))
           .where((p) => p.visible)
           .toList();
+      GeminiService.updateProductCatalog(_products);
       _refreshCartProductsWithCatalog();
     } catch (e) {
       _errorMessage = "Không thể tải danh sách sản phẩm: $e";
@@ -424,16 +423,21 @@ class ShopProvider extends ChangeNotifier {
       for (final doc in snap.docs) {
         final data = doc.data();
         if (data['active'] == false || data['isActive'] == false) continue;
-        final expiry = _parseVoucherExpiry(data['expiresAt'] ?? data['expiryDate']);
+        final expiry = _parseVoucherExpiry(
+          data['expiresAt'] ?? data['expiryDate'],
+        );
         if (expiry != null && now.isAfter(expiry)) continue;
         final maxUsage = (data['maxUsage'] as num?)?.toInt() ?? 0;
         final used = (data['used'] as num?)?.toInt() ?? 0;
         if (maxUsage > 0 && used >= maxUsage) continue;
 
         final code = (data['code'] ?? doc.id).toString().trim().toUpperCase();
-        final type = (data['discountType'] ?? data['type'] ?? 'fixed').toString();
-        final value = (data['discountValue'] ?? data['value'] as num?)?.toInt() ?? 0;
-        final minOrder = (data['minOrderAmount'] ?? data['minOrder'] as num?)?.toInt() ?? 0;
+        final type = (data['discountType'] ?? data['type'] ?? 'fixed')
+            .toString();
+        final value =
+            (data['discountValue'] ?? data['value'] as num?)?.toInt() ?? 0;
+        final minOrder =
+            (data['minOrderAmount'] ?? data['minOrder'] as num?)?.toInt() ?? 0;
         activeList.add({
           'docId': doc.id,
           'code': code,
@@ -458,8 +462,10 @@ class ShopProvider extends ChangeNotifier {
     if (code.isEmpty) return null;
 
     try {
-      DocumentSnapshot<Map<String, dynamic>> doc =
-          await _firestore.collection('Vouchers').doc(code).get();
+      DocumentSnapshot<Map<String, dynamic>> doc = await _firestore
+          .collection('Vouchers')
+          .doc(code)
+          .get();
       if (!doc.exists || doc.data() == null) {
         final querySnap = await _firestore
             .collection('Vouchers')
@@ -477,7 +483,9 @@ class ShopProvider extends ChangeNotifier {
         return {'valid': false, 'reason': 'Mã giảm giá hiện đang tạm ngưng.'};
       }
 
-      final expiry = _parseVoucherExpiry(data['expiresAt'] ?? data['expiryDate']);
+      final expiry = _parseVoucherExpiry(
+        data['expiresAt'] ?? data['expiryDate'],
+      );
       if (expiry != null && DateTime.now().isAfter(expiry)) {
         return {'valid': false, 'reason': 'Mã giảm giá đã hết hạn sử dụng.'};
       }
@@ -498,7 +506,8 @@ class ShopProvider extends ChangeNotifier {
         };
       }
 
-      final discountType = (data['discountType'] ?? data['type'] ?? 'fixed').toString();
+      final discountType = (data['discountType'] ?? data['type'] ?? 'fixed')
+          .toString();
       final discountValue =
           (data['discountValue'] ?? data['value'] as num?)?.toInt() ?? 0;
       final maxDiscount = (data['maxDiscount'] as num?)?.toInt() ?? 0;
@@ -514,13 +523,17 @@ class ShopProvider extends ChangeNotifier {
         discountAmount = subtotal;
       }
 
-      final normalizedCode = (data['code'] ?? doc.id).toString().trim().toUpperCase();
+      final normalizedCode = (data['code'] ?? doc.id)
+          .toString()
+          .trim()
+          .toUpperCase();
       return {
         'valid': true,
         'voucherDocId': doc.id,
         'code': normalizedCode,
         'discountAmount': discountAmount,
-        'description': data['description']?.toString() ??
+        'description':
+            data['description']?.toString() ??
             (discountType == 'percent'
                 ? 'Giảm $discountValue% cho đơn từ ${formatCurrency(minOrder)}'
                 : 'Giảm ${formatCurrency(discountValue)} cho đơn từ ${formatCurrency(minOrder)}'),
@@ -609,19 +622,25 @@ class ShopProvider extends ChangeNotifier {
       await _firestore.runTransaction((tx) async {
         // 1. Đọc kiểm tra tồn kho thực tế của tất cả sản phẩm trước khi ghi
         final Map<String, int> currentStocks = {};
-        final Map<String, DocumentReference<Map<String, dynamic>>> prodRefs = {};
+        final Map<String, DocumentReference<Map<String, dynamic>>> prodRefs =
+            {};
 
         for (final item in orderItems) {
-          final pRef = _firestore.collection('ShopProducts').doc(item.productId);
+          final pRef = _firestore
+              .collection('ShopProducts')
+              .doc(item.productId);
           final pSnap = await tx.get(pRef);
           if (!pSnap.exists || pSnap.data() == null) {
             throw Exception('Sản phẩm "${item.name}" không còn tồn tại.');
           }
           final pData = pSnap.data()!;
           if (pData['visible'] == false) {
-            throw Exception('Sản phẩm "${item.name}" hiện đã ngừng kinh doanh.');
+            throw Exception(
+              'Sản phẩm "${item.name}" hiện đã ngừng kinh doanh.',
+            );
           }
-          final currentStock = (pData['stock'] as num?)?.toInt() ??
+          final currentStock =
+              (pData['stock'] as num?)?.toInt() ??
               ((pData['inStock'] ?? true) ? 25 : 0);
           if (currentStock < item.quantity) {
             throw Exception(
@@ -641,7 +660,11 @@ class ShopProvider extends ChangeNotifier {
         if (trimmedCode != null && trimmedCode.isNotEmpty) {
           voucherRef = _firestore
               .collection('Vouchers')
-              .doc((voucherDocId != null && voucherDocId.isNotEmpty) ? voucherDocId : trimmedCode);
+              .doc(
+                (voucherDocId != null && voucherDocId.isNotEmpty)
+                    ? voucherDocId
+                    : trimmedCode,
+              );
           voucherSnap = await tx.get(voucherRef);
           if (voucherSnap.exists && voucherSnap.data() != null) {
             final vData = voucherSnap.data()!;
@@ -667,7 +690,8 @@ class ShopProvider extends ChangeNotifier {
         // 4. Trừ stock, cập nhật soldCount & ghi lịch sử xuất kho InventoryTransactions
         for (final item in orderItems) {
           final pRef = prodRefs[item.productId]!;
-          final newStock = (currentStocks[item.productId] ?? item.quantity) - item.quantity;
+          final newStock =
+              (currentStocks[item.productId] ?? item.quantity) - item.quantity;
           updatedStockById[item.productId] = newStock;
           tx.update(pRef, {
             'stock': newStock,
@@ -683,7 +707,9 @@ class ShopProvider extends ChangeNotifier {
             'type': 'out',
             'qty': item.quantity,
             'note': 'Xuất kho đơn hàng $orderCode',
-            'by': address.recipientName.isNotEmpty ? address.recipientName : 'Khách hàng App',
+            'by': address.recipientName.isNotEmpty
+                ? address.recipientName
+                : 'Khách hàng App',
             'at': nowIso,
             'orderId': docRef.id,
             'orderCode': orderCode,
@@ -700,7 +726,8 @@ class ShopProvider extends ChangeNotifier {
       for (final item in orderItems) {
         final pIdx = _products.indexWhere((p) => p.id == item.productId);
         if (pIdx != -1) {
-          final newStock = updatedStockById[item.productId] ??
+          final newStock =
+              updatedStockById[item.productId] ??
               max(0, _products[pIdx].stock - item.quantity);
           _products[pIdx] = _products[pIdx].copyWith(
             stock: newStock,

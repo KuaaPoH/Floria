@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/ai_config_service.dart';
 import '../../../core/services/gemini_service.dart';
 
 class ScanProvider extends ChangeNotifier {
@@ -80,8 +81,8 @@ class ScanProvider extends ChangeNotifier {
         token = await user.getIdToken();
       } catch (_) {}
 
-      // 1. Ưu tiên nhận diện bằng Google Gemini Multimodal để tránh đoán nhầm cây ngoài 40 loài
-      if (await GeminiService.hasApiKey()) {
+      // 1. Ưu tiên nhận diện bằng Google Gemini Multimodal (theo cấu hình Web Admin)
+      if (AiConfigService.preferGemini && await GeminiService.hasApiKey()) {
         try {
           final geminiRes = await GeminiService.identifyPlantWithHint(
             imageBytes: _webImageBytes!,
@@ -198,8 +199,8 @@ class ScanProvider extends ChangeNotifier {
         } catch (_) {}
       }
 
-      // 1. Ưu tiên chẩn đoán bằng Google Gemini Multimodal (nhận diện được cả bệnh ngoài 5 loại)
-      if (await GeminiService.hasApiKey()) {
+      // 1. Ưu tiên chẩn đoán bằng Google Gemini Multimodal (theo cấu hình Web Admin)
+      if (AiConfigService.preferGemini && await GeminiService.hasApiKey()) {
         try {
           final geminiRes = await GeminiService.diagnoseDiseaseWithImage(
             imageBytes: _webImageBytes!,
@@ -283,10 +284,11 @@ class ScanProvider extends ChangeNotifier {
         final result = Map<String, dynamic>.from(response.data);
         final bool isValidPlant = result['is_valid_plant'] != false;
         final double conf = (result['confidence'] as num?)?.toDouble() ?? 0.0;
-        final bool isInDb = result['is_in_database'] != false && conf >= 70.0;
+        final bool isInDb = result['is_in_database'] != false &&
+            conf >= AiConfigService.diseaseConfidenceThreshold;
 
-        // Chỉ fallback sang Gemini khi AI Engine xác nhận là cây nhưng độ tin cậy < 50% (ngoài 40 loài)
-        if (isValidPlant && !isInDb && _webImageBytes != null) {
+        // Chỉ fallback sang Gemini khi được bật cấu hình và AI Engine báo ngoài danh mục
+        if (isValidPlant && !isInDb && _webImageBytes != null && AiConfigService.preferGemini) {
           try {
             if (await GeminiService.hasApiKey()) {
               final geminiRes = await GeminiService.identifyPlantWithHint(

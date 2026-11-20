@@ -16,6 +16,8 @@ interface ImageUploaderProps {
   className?: string;
   aspect?: "square" | "wide";
   label?: string;
+  /** Chỉ đọc ảnh cục bộ (data URL), không tải lên Cloudinary (dùng cho Sandbox test tạm). */
+  localOnly?: boolean;
 }
 
 async function uploadToCloudinary(file: File): Promise<string> {
@@ -36,7 +38,7 @@ async function uploadToCloudinary(file: File): Promise<string> {
 }
 
 /** Uploads image to Cloudinary in API mode, or previews via data URL in mock mode. */
-export function ImageUploader({ value, onChange, className, aspect = "square", label = "Kéo thả hoặc chọn ảnh" }: ImageUploaderProps) {
+export function ImageUploader({ value, onChange, className, aspect = "square", label = "Kéo thả hoặc chọn ảnh", localOnly = false }: ImageUploaderProps) {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -48,7 +50,7 @@ export function ImageUploader({ value, onChange, className, aspect = "square", l
       return;
     }
 
-    if (IS_MOCK) {
+    if (IS_MOCK || localOnly) {
       const reader = new FileReader();
       reader.onload = () => onChange(String(reader.result));
       reader.readAsDataURL(file);

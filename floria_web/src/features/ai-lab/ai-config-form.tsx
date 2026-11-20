@@ -3,171 +3,276 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { RotateCcw, Save } from "lucide-react";
+import { Lock, RotateCcw, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Field } from "@/components/shared/field";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ChartCard } from "@/components/shared/chart-card";
-import { useSingleton } from "@/hooks/use-singleton";
-import { useResourceList } from "@/hooks/use-resource";
-import { aiConfigService, logAudit, modelsService } from "@/services";
-import { DEFAULT_AI_CONFIG } from "@/mocks/ai";
-import type { AiConfig } from "@/types";
+import { apiRequest } from "@/lib/api-client";
+import { logAudit } from "@/services";
+import type { RealAiConfig } from "@/app/api/admin/ai/config/route";
 
-export const aiConfigSchema = z.object({
-  confidenceThreshold: z.number().min(0.1, "Tối thiểu 0,1").max(0.99, "Tối đa 0,99"),
-  gatekeeperThreshold: z.number().min(0.1).max(0.99),
-  topK: z.number().int().min(1, "Tối thiểu 1").max(10, "Tối đa 10"),
-  inputSize: z.number().refine((v) => [224, 256, 288, 320, 384].includes(v), "Kích thước không hỗ trợ"),
-  speciesVersion: z.string().min(1),
-  diseaseVersion: z.string().min(1),
-  executionProvider: z.enum(["CPUExecutionProvider", "CUDAExecutionProvider"]),
-  batchSize: z.number().int().min(1, "Tối thiểu 1").max(32, "Tối đa 32"),
-  normalize: z.boolean(),
+const aiConfigSchema = z.object({
+  preferGemini: z.boolean(),
+  speciesConfidenceThreshold: z.number().min(10).max(99),
+  diseaseConfidenceThreshold: z.number().min(10).max(99),
+  gatekeeperSpeciesThreshold: z.number().min(0.1).max(0.99),
+  gatekeeperDiseaseThreshold: z.number().min(0.1).max(0.99),
 });
 
+type EditableConfig = z.infer<typeof aiConfigSchema>;
+
+const FALLBACK_CONFIG: RealAiConfig = {
+  preferGemini: true,
+  speciesConfidenceThreshold: 70,
+  diseaseConfidenceThreshold: 50,
+  gatekeeperSpeciesThreshold: 0.7,
+  gatekeeperDiseaseThreshold: 0.5,
+  inputSize: 224,
+  normalize: true,
+  executionProvider: "CPUExecutionProvider",
+  speciesModel: "tf_efficientnetv2_b0.onnx",
+  diseaseModel: "tf_efficientnetv2_b0_disease.onnx",
+};
+
 export function AiConfigForm({ canConfigure }: { canConfigure: boolean }) {
-  const cfg = useSingleton(aiConfigService);
-  const models = useResourceList(modelsService);
-  const form = useForm<AiConfig>({ resolver: zodResolver(aiConfigSchema), defaultValues: DEFAULT_AI_CONFIG });
-  const [pending, setPending] = useState<AiConfig | null>(null);
+  const qc = useQueryClient();
+  const cfgQuery = useQuery({
+    queryKey: ["ai-real-config"],
+    queryFn: () => apiRequest<RealAiConfig>("/ai/config"),
+  });
+
+  const form = useForm<EditableConfig>({
+    resolver: zodResolver(aiConfigSchema),
+    defaultValues: {
+      preferGemini: FALLBACK_CONFIG.preferGemini,
+      speciesConfidenceThreshold: FALLBACK_CONFIG.speciesConfidenceThreshold,
+      diseaseConfidenceThreshold: FALLBACK_CONFIG.diseaseConfidenceThreshold,
+      gatekeeperSpeciesThreshold: FALLBACK_CONFIG.gatekeeperSpeciesThreshold,
+      gatekeeperDiseaseThreshold: FALLBACK_CONFIG.gatekeeperDiseaseThreshold,
+    },
+  });
+
+  const [pending, setPending] = useState<EditableConfig | null>(null);
 
   useEffect(() => {
-    if (cfg.data) form.reset(cfg.data);
-  }, [cfg.data, form]);
+    if (cfgQuery.data) {
+      form.reset({
+        preferGemini: cfgQuery.data.preferGemini,
+        speciesConfidenceThreshold: cfgQuery.data.speciesConfidenceThreshold,
+        diseaseConfidenceThreshold: cfgQuery.data.diseaseConfidenceThreshold,
+        gatekeeperSpeciesThreshold: cfgQuery.data.gatekeeperSpeciesThreshold,
+        gatekeeperDiseaseThreshold: cfgQuery.data.gatekeeperDiseaseThreshold,
+      });
+    }
+  }, [cfgQuery.data, form]);
 
-  const speciesVersions = models.data?.find((m) => m.kind === "species")?.versions ?? [];
-  const diseaseVersions = models.data?.find((m) => m.kind === "disease")?.versions ?? [];
-  const e = form.formState.errors;
+  const saveMutation = useMutation({
+    mutationFn: (payload: EditableConfig) =>
+      apiRequest<RealAiConfig & { engineReloaded?: boolean }>("/ai/config", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: (res, variables) => {
+      qc.setQueryData(["ai-real-config"], res);
+      form.reset(variables);
+      toast.success(
+        res.engineReloaded
+          ? "Đã lưu cấu hình lên Firestore & đồng bộ nóng AI Engine"
+          : "Đã lưu cấu hình lên Firestore (App sẽ cập nhật khi mở lại)",
+      );
+      logAudit({
+        action: "Cập nhật cấu hình AI",
+        target: "SystemConfig/ai_config",
+        before: cfgQuery.data ? JSON.stringify({ preferGemini: cfgQuery.data.preferGemini, species: cfgQuery.data.speciesConfidenceThreshold, disease: cfgQuery.data.diseaseConfidenceThreshold }) : "",
+        after: JSON.stringify(variables),
+      });
+      setPending(null);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Không thể lưu cấu hình AI");
+      setPending(null);
+    },
+  });
 
-  if (cfg.isLoading) return <Skeleton className="h-96 rounded-xl" />;
+  if (cfgQuery.isLoading) return <Skeleton className="h-96 rounded-xl" />;
+
+  const data = cfgQuery.data ?? FALLBACK_CONFIG;
 
   return (
-    <ChartCard title="Cấu hình suy luận AI" description="Áp dụng cho Python AI Engine khi kết nối. Mọi thay đổi được ghi nhật ký.">
-      <form onSubmit={form.handleSubmit((v) => setPending(v))} className="space-y-5">
-        <fieldset disabled={!canConfigure} className="grid gap-5 md:grid-cols-2">
+    <ChartCard
+      title="Cấu hình suy luận & Đồng bộ App / AI Engine"
+      description="Lưu tại SystemConfig/ai_config. Tự động áp dụng cho Python AI Engine và đồng bộ khi mở Floria App."
+    >
+      <form onSubmit={form.handleSubmit((v) => setPending(v))} className="space-y-6">
+        <fieldset disabled={!canConfigure || saveMutation.isPending} className="space-y-5">
           <Controller
             control={form.control}
-            name="confidenceThreshold"
+            name="preferGemini"
             render={({ field }) => (
-              <Field label={`Ngưỡng độ tin cậy: ${field.value.toFixed(2).replace(".", ",")}`} hint="Kết quả thấp hơn ngưỡng sẽ hiển thị 'Không chắc chắn'." error={e.confidenceThreshold?.message}>
-                <Slider value={[field.value]} min={0.1} max={0.99} step={0.01} onValueChange={([v]) => field.onChange(v)} className="py-2" />
-              </Field>
-            )}
-          />
-          <Controller
-            control={form.control}
-            name="gatekeeperThreshold"
-            render={({ field }) => (
-              <Field label={`Ngưỡng CLIP Gatekeeper: ${field.value.toFixed(2).replace(".", ",")}`} hint="Ảnh dưới ngưỡng bị từ chối là 'không phải cây'." error={e.gatekeeperThreshold?.message}>
-                <Slider value={[field.value]} min={0.1} max={0.99} step={0.01} onValueChange={([v]) => field.onChange(v)} className="py-2" />
-              </Field>
-            )}
-          />
-          <Field label="Top-K dự đoán" htmlFor="topK" error={e.topK?.message}>
-            <Input id="topK" type="number" {...form.register("topK", { valueAsNumber: true })} />
-          </Field>
-          <Controller
-            control={form.control}
-            name="inputSize"
-            render={({ field }) => (
-              <Field label="Kích thước ảnh đầu vào" error={e.inputSize?.message}>
-                <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{[224, 256, 288, 320, 384].map((s) => <SelectItem key={s} value={String(s)}>{s} × {s} px</SelectItem>)}</SelectContent>
-                </Select>
-              </Field>
-            )}
-          />
-          <Controller
-            control={form.control}
-            name="speciesVersion"
-            render={({ field }) => (
-              <Field label="Phiên bản mô hình loài">
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{speciesVersions.map((v) => <SelectItem key={v.version} value={v.version}>tf_efficientnetv2_b0 · v{v.version}</SelectItem>)}</SelectContent>
-                </Select>
-              </Field>
-            )}
-          />
-          <Controller
-            control={form.control}
-            name="diseaseVersion"
-            render={({ field }) => (
-              <Field label="Phiên bản mô hình bệnh">
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{diseaseVersions.map((v) => <SelectItem key={v.version} value={v.version}>disease · v{v.version}</SelectItem>)}</SelectContent>
-                </Select>
-              </Field>
-            )}
-          />
-          <Controller
-            control={form.control}
-            name="executionProvider"
-            render={({ field }) => (
-              <Field label="ONNX Execution Provider">
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CPUExecutionProvider">CPUExecutionProvider</SelectItem>
-                    <SelectItem value="CUDAExecutionProvider">CUDAExecutionProvider</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            )}
-          />
-          <Field label="Batch size" htmlFor="batch" error={e.batchSize?.message}>
-            <Input id="batch" type="number" {...form.register("batchSize", { valueAsNumber: true })} />
-          </Field>
-          <Controller
-            control={form.control}
-            name="normalize"
-            render={({ field }) => (
-              <label className="flex items-center justify-between rounded-xl border p-3 md:col-span-2">
-                <span>
-                  <span className="block text-sm font-medium">Chuẩn hoá ảnh (ImageNet mean/std)</span>
-                  <span className="block text-xs text-muted-foreground">Bắt buộc với các mô hình EfficientNetV2 hiện tại.</span>
+              <label className="flex items-center justify-between gap-4 rounded-xl border bg-surface-2/40 p-4">
+                <span className="flex items-start gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-forest/10 text-forest">
+                    <Sparkles className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold">Ưu tiên LLM Multimodal trên Floria App</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Khi bật: App nhận diện cây/bệnh qua LLM trước (hỗ trợ ngoài danh mục), lỗi mới chuyển sang ONNX. Khi tắt: App chạy thẳng về AI Engine nội bộ.
+                    </span>
+                  </span>
                 </span>
                 <Switch checked={field.value} onCheckedChange={field.onChange} />
               </label>
             )}
           />
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <Controller
+              control={form.control}
+              name="speciesConfidenceThreshold"
+              render={({ field }) => (
+                <Field
+                  label={`Ngưỡng khớp CSDL Loài (40 loài): ${field.value}%`}
+                  hint="Dưới ngưỡng này, AI Engine đánh dấu is_in_database = false (cây ngoài danh mục)."
+                >
+                  <Slider
+                    value={[field.value]}
+                    min={10}
+                    max={99}
+                    step={1}
+                    onValueChange={([v]) => field.onChange(v)}
+                    className="py-2"
+                  />
+                </Field>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="diseaseConfidenceThreshold"
+              render={({ field }) => (
+                <Field
+                  label={`Ngưỡng khớp CSDL Bệnh (5 nhóm): ${field.value}%`}
+                  hint="Dưới ngưỡng này, bệnh được xem là chưa chắc chắn thuộc 5 nhóm chuẩn."
+                >
+                  <Slider
+                    value={[field.value]}
+                    min={10}
+                    max={99}
+                    step={1}
+                    onValueChange={([v]) => field.onChange(v)}
+                    className="py-2"
+                  />
+                </Field>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="gatekeeperSpeciesThreshold"
+              render={({ field }) => (
+                <Field
+                  label={`CLIP Gatekeeper (Quét Loài): ${field.value.toFixed(2)}`}
+                  hint="Từ chối ảnh nếu xác suất không phải thực vật vượt ngưỡng này (mặc định 0.70)."
+                >
+                  <Slider
+                    value={[field.value]}
+                    min={0.1}
+                    max={0.99}
+                    step={0.01}
+                    onValueChange={([v]) => field.onChange(v)}
+                    className="py-2"
+                  />
+                </Field>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="gatekeeperDiseaseThreshold"
+              render={({ field }) => (
+                <Field
+                  label={`CLIP Gatekeeper (Quét Bệnh): ${field.value.toFixed(2)}`}
+                  hint="Áp dụng cho ảnh chụp cận cảnh phiến lá bệnh (mặc định 0.50)."
+                >
+                  <Slider
+                    value={[field.value]}
+                    min={0.1}
+                    max={0.99}
+                    step={0.01}
+                    onValueChange={([v]) => field.onChange(v)}
+                    className="py-2"
+                  />
+                </Field>
+              )}
+            />
+          </div>
+
+          <div className="rounded-xl border border-dashed bg-muted/30 p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Lock className="size-3.5" /> Thông số mô hình ONNX (Chỉ đọc — khóa theo file .onnx)
+            </div>
+            <div className="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg bg-card p-2.5">
+                <p className="text-muted-foreground">Kích thước ảnh đầu vào</p>
+                <p className="mt-0.5 font-mono font-semibold">{data.inputSize} × {data.inputSize} px</p>
+              </div>
+              <div className="rounded-lg bg-card p-2.5">
+                <p className="text-muted-foreground">Chuẩn hoá ảnh</p>
+                <p className="mt-0.5 font-mono font-semibold">{data.normalize ? "ImageNet mean/std" : "Tắt"}</p>
+              </div>
+              <div className="rounded-lg bg-card p-2.5">
+                <p className="text-muted-foreground">Execution Provider</p>
+                <p className="mt-0.5 font-mono font-semibold">{data.executionProvider}</p>
+              </div>
+              <div className="rounded-lg bg-card p-2.5">
+                <p className="text-muted-foreground">Cặp mô hình ONNX</p>
+                <p className="mt-0.5 truncate font-mono font-semibold" title={`${data.speciesModel} & ${data.diseaseModel}`}>
+                  EfficientNetV2-B0
+                </p>
+              </div>
+            </div>
+          </div>
         </fieldset>
+
         {canConfigure ? (
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => cfg.data && form.reset(cfg.data)} disabled={!form.formState.isDirty}><RotateCcw /> Hoàn tác</Button>
-            <Button type="submit" disabled={!form.formState.isDirty}><Save /> Lưu cấu hình</Button>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {data.updatedAt ? `Cập nhật lần cuối: ${new Date(data.updatedAt).toLocaleString("vi-VN")}${data.updatedBy ? ` bởi ${data.updatedBy}` : ""}` : "Đang dùng cấu hình mặc định"}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => form.reset()}
+                disabled={!form.formState.isDirty || saveMutation.isPending}
+              >
+                <RotateCcw /> Hoàn tác
+              </Button>
+              <Button type="submit" disabled={!form.formState.isDirty || saveMutation.isPending}>
+                <Save /> Lưu & Đồng bộ
+              </Button>
+            </div>
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">Bạn chỉ có quyền xem cấu hình này.</p>
         )}
       </form>
+
       <ConfirmDialog
         open={!!pending}
         onOpenChange={(o) => !o && setPending(null)}
-        title="Áp dụng cấu hình AI mới?"
-        description="Cấu hình sẽ có hiệu lực cho mọi yêu cầu nhận diện tiếp theo."
-        confirmLabel="Áp dụng"
-        onConfirm={() => {
-          if (!pending || !cfg.data) return;
-          const before = cfg.data;
-          const changed = (Object.keys(pending) as (keyof AiConfig)[]).filter((k) => pending[k] !== before[k]);
-          cfg.save.mutate(pending, {
-            onSuccess: () => {
-              toast.success("Đã lưu cấu hình AI");
-              logAudit({ action: "Cập nhật cấu hình AI", target: `AI Config · ${changed.join(", ")}`, before: changed.map((k) => `${k}: ${before[k]}`).join(", "), after: changed.map((k) => `${k}: ${pending[k]}`).join(", ") });
-            },
-          });
-        }}
+        title="Lưu & đồng bộ cấu hình AI?"
+        description="Cấu hình mới sẽ được ghi vào Firestore SystemConfig/ai_config, cập nhật nóng cho Python AI Engine và đồng bộ sang Floria App khi người dùng mở lại ứng dụng."
+        confirmLabel="Lưu cấu hình"
+        onConfirm={() => pending && saveMutation.mutate(pending)}
       />
     </ChartCard>
   );

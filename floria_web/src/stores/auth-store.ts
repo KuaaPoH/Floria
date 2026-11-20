@@ -89,9 +89,19 @@ export const useAuthStore = create<AuthState>()(
         }
         try {
           const token = await user.getIdToken();
-          const session = await verifyFirebaseSession(token);
-          set({ session });
-          return session;
+          const newSession = await verifyFirebaseSession(token);
+          const current = get().session;
+          if (
+            current &&
+            current.id === newSession.id &&
+            current.name === newSession.name &&
+            current.email === newSession.email &&
+            current.role === newSession.role
+          ) {
+            return current;
+          }
+          set({ session: newSession });
+          return newSession;
         } catch {
           return get().session;
         }

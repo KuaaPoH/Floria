@@ -29,30 +29,32 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
+  // 1. Chuyển hướng sang trang đăng nhập nếu chưa có session
   useEffect(() => {
-    if (!mounted || isLoginRoute) return undefined;
+    if (!mounted || isLoginRoute) return;
     if (!session) {
       router.replace("/admin/login");
-      return undefined;
     }
-    if (!IS_MOCK) {
-      let active = true;
-      const auth = getFirebaseClientAuth();
-      void auth.authStateReady().then(async () => {
-        if (!active) return;
-        if (!auth.currentUser) {
-          await logout();
-          if (active) router.replace("/admin/login");
-          return;
-        }
-        await refreshSession();
-      });
-      return () => {
-        active = false;
-      };
-    }
-    return undefined;
-  }, [mounted, session, isLoginRoute, logout, refreshSession, router]);
+  }, [mounted, session, isLoginRoute, router]);
+
+  // 2. Xác thực với Firebase đúng 1 lần khi layout được mount (tránh lặp vô tận)
+  useEffect(() => {
+    if (!mounted || isLoginRoute || IS_MOCK) return undefined;
+    let active = true;
+    const auth = getFirebaseClientAuth();
+    void auth.authStateReady().then(async () => {
+      if (!active) return;
+      if (!auth.currentUser) {
+        await logout();
+        if (active) router.replace("/admin/login");
+        return;
+      }
+      await refreshSession();
+    });
+    return () => {
+      active = false;
+    };
+  }, [mounted, isLoginRoute, logout, refreshSession, router]);
 
   if (isLoginRoute) {
     return <>{children}</>;

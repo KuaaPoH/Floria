@@ -3,11 +3,70 @@ from PIL import Image
 import numpy as np
 import io
 import os
+import time
 import onnxruntime as ort
 import torch
 from transformers import CLIPProcessor, CLIPModel
 
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+except ImportError:
+    firebase_admin = None
+
 app = FastAPI(title="AI Disease Classification Engine")
+
+# Khoi tao Firebase Admin (tuy chon) de dong bo SystemConfig/ai_config
+_firestore_db = None
+if firebase_admin is not None:
+    try:
+        if not firebase_admin._apps:
+            sa_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+            if os.path.exists(sa_path):
+                cred = credentials.Certificate(sa_path)
+                firebase_admin.initialize_app(cred)
+                _firestore_db = firestore.client()
+                print("-> Da ket noi Firestore de dong bo cau hinh AI.")
+        else:
+            _firestore_db = firestore.client()
+    except Exception as e:
+        print(f"Khong the ket noi Firestore (se dung cau hinh mac dinh): {e}")
+
+DEFAULT_RUNTIME_CONFIG = {
+    "preferGemini": True,
+    "speciesConfidenceThreshold": 70.0,
+    "diseaseConfidenceThreshold": 50.0,
+    "gatekeeperSpeciesThreshold": 0.70,
+    "gatekeeperDiseaseThreshold": 0.50,
+}
+
+_config_cache = {
+    "data": dict(DEFAULT_RUNTIME_CONFIG),
+    "expires_at": 0.0,
+}
+CONFIG_CACHE_TTL_SEC = 300.0  # Cache 5 phut de bao ve quota Firestore
+
+
+def get_runtime_config(force_refresh: bool = False) -> dict:
+    now = time.time()
+    if not force_refresh and _config_cache["expires_at"] > now:
+        return _config_cache["data"]
+
+    cfg = dict(DEFAULT_RUNTIME_CONFIG)
+    if _firestore_db is not None:
+        try:
+            snap = _firestore_db.collection("SystemConfig").document("ai_config").get()
+            if snap.exists:
+                raw = snap.to_dict() or {}
+                for k in DEFAULT_RUNTIME_CONFIG:
+                    if k in raw and raw[k] is not None:
+                        cfg[k] = raw[k]
+        except Exception as e:
+            print(f"Loi doc SystemConfig/ai_config: {e}")
+
+    _config_cache["data"] = cfg
+    _config_cache["expires_at"] = now + CONFIG_CACHE_TTL_SEC
+    return cfg
 
 models_path = "models"
 if not os.path.exists(models_path):
@@ -103,11 +162,24 @@ def home():
     return {
         "status": "online",
         "message": "AI Engine Microservice đang hoạt động với ONNX!",
-        "loaded_models": list(loaded_models.keys())
+        "loaded_models": list(loaded_models.keys()),
+        "clip_loaded": clip_model is not None and cached_text_features is not None,
+        "species_classes_count": len(class_names),
+        "disease_classes_count": len(disease_class_names),
+        "config": get_runtime_config(),
     }
+
+
+@app.post("/config/reload")
+def reload_config():
+    cfg = get_runtime_config(force_refresh=True)
+    return {"status": "reloaded", "config": cfg}
+
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), model_name: str = Form("tf_efficientnetv2_b0")):
+    t0 = time.perf_counter()
+    cfg = get_runtime_config()
     model_name = model_name.lower()
     
     if model_name not in loaded_models:
@@ -134,11 +206,15 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("tf_effic
                 "confidence": 0.0,
                 "top_3": [],
                 "is_valid_plant": False,
+                "latency_ms": round((time.perf_counter() - t0) * 1000),
                 "success": True,
                 "message": "Ảnh quá tối hoặc thiếu chi tiết. Vui lòng chụp rõ lại cây!"
             }
             
         # 2. Gatekeeper: CLIP (Chan cho meo, do vat) - Toi uu hoa sieu toc voi cached text features
+        clip_non_plant_prob = None
+        clip_plant_prob = None
+        gate_thresh = float(cfg.get("gatekeeperSpeciesThreshold", 0.70))
         if clip_model and clip_processor and cached_text_features is not None:
             with torch.inference_mode():
                 image_inputs = clip_processor(images=image_pil, return_tensors="pt")
@@ -150,15 +226,20 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("tf_effic
                 logit_scale = clip_model.logit_scale.exp()
                 logits = logit_scale * (image_features @ cached_text_features.T)
                 probs = logits.softmax(dim=-1).cpu().numpy()[0]
+                clip_plant_prob = round(float(probs[0]), 4)
+                clip_non_plant_prob = round(float(probs[1]), 4)
             
-            # Chỉ chặn khi CLIP chắc chắn (> 70%) không phải thực vật, tránh lọc nhầm cây có nền phức tạp
-            if probs[1] > 0.70:
+            # Chỉ chặn khi CLIP chắc chắn (> gate_thresh) không phải thực vật, tránh lọc nhầm cây có nền phức tạp
+            if probs[1] > gate_thresh:
                 return {
                     "model_used": model_name,
                     "prediction": "Không phải cây",
                     "confidence": 0.0,
                     "top_3": [],
                     "is_valid_plant": False,
+                    "clip_plant_prob": clip_plant_prob,
+                    "clip_non_plant_prob": clip_non_plant_prob,
+                    "latency_ms": round((time.perf_counter() - t0) * 1000),
                     "success": True,
                     "message": "Hệ thống phát hiện đây không phải là thực vật. Vui lòng chụp ảnh lá cây hoặc cây cảnh!"
                 }
@@ -187,9 +268,9 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("tf_effic
         predicted_class = top3_results[0]["class"]
         top_confidence = top3_results[0]["confidence"]
         
-        # Neu do tin cay >= 70%: thuoc 40 loai trong CSDL
-        # Neu < 70%: CLIP da xac nhan day la cay, nhung kha nang cao nam ngoai 40 loai CSDL
-        is_in_database = top_confidence >= 70.0
+        # Neu do tin cay >= speciesConfidenceThreshold: thuoc 40 loai trong CSDL
+        species_thresh = float(cfg.get("speciesConfidenceThreshold", 70.0))
+        is_in_database = top_confidence >= species_thresh
         
         return {
             "model_used": model_name,
@@ -198,6 +279,9 @@ async def predict(file: UploadFile = File(...), model_name: str = Form("tf_effic
             "top_3": top3_results,
             "is_valid_plant": True,
             "is_in_database": is_in_database,
+            "clip_plant_prob": clip_plant_prob,
+            "clip_non_plant_prob": clip_non_plant_prob,
+            "latency_ms": round((time.perf_counter() - t0) * 1000),
             "success": True,
             "message": "Thành công" if is_in_database else "Phát hiện thực vật nằm ngoài danh mục 40 cây của hệ thống."
         }
@@ -260,6 +344,8 @@ DISEASE_META = {
 
 @app.post("/predict-disease")
 async def predict_disease(file: UploadFile = File(...)):
+    t0 = time.perf_counter()
+    cfg = get_runtime_config()
     model_name = "tf_efficientnetv2_b0_disease"
     
     if model_name not in loaded_models:
@@ -287,11 +373,15 @@ async def predict_disease(file: UploadFile = File(...)):
                 "confidence": 0.0,
                 "top_3": [],
                 "is_valid_plant": False,
+                "latency_ms": round((time.perf_counter() - t0) * 1000),
                 "success": False,
                 "message": "Ảnh quá tối hoặc thiếu chi tiết. Vui lòng chụp rõ lại phiến lá!"
             }
 
         # 2. Gatekeeper CLIP
+        clip_plant_prob = None
+        clip_non_plant_prob = None
+        gate_thresh = float(cfg.get("gatekeeperDiseaseThreshold", 0.50))
         if clip_model and clip_processor and cached_text_features is not None:
             with torch.inference_mode():
                 image_inputs = clip_processor(images=image_pil, return_tensors="pt")
@@ -302,14 +392,19 @@ async def predict_disease(file: UploadFile = File(...)):
                 logit_scale = clip_model.logit_scale.exp()
                 logits = logit_scale * (image_features @ cached_text_features.T)
                 probs = logits.softmax(dim=-1).cpu().numpy()[0]
+                clip_plant_prob = round(float(probs[0]), 4)
+                clip_non_plant_prob = round(float(probs[1]), 4)
             
-            if probs[1] > 0.5:
+            if probs[1] > gate_thresh:
                 return {
                     "prediction": "Không phải cây",
                     "prediction_vi": "Không phải cây",
                     "confidence": 0.0,
                     "top_3": [],
                     "is_valid_plant": False,
+                    "clip_plant_prob": clip_plant_prob,
+                    "clip_non_plant_prob": clip_non_plant_prob,
+                    "latency_ms": round((time.perf_counter() - t0) * 1000),
                     "success": False,
                     "message": "Hệ thống phát hiện đây không phải thực vật. Hãy chụp cận cảnh lá cây bị bệnh!"
                 }
@@ -344,6 +439,7 @@ async def predict_disease(file: UploadFile = File(...)):
             "treatment": ["Cách ly cây", "Tham khảo ý kiến chuyên gia"]
         })
         
+        disease_thresh = float(cfg.get("diseaseConfidenceThreshold", 50.0))
         return {
             "model_used": model_name,
             "prediction": pred_class,
@@ -355,7 +451,10 @@ async def predict_disease(file: UploadFile = File(...)):
             "cause": meta["cause"],
             "treatment_steps": meta["treatment"],
             "is_valid_plant": True,
-            "is_in_database": pred_conf >= 50.0,
+            "is_in_database": pred_conf >= disease_thresh,
+            "clip_plant_prob": clip_plant_prob,
+            "clip_non_plant_prob": clip_non_plant_prob,
+            "latency_ms": round((time.perf_counter() - t0) * 1000),
             "success": True,
             "message": "Chẩn đoán bệnh thành công"
         }

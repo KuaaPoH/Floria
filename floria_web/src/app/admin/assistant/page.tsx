@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { ColumnDef } from "@tanstack/react-table";
-import { Bot, Check, Eye, History, Plus, Save, Send, ShieldAlert, Sparkles, Tag, UploadCloud } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bot, Loader2, MessageSquare, Pencil, Plus, Save, Send, ShieldAlert, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,41 +12,138 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/page-header";
-import { DemoBadge } from "@/components/shared/demo-badge";
 import { Field } from "@/components/shared/field";
-import { DataTable } from "@/components/shared/data-table";
-import { StatusBadge, statusLabel } from "@/components/shared/status-badge";
-import { DetailDrawer, DetailSection, InfoGrid } from "@/components/shared/detail-drawer";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { FormDialog } from "@/components/shared/form-dialog";
-import { SearchInput } from "@/components/shared/search-input";
-import { FilterSelect } from "@/components/shared/filter-select";
-import { useSingleton } from "@/hooks/use-singleton";
-import { useResourceList, useResourceMutations } from "@/hooks/use-resource";
-import { useAuthStore } from "@/stores/auth-store";
+import { EmptyState } from "@/components/shared/states";
+import { apiRequest } from "@/lib/api-client";
+import { useResourceList } from "@/hooks/use-resource";
+import { logAudit, productsService } from "@/services";
 import { usePermission } from "@/stores/rbac-store";
-import {
-  actionTagsService,
-  assistantSettingsService,
-  guardrailsService,
-  logAudit,
-  promptDraftService,
-  promptVersionsService,
-  reportsService,
-} from "@/services";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatVND } from "@/lib/format";
 import { uid } from "@/lib/id";
-import type { ActionTag, AssistantSettings, ConversationReport, Guardrail } from "@/types";
+import type { AssistantConfig, AssistantGuardrail } from "@/app/api/admin/assistant/config/route";
 
-const TABS = ["settings", "prompt", "guardrails", "tags", "sandbox", "reports"] as const;
+const TABS = ["settings", "guardrails", "tags", "sandbox", "history"] as const;
 type Tab = (typeof TABS)[number];
 
-const GUARDRAIL_CAT_LABEL: Record<Guardrail["category"], string> = {
-  care: "Chăm sóc & Chẩn đoán",
-  toxicity: "Cảnh báo độc tính (Thú cưng / Trẻ em)",
-  medical: "Cấm dùng cây cảnh chữa bệnh người",
-  scope: "Chặn chủ đề ngoài phạm vi Floria",
+const SANDBOX_SESSIONS_KEY = "floria_assistant_sandbox_sessions_v1";
+
+interface SandboxMessage {
+  id: string;
+  role: "user" | "model";
+  text: string;
+  model?: string;
+  latencyMs?: number;
+  createdAt: string;
+}
+
+interface SandboxSession {
+  id: string;
+  title: string;
+  messages: SandboxMessage[];
+  updatedAt: string;
+}
+
+function loadSandboxSessions(): SandboxSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(SANDBOX_SESSIONS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSandboxSessions(items: SandboxSession[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SANDBOX_SESSIONS_KEY, JSON.stringify(items.slice(0, 30)));
+  } catch {
+    // Bỏ qua lỗi quota localStorage
+  }
+}
+
+function parseAssistantReply(raw: string): {
+  cleanText: string;
+  productIds: string[];
+  careSchedule: { water: string; fertilize: string; clean: string } | null;
+} {
+  const productIds: string[] = [];
+  const prodRegex = /\[RECOMMEND_PRODUCT:\s*([^\]]+)\]/gi;
+  let match: RegExpExecArray | null;
+  while ((match = prodRegex.exec(raw)) !== null) {
+    const id = match[1].trim();
+    if (id && !productIds.includes(id)) productIds.push(id);
+  }
+
+  let careSchedule: { water: string; fertilize: string; clean: string } | null = null;
+  const careMatch = raw.match(/\[CARE_SCHEDULE:\s*water=(\d+)\s*,\s*fertilize=(\d+)\s*,\s*clean=(\d+)\s*\]/i);
+  if (careMatch) {
+    careSchedule = { water: careMatch[1], fertilize: careMatch[2], clean: careMatch[3] };
+  }
+
+  const cleanText = raw
+    .replace(/\[RECOMMEND_PRODUCT:\s*[^\]]+\]/gi, "")
+    .replace(/\[CARE_SCHEDULE:\s*[^\]]+\]/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return { cleanText, productIds, careSchedule };
+}
+
+function renderInlineMarkdown(line: string) {
+  const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={idx} className="font-semibold text-forest">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code key={idx} className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
+}
+
+function FormattedChatText({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1.5 leading-relaxed text-foreground">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} className="h-1" />;
+        if (/^[-*]\s+/.test(trimmed)) {
+          return (
+            <div key={i} className="flex gap-2 pl-2">
+              <span className="text-forest">•</span>
+              <span className="flex-1">{renderInlineMarkdown(trimmed.replace(/^[-*]\s+/, ""))}</span>
+            </div>
+          );
+        }
+        return <p key={i}>{renderInlineMarkdown(line)}</p>;
+      })}
+    </div>
+  );
+}
+
+const GUARDRAIL_CAT_LABEL: Record<AssistantGuardrail["category"], string> = {
+  care: "Chăm sóc & Kê đơn",
+  toxicity: "Cảnh báo độc tính",
+  medical: "Cấm chữa bệnh người",
+  scope: "Chặn ngoài phạm vi",
 };
 
 export default function AssistantPage() {
@@ -56,344 +153,368 @@ export default function AssistantPage() {
   const tab: Tab = rawTab && TABS.includes(rawTab) ? rawTab : "settings";
 
   const canEdit = usePermission("assistant", "edit");
+  const qc = useQueryClient();
+
+  const [sessions, setSessions] = useState<SandboxSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loaded = loadSandboxSessions();
+    setSessions(loaded);
+    if (loaded.length > 0) setActiveSessionId(loaded[0].id);
+  }, []);
+
+  const updateSessions = (updater: (prev: SandboxSession[]) => SandboxSession[]) => {
+    setSessions((prev) => {
+      const next = updater(prev);
+      saveSandboxSessions(next);
+      return next;
+    });
+  };
+
+  const createNewSession = () => {
+    const newId = uid("chat");
+    const fresh: SandboxSession = {
+      id: newId,
+      title: "Hộp thoại mới",
+      messages: [],
+      updatedAt: new Date().toISOString(),
+    };
+    updateSessions((prev) => [fresh, ...prev]);
+    setActiveSessionId(newId);
+    return newId;
+  };
+
+  const deleteSession = (id: string) => {
+    updateSessions((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      if (activeSessionId === id) {
+        setActiveSessionId(next[0]?.id ?? null);
+      }
+      return next;
+    });
+    toast.success("Đã xoá hộp thoại");
+  };
+
+  const clearAllSessions = () => {
+    setSessions([]);
+    setActiveSessionId(null);
+    saveSandboxSessions([]);
+    toast.success("Đã xoá toàn bộ hộp thoại kiểm thử");
+  };
+
+  const cfgQuery = useQuery({
+    queryKey: ["assistant-real-config"],
+    queryFn: () => apiRequest<AssistantConfig>("/assistant/config"),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: AssistantConfig) =>
+      apiRequest<AssistantConfig>("/assistant/config", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: (res) => {
+      qc.setQueryData(["assistant-real-config"], res);
+      toast.success("Đã lưu cấu hình Trợ lý Floria lên Firestore");
+      logAudit({
+        action: "Cập nhật Trợ lý Floria",
+        target: "SystemConfig/assistant_config",
+        before: "—",
+        after: `${res.name} · ${res.guardrails.filter((g) => g.enabled).length} guardrails`,
+      });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Không thể lưu cấu hình");
+    },
+  });
 
   return (
     <>
       <PageHeader
         title="Floria Assistant & Guardrails"
-        description="Cấu hình nhân cách trợ lý AI, System Prompt, quy tắc an toàn, Action Tags và kiểm duyệt báo cáo hội thoại."
-        badge={<DemoBadge label="Mô phỏng AI" />}
+        description="Cấu hình nhân cách Trợ lý Floria, System Prompt, quy tắc an toàn, Action Tags và kiểm thử trên Sandbox."
       />
 
-      <Tabs value={tab} onValueChange={(v) => router.replace(`/assistant?tab=${v}`)}>
+      <Tabs value={tab} onValueChange={(v) => router.replace(`/admin/assistant?tab=${v}`)}>
         <TabsList className="mb-5 h-10 w-full justify-start overflow-x-auto sm:w-auto">
-          <TabsTrigger value="settings">Cài đặt chung</TabsTrigger>
-          <TabsTrigger value="prompt">System Prompt</TabsTrigger>
-          <TabsTrigger value="guardrails">Guardrails</TabsTrigger>
-          <TabsTrigger value="tags">Action Tags</TabsTrigger>
-          <TabsTrigger value="sandbox">Testing Sandbox</TabsTrigger>
-          <TabsTrigger value="reports">Báo cáo hội thoại</TabsTrigger>
+          <TabsTrigger value="settings">Cài đặt & Kịch bản</TabsTrigger>
+          <TabsTrigger value="guardrails">Quy tắc an toàn</TabsTrigger>
+          <TabsTrigger value="tags">Thẻ hành động</TabsTrigger>
+          <TabsTrigger value="sandbox">Kiểm thử trợ lý</TabsTrigger>
+          <TabsTrigger value="history">Lịch sử kiểm thử ({sessions.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="settings">
-          <GeneralSettingsTab canEdit={canEdit} />
+          <GeneralAndPromptTab
+            config={cfgQuery.data}
+            loading={cfgQuery.isLoading}
+            canEdit={canEdit}
+            saving={saveMutation.isPending}
+            onSave={(next) => saveMutation.mutate(next)}
+          />
         </TabsContent>
-        <TabsContent value="prompt">
-          <SystemPromptTab canEdit={canEdit} />
-        </TabsContent>
+
         <TabsContent value="guardrails">
-          <GuardrailsTab canEdit={canEdit} />
+          <GuardrailsTab
+            config={cfgQuery.data}
+            loading={cfgQuery.isLoading}
+            canEdit={canEdit}
+            saving={saveMutation.isPending}
+            onSave={(next) => saveMutation.mutate(next)}
+          />
         </TabsContent>
+
         <TabsContent value="tags">
-          <ActionTagsTab canEdit={canEdit} />
+          <ActionTagsTab
+            config={cfgQuery.data}
+            canEdit={canEdit}
+            saving={saveMutation.isPending}
+            onSave={(next) => saveMutation.mutate(next)}
+          />
         </TabsContent>
+
         <TabsContent value="sandbox">
-          <TestingSandboxTab />
+          <TestingSandboxTab
+            config={cfgQuery.data}
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSelectSession={setActiveSessionId}
+            onCreateSession={createNewSession}
+            onDeleteSession={deleteSession}
+            onUpdateSessions={updateSessions}
+          />
         </TabsContent>
-        <TabsContent value="reports">
-          <ReportsTab canEdit={canEdit} />
+
+        <TabsContent value="history">
+          <SandboxHistoryTab
+            sessions={sessions}
+            onOpenSession={(id) => {
+              setActiveSessionId(id);
+              router.replace("/admin/assistant?tab=sandbox");
+            }}
+            onDeleteSession={deleteSession}
+            onClearAll={clearAllSessions}
+          />
         </TabsContent>
       </Tabs>
     </>
   );
 }
 
-function GeneralSettingsTab({ canEdit }: { canEdit: boolean }) {
-  const settings = useSingleton(assistantSettingsService);
-  const [form, setForm] = useState<AssistantSettings | null>(null);
+function GeneralAndPromptTab({
+  config,
+  loading,
+  canEdit,
+  saving,
+  onSave,
+}: {
+  config?: AssistantConfig;
+  loading: boolean;
+  canEdit: boolean;
+  saving: boolean;
+  onSave: (next: AssistantConfig) => void;
+}) {
+  const [name, setName] = useState("");
+  const [tone, setTone] = useState("");
+  const [defaultModel, setDefaultModel] = useState("gemini-3-flash-preview");
+  const [systemPrompt, setSystemPrompt] = useState("");
 
   useEffect(() => {
-    if (settings.data) setForm(settings.data);
-  }, [settings.data]);
+    if (config) {
+      setName(config.name);
+      setTone(config.tone);
+      setDefaultModel(config.defaultModel || "gemini-3-flash-preview");
+      setSystemPrompt(config.systemPrompt);
+    }
+  }, [config]);
 
-  if (!form) return null;
-
-  const save = () => {
-    settings.save.mutate(form, {
-      onSuccess: () => {
-        logAudit({
-          action: "Cập nhật trợ lý",
-          target: "Assistant · Cài đặt chung",
-          before: settings.data?.tone ?? "—",
-          after: `${form.name} · ${form.language} · ${form.tone}`,
-        });
-        toast.success("Đã lưu cài đặt chung trợ lý");
-      },
-    });
-  };
+  if (loading || !config) return <Skeleton className="h-96 rounded-xl" />;
 
   return (
-    <div className="card-surface max-w-3xl p-6">
-      <div className="mb-5">
-        <h3 className="text-base font-semibold">Thông số cơ bản</h3>
-        <p className="text-xs text-muted-foreground">Áp dụng cho phản hồi của bác sĩ cây trồng Floria trên ứng dụng di động.</p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Tên trợ lý">
-          <Input value={form.name} disabled={!canEdit} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+    <div className="card-surface max-w-4xl space-y-5 p-6">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Tên xưng hô của trợ lý">
+          <Input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit || saving} />
         </Field>
-        <Field label="Ngôn ngữ mặc định">
-          <Select value={form.language} disabled={!canEdit} onValueChange={(v) => setForm({ ...form, language: v as "vi" | "en" })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
+        <Field label="Giọng điệu & phong cách">
+          <Input value={tone} onChange={(e) => setTone(e.target.value)} disabled={!canEdit || saving} />
+        </Field>
+        <Field label="Model LLM mặc định">
+          <Select value={defaultModel} onValueChange={setDefaultModel} disabled={!canEdit || saving}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="vi">Tiếng Việt</SelectItem>
-              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="gemini-3-flash-preview">gemini-3-flash-preview</SelectItem>
+              <SelectItem value="gemini-flash-lite-latest">gemini-flash-lite-latest</SelectItem>
+              <SelectItem value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</SelectItem>
+              <SelectItem value="gemini-3.6-flash">gemini-3.6-flash</SelectItem>
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Giọng điệu phản hồi">
-          <Select value={form.tone} disabled={!canEdit} onValueChange={(v) => setForm({ ...form, tone: v as AssistantSettings["tone"] })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="friendly">Thân thiện, gần gũi</SelectItem>
-              <SelectItem value="professional">Chuyên gia thực vật học</SelectItem>
-              <SelectItem value="concise">Ngắn gọn, súc tích</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label="Độ dài phản hồi tối đa (ký tự)">
-          <Input
-            type="number"
-            min={150}
-            max={2000}
-            disabled={!canEdit}
-            value={form.maxLength}
-            onChange={(e) => setForm({ ...form, maxLength: Math.max(150, Number(e.target.value) || 600) })}
-          />
-        </Field>
-        <Field label="Câu trả lời dự phòng (Fallback)" className="sm:col-span-2">
-          <Textarea rows={3} disabled={!canEdit} value={form.fallback} onChange={(e) => setForm({ ...form, fallback: e.target.value })} />
-        </Field>
       </div>
-      {canEdit && (
-        <div className="mt-5 flex justify-end">
-          <Button onClick={save} disabled={settings.save.isPending}>
-            <Save /> Lưu cài đặt
+
+      <Field
+        label="System Prompt chính (đồng bộ sang Floria App khi mở lại ứng dụng)"
+        hint="Hệ thống tự động ghép thêm các quy tắc Guardrails đang bật và danh sách sản phẩm đang kích hoạt."
+      >
+        <Textarea
+          rows={8}
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          disabled={!canEdit || saving}
+          className="font-mono text-xs leading-relaxed"
+        />
+      </Field>
+
+      <div className="flex items-center justify-between border-t pt-4">
+        <p className="text-xs text-muted-foreground">
+          {config.updatedAt
+            ? `Cập nhật lần cuối: ${formatDateTime(config.updatedAt)}${config.updatedBy ? ` bởi ${config.updatedBy}` : ""}`
+            : "Đang dùng cấu hình mặc định"}
+        </p>
+        {canEdit && (
+          <Button
+            disabled={saving}
+            onClick={() =>
+              onSave({
+                ...config,
+                name,
+                tone,
+                defaultModel,
+                systemPrompt,
+              })
+            }
+          >
+            {saving ? <Loader2 className="animate-spin" /> : <Save />} Lưu & Đồng bộ
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-function SystemPromptTab({ canEdit }: { canEdit: boolean }) {
-  const adminName = useAuthStore((s) => s.session?.name ?? "Admin");
-  const draft = useSingleton(promptDraftService);
-  const versions = useResourceList(promptVersionsService);
-  const { create } = useResourceMutations(promptVersionsService, { entity: "Phiên bản Prompt", silent: true });
-  const [content, setContent] = useState("");
-  const [previewOpen, setPreviewOpen] = useState(false);
+function GuardrailsTab({
+  config,
+  loading,
+  canEdit,
+  saving,
+  onSave,
+}: {
+  config?: AssistantConfig;
+  loading: boolean;
+  canEdit: boolean;
+  saving: boolean;
+  onSave: (next: AssistantConfig) => void;
+}) {
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingRule, setDeletingRule] = useState<AssistantGuardrail | null>(null);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<AssistantGuardrail["category"]>("scope");
+  const [ruleText, setRuleText] = useState("");
 
-  useEffect(() => {
-    if (draft.data) setContent(draft.data.content);
-  }, [draft.data]);
+  if (loading || !config) return <Skeleton className="h-72 rounded-xl" />;
 
-  const sorted = useMemo(() => [...(versions.data ?? [])].sort((a, b) => b.version - a.version), [versions.data]);
-  const latestVer = sorted[0]?.version ?? 0;
-
-  const saveDraft = () => {
-    draft.save.mutate(
-      { content },
-      {
-        onSuccess: () => {
-          toast.success("Đã lưu bản nháp System Prompt");
-        },
-      },
-    );
+  const openCreate = () => {
+    setEditingId(null);
+    setName("");
+    setCategory("scope");
+    setRuleText("");
+    setFormOpen(true);
   };
 
-  const publish = () => {
-    if (!content.trim()) {
-      toast.error("Nội dung prompt không được để trống");
-      return;
-    }
-    draft.save.mutate({ content });
-    create.mutate(
-      {
-        id: uid("pv"),
-        version: latestVer + 1,
-        status: "published",
-        at: new Date().toISOString(),
-        by: adminName,
-        content,
-      },
-      {
-        onSuccess: () => {
-          logAudit({ action: "Xuất bản Prompt", target: `Assistant Prompt v${latestVer + 1}`, before: `v${latestVer}`, after: `v${latestVer + 1}` });
-          toast.success(`Đã xuất bản System Prompt v${latestVer + 1}`);
-        },
-      },
-    );
+  const openEdit = (g: AssistantGuardrail) => {
+    setEditingId(g.id);
+    setName(g.name);
+    setCategory(g.category);
+    setRuleText(g.ruleText);
+    setFormOpen(true);
   };
 
-  return (
-    <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-      <div className="card-surface p-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 className="text-base font-semibold">System Prompt Editor</h3>
-            <p className="text-xs text-muted-foreground">Định hướng hành vi, ngữ khí và quy chuẩn thực vật cho Floria Assistant.</p>
-          </div>
-          <span className="rounded-md bg-surface-2 px-2.5 py-1 font-mono text-xs text-muted-foreground">{content.length} ký tự</span>
-        </div>
-        <Textarea rows={14} className="font-mono text-xs leading-relaxed" disabled={!canEdit} value={content} onChange={(e) => setContent(e.target.value)} />
-        <div className="mt-4 flex flex-wrap justify-between gap-2">
-          <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
-            <Eye /> Xem trước
-          </Button>
-          {canEdit && (
-            <div className="flex gap-2">
-              <Button type="button" variant="soft" onClick={saveDraft} disabled={draft.save.isPending}>
-                <Save /> Lưu nháp
-              </Button>
-              <Button type="button" onClick={publish} disabled={create.isPending}>
-                <UploadCloud /> Xuất bản (v{latestVer + 1})
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+  const toggleRule = (id: string) => {
+    const nextRules = config.guardrails.map((g) => (g.id === id ? { ...g, enabled: !g.enabled } : g));
+    onSave({ ...config, guardrails: nextRules });
+  };
 
-      <div className="card-surface p-5">
-        <div className="mb-3 flex items-center gap-2">
-          <History className="size-4 text-leaf" />
-          <h3 className="text-base font-semibold">Lịch sử phiên bản</h3>
-        </div>
-        <div className="space-y-3">
-          {sorted.map((v) => (
-            <div key={v.id} className="rounded-xl border bg-surface-2/40 p-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-semibold">v{v.version}</span>
-                <StatusBadge status={v.status} />
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {v.by} · {formatDateTime(v.at)}
-              </p>
-              <p className="mt-2 line-clamp-3 text-xs text-foreground/80">{v.content}</p>
-              {canEdit && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="mt-2 h-7 px-2 text-xs text-leaf"
-                  onClick={() => {
-                    setContent(v.content);
-                    toast.info(`Đã nạp lại nội dung v${v.version} vào trình soạn thảo`);
-                  }}
-                >
-                  Nạp phiên bản này
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="rounded-2xl sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Xem trước System Prompt</DialogTitle>
-          </DialogHeader>
-          <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl border bg-surface-2/60 p-4 font-mono text-xs leading-relaxed">{content}</pre>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-function GuardrailsTab({ canEdit }: { canEdit: boolean }) {
-  const list = useResourceList(guardrailsService);
-  const { update, create } = useResourceMutations(guardrailsService, { entity: "Guardrail" });
-  const [editing, setEditing] = useState<Guardrail | null | undefined>(undefined);
-  const [form, setForm] = useState<Guardrail>({
-    id: "",
-    category: "care",
-    name: "",
-    description: "",
-    response: "",
-    keywords: [],
-    enabled: true,
-  });
-  const [kwText, setKwText] = useState("");
-
-  useEffect(() => {
-    if (editing === undefined) return;
-    if (editing) {
-      setForm(editing);
-      setKwText(editing.keywords.join(", "));
-    } else {
-      setForm({ id: uid("gr"), category: "care", name: "", description: "", response: "", keywords: [], enabled: true });
-      setKwText("");
-    }
-  }, [editing]);
-
-  const submit = (e: React.FormEvent) => {
+  const submitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.response.trim()) {
-      toast.error("Vui lòng nhập tên quy tắc và câu phản hồi");
-      return;
-    }
-    const payload: Guardrail = {
-      ...form,
-      keywords: kwText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-    if (editing) {
-      update.mutate({ id: payload.id, patch: payload, label: payload.name }, { onSuccess: () => setEditing(undefined) });
+    if (!name.trim() || !ruleText.trim()) return;
+
+    if (editingId) {
+      const nextRules = config.guardrails.map((g) =>
+        g.id === editingId
+          ? { ...g, name: name.trim(), category, ruleText: ruleText.trim() }
+          : g,
+      );
+      onSave({ ...config, guardrails: nextRules });
     } else {
-      create.mutate(payload, { onSuccess: () => setEditing(undefined) });
+      const nextRule: AssistantGuardrail = {
+        id: uid("gr"),
+        name: name.trim(),
+        category,
+        ruleText: ruleText.trim(),
+        enabled: true,
+      };
+      onSave({ ...config, guardrails: [...config.guardrails, nextRule] });
     }
+    setFormOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!deletingRule) return;
+    const nextRules = config.guardrails.filter((g) => g.id !== deletingRule.id);
+    onSave({ ...config, guardrails: nextRules });
+    setDeletingRule(null);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Các quy tắc an toàn đang bật ({config.guardrails.filter((g) => g.enabled).length}/{config.guardrails.length}) sẽ được ghép vào System Instruction của Trợ lý Floria.
+        </p>
         {canEdit && (
-          <Button onClick={() => setEditing(null)}>
-            <Plus /> Thêm quy tắc Guardrail
+          <Button onClick={openCreate}>
+            <Plus /> Thêm quy tắc
           </Button>
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {(list.data ?? []).map((g) => (
-          <div key={g.id} className="card-surface flex flex-col justify-between p-5">
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <Badge variant="outline" className="mb-2 text-[11px]">
+      <div className="grid gap-3 md:grid-cols-2">
+        {config.guardrails.map((g) => (
+          <div key={g.id} className="card-surface flex flex-col justify-between gap-3 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <ShieldAlert className="size-4 text-forest" />
+                  <span className="text-sm font-semibold">{g.name}</span>
+                  <Badge variant="outline" className="text-[10px]">
                     {GUARDRAIL_CAT_LABEL[g.category]}
                   </Badge>
-                  <h4 className="font-semibold text-foreground">{g.name}</h4>
                 </div>
-                <Switch
-                  checked={g.enabled}
-                  disabled={!canEdit}
-                  onCheckedChange={(checked) => update.mutate({ id: g.id, patch: { enabled: checked }, before: String(g.enabled), label: g.name })}
-                />
+                <p className="text-xs text-muted-foreground">{g.ruleText}</p>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">{g.description}</p>
-              <div className="mt-3 rounded-lg bg-surface-2/60 p-3 text-xs">
-                <p className="font-medium text-foreground">Phản hồi mẫu:</p>
-                <p className="mt-1 text-muted-foreground">{g.response}</p>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {g.keywords.map((kw) => (
-                  <span key={kw} className="rounded-md border bg-card px-2 py-0.5 text-[11px] text-muted-foreground">
-                    {kw}
-                  </span>
-                ))}
-              </div>
+              <Switch
+                checked={g.enabled}
+                disabled={!canEdit || saving}
+                onCheckedChange={() => toggleRule(g.id)}
+                aria-label={`Bật/tắt ${g.name}`}
+              />
             </div>
+
             {canEdit && (
-              <div className="mt-4 flex justify-end border-t pt-3">
-                <Button size="sm" variant="outline" onClick={() => setEditing(g)}>
-                  Chỉnh sửa
+              <div className="flex justify-end gap-1.5 border-t pt-2.5">
+                <Button size="sm" variant="ghost" onClick={() => openEdit(g)} disabled={saving}>
+                  <Pencil className="size-3.5" /> Chỉnh sửa
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-danger hover:text-danger"
+                  onClick={() => setDeletingRule(g)}
+                  disabled={saving}
+                >
+                  <Trash2 className="size-3.5" /> Xoá
                 </Button>
               </div>
             )}
@@ -401,374 +522,534 @@ function GuardrailsTab({ canEdit }: { canEdit: boolean }) {
         ))}
       </div>
 
-      <FormDialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)} title={editing ? `Sửa · ${editing.name}` : "Thêm quy tắc Guardrail"} onSubmit={submit}>
-        <div className="grid gap-4">
-          <Field label="Nhóm quy tắc">
-            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as Guardrail["category"] })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+      <FormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editingId ? "Chỉnh sửa quy tắc Guardrail" : "Thêm quy tắc Guardrail mới"}
+        onSubmit={submitForm}
+        submitLabel={editingId ? "Cập nhật" : "Lưu quy tắc"}
+      >
+        <div className="space-y-3">
+          <Field label="Tên quy tắc">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="VD: Không tư vấn thuốc trừ sâu hóa học mạnh"
+            />
+          </Field>
+          <Field label="Nhóm">
+            <Select value={category} onValueChange={(v) => setCategory(v as AssistantGuardrail["category"])}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(GUARDRAIL_CAT_LABEL).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>
-                    {v}
-                  </SelectItem>
+                {Object.entries(GUARDRAIL_CAT_LABEL).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>{label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Tên quy tắc">
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </Field>
-          <Field label="Mô tả">
-            <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          </Field>
-          <Field label="Câu phản hồi khi kích hoạt">
-            <Textarea rows={3} value={form.response} onChange={(e) => setForm({ ...form, response: e.target.value })} />
-          </Field>
-          <Field label="Từ khoá kích hoạt (phân cách bằng dấu phẩy)">
-            <Input value={kwText} onChange={(e) => setKwText(e.target.value)} placeholder="mèo, chó, độc tính..." />
+          <Field label="Nội dung chỉ dẫn gửi cho LLM">
+            <Textarea rows={3} value={ruleText} onChange={(e) => setRuleText(e.target.value)} />
           </Field>
         </div>
       </FormDialog>
+
+      <ConfirmDialog
+        open={!!deletingRule}
+        onOpenChange={(o) => !o && setDeletingRule(null)}
+        title={`Xoá quy tắc "${deletingRule?.name}"?`}
+        description="Quy tắc này sẽ bị gỡ khỏi System Instruction của Trợ lý Floria."
+        tone="danger"
+        confirmLabel="Xoá quy tắc"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
 
-function ActionTagsTab({ canEdit }: { canEdit: boolean }) {
-  const list = useResourceList(actionTagsService);
-  const { update } = useResourceMutations(actionTagsService, { entity: "Action Tag" });
-  const [editing, setEditing] = useState<ActionTag | null>(null);
-  const [kw, setKw] = useState("");
-  const [intent, setIntent] = useState("");
-  const [condition, setCondition] = useState("");
+function ActionTagsTab({
+  config,
+  canEdit,
+  saving,
+  onSave,
+}: {
+  config?: AssistantConfig;
+  canEdit: boolean;
+  saving: boolean;
+  onSave: (next: AssistantConfig) => void;
+}) {
+  const products = useResourceList(productsService);
+  const disabledIds = new Set(config?.disabledProductIds ?? []);
 
-  useEffect(() => {
-    if (!editing) return;
-    setKw(editing.keywords.join(", "));
-    setIntent(editing.intent);
-    setCondition(editing.condition);
-  }, [editing]);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editing) return;
-    update.mutate(
-      {
-        id: editing.id,
-        patch: {
-          keywords: kw
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          intent,
-          condition,
-        },
-        label: editing.tag,
-      },
-      { onSuccess: () => setEditing(null) },
-    );
+  const toggleProduct = (productId: string) => {
+    if (!config) return;
+    const nextSet = new Set(disabledIds);
+    if (nextSet.has(productId)) {
+      nextSet.delete(productId);
+    } else {
+      nextSet.add(productId);
+    }
+    onSave({ ...config, disabledProductIds: Array.from(nextSet) });
   };
 
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {(list.data ?? []).map((t) => (
-        <div key={t.id} className="card-surface p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-lg bg-accent text-forest">
-                <Tag className="size-4" />
-              </span>
-              <div>
-                <p className="font-mono text-sm font-semibold text-forest">{t.tag}</p>
-                <p className="text-xs text-muted-foreground">{t.enabled ? "Đang bật" : "Đã tắt"}</p>
-              </div>
-            </div>
-            <Switch checked={t.enabled} disabled={!canEdit} onCheckedChange={(enabled) => update.mutate({ id: t.id, patch: { enabled }, label: t.tag })} />
-          </div>
-          <div className="mt-4 space-y-2 text-xs">
-            <div>
-              <span className="font-semibold text-foreground">Ý định (Intent): </span>
-              <span className="text-muted-foreground">{t.intent}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-foreground">Điều kiện kích hoạt: </span>
-              <span className="text-muted-foreground">{t.condition}</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {t.keywords.map((k) => (
-                <span key={k} className="rounded-md bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-foreground">
-                  {k}
-                </span>
-              ))}
-            </div>
-          </div>
-          {canEdit && (
-            <div className="mt-4 flex justify-end border-t pt-3">
-              <Button size="sm" variant="outline" onClick={() => setEditing(t)}>
-                Cấu hình
-              </Button>
-            </div>
-          )}
-        </div>
-      ))}
-
-      <FormDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} title={`Cấu hình ${editing?.tag ?? ""}`} onSubmit={submit}>
-        <div className="grid gap-4">
-          <Field label="Từ khoá kích hoạt (cách nhau dấu phẩy)">
-            <Input value={kw} onChange={(e) => setKw(e.target.value)} />
-          </Field>
-          <Field label="Mô tả ý định (Intent)">
-            <Textarea rows={2} value={intent} onChange={(e) => setIntent(e.target.value)} />
-          </Field>
-          <Field label="Điều kiện kích hoạt">
-            <Textarea rows={2} value={condition} onChange={(e) => setCondition(e.target.value)} />
-          </Field>
-        </div>
-      </FormDialog>
-    </div>
-  );
-}
-
-interface SandboxResult {
-  userText: string;
-  intent: string;
-  matchedGuardrails: string[];
-  triggeredTags: string[];
-  response: string;
-}
-
-function TestingSandboxTab() {
-  const guardrails = useResourceList(guardrailsService);
-  const tags = useResourceList(actionTagsService);
-  const settings = useSingleton(assistantSettingsService);
-  const [input, setInput] = useState("");
-  const [history, setHistory] = useState<SandboxResult[]>([]);
-
-  const SAMPLES = [
-    "Mèo nhà mình ăn phải lá Trầu bà có sao không?",
-    "Cây bị đốm lá nên mua thuốc hay phân bón nào?",
-    "Lá cây trầu bà đắp chữa ho được không?",
-    "Tạo lịch tưới nước cho cây Monstera",
-    "Giá vàng hôm nay bao nhiêu?",
+  const realTags = [
+    {
+      tag: "[RECOMMEND_PRODUCT: product_id]",
+      title: "Kê đơn sản phẩm từ Cửa hàng Floria",
+      desc: "Khi cây bị bệnh nặng hoặc người dùng hỏi mua vật tư, Trợ lý Floria gắn thẻ này để App tự động hiển thị thẻ sản phẩm kèm nút Mua ngay.",
+    },
+    {
+      tag: "[CARE_SCHEDULE: {...}]",
+      title: "Đề xuất & Áp dụng Lịch chăm sóc cây",
+      desc: "Khi người dùng hỏi lịch tưới/bón phân cho cây cụ thể, App bắt thẻ này để hiện nút 1 chạm áp dụng thẳng vào MyGarden.",
+    },
   ];
 
-  const runTest = (msgText?: string) => {
-    const text = (msgText ?? input).trim();
-    if (!text) return;
-    const lower = text.toLowerCase();
-
-    const activeGr = (guardrails.data ?? []).filter((g) => g.enabled);
-    const matchedGr = activeGr.filter((g) => g.keywords.some((k) => lower.includes(k.toLowerCase())));
-    const activeTags = (tags.data ?? []).filter((t) => t.enabled);
-    const matchedTags = activeTags.filter((t) => t.keywords.some((k) => lower.includes(k.toLowerCase())));
-
-    let intent = "Tư vấn chăm sóc cây tổng quát";
-    if (matchedGr.some((g) => g.category === "medical")) intent = "Yêu cầu y tế ngoài phạm vi (Cấm)";
-    else if (matchedGr.some((g) => g.category === "scope")) intent = "Chủ đề ngoài phạm vi Floria";
-    else if (matchedGr.some((g) => g.category === "toxicity")) intent = "Cảnh báo an toàn thú cưng / trẻ nhỏ";
-    else if (matchedTags.some((t) => t.tag === "[RECOMMEND_PRODUCT]")) intent = "Nhu cầu tìm mua vật tư / phân bón";
-    else if (matchedTags.some((t) => t.tag === "[CARE_SCHEDULE]")) intent = "Thiết lập lịch chăm sóc cây";
-
-    let response = "";
-    const blocked = matchedGr.find((g) => g.category === "medical" || g.category === "scope");
-    if (blocked) {
-      response = blocked.response;
-    } else if (matchedGr.length > 0) {
-      response = matchedGr.map((g) => g.response).join(" ");
-    } else {
-      response = `(${settings.data?.name ?? "Floria"} · Mô phỏng): Dựa trên mô tả "${text}", hãy kiểm tra độ ẩm đất mặt trên 2–3cm trước khi tưới và đảm bảo ánh sáng gián tiếp.`;
-    }
-
-    if (!blocked && matchedTags.length > 0) {
-      response += ` ${matchedTags.map((t) => t.tag).join(" ")}`;
-    }
-
-    setHistory((h) => [
-      {
-        userText: text,
-        intent,
-        matchedGuardrails: matchedGr.map((g) => g.name),
-        triggeredTags: blocked ? [] : matchedTags.map((t) => t.tag),
-        response,
-      },
-      ...h,
-    ]);
-    if (!msgText) setInput("");
-  };
+  const allProducts = products.data ?? [];
+  const activeCount = allProducts.filter((p) => !disabledIds.has(p.id)).length;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
-      <div className="card-surface flex flex-col justify-between p-5">
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-base font-semibold">Kiểm thử hội thoại</h3>
-            <DemoBadge label="DEMO · Mô phỏng quy tắc" />
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2">
+        {realTags.map((t) => (
+          <div key={t.tag} className="card-surface space-y-2 p-5">
+            <div className="flex items-center gap-2">
+              <Tag className="size-4 text-forest" />
+              <h3 className="text-sm font-semibold">{t.title}</h3>
+            </div>
+            <p className="inline-block rounded-md bg-muted px-2 py-1 font-mono text-xs text-forest">{t.tag}</p>
+            <p className="text-xs text-muted-foreground">{t.desc}</p>
           </div>
-          <p className="text-xs text-muted-foreground">Kiểm tra cách Guardrails và Action Tags phản ứng với câu hỏi của người dùng dựa trên quy tắc hiện tại.</p>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {SAMPLES.map((s) => (
-              <button key={s} type="button" onClick={() => runTest(s)} className="rounded-lg border bg-surface-2/60 px-2.5 py-1.5 text-left text-xs transition hover:border-sage">
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            runTest();
-          }}
-          className="mt-6 flex gap-2"
-        >
-          <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Nhập câu hỏi thử nghiệm…" />
-          <Button type="submit">
-            <Send /> Gửi thử
-          </Button>
-        </form>
+        ))}
       </div>
 
       <div className="card-surface p-5">
-        <h3 className="mb-3 text-base font-semibold">Kết quả phân tích mô phỏng</h3>
-        {history.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-surface-2/40 p-8 text-center text-xs text-muted-foreground">
-            Chọn một câu hỏi mẫu hoặc nhập nội dung ở khung bên trái để kiểm tra Guardrails & Action Tags.
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold">
+              Danh sách Product ID hợp lệ trong ShopProducts ({activeCount}/{allProducts.length} đang bật cho AI)
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Gạt tắt nếu không muốn Trợ lý Floria kê đơn sản phẩm đó (vẫn giữ hiển thị bán bình thường trong Cửa hàng).
+            </p>
           </div>
-        ) : (
-          <div className="max-h-[460px] space-y-4 overflow-y-auto pr-1">
-            {history.map((item, idx) => (
-              <div key={idx} className="rounded-xl border bg-surface-2/40 p-4 text-xs">
-                <p className="font-semibold text-foreground">Người dùng: “{item.userText}”</p>
-                <div className="mt-2.5 grid gap-2 sm:grid-cols-3">
-                  <div className="rounded-lg bg-card p-2.5">
-                    <p className="text-[11px] text-muted-foreground">Intent nhận diện</p>
-                    <p className="mt-0.5 font-medium text-foreground">{item.intent}</p>
-                  </div>
-                  <div className="rounded-lg bg-card p-2.5">
-                    <p className="text-[11px] text-muted-foreground">Guardrails khớp</p>
-                    <p className="mt-0.5 font-medium text-warning">{item.matchedGuardrails.length ? item.matchedGuardrails.join(", ") : "Không có"}</p>
-                  </div>
-                  <div className="rounded-lg bg-card p-2.5">
-                    <p className="text-[11px] text-muted-foreground">Action Tags</p>
-                    <p className="mt-0.5 font-mono font-medium text-leaf">{item.triggeredTags.length ? item.triggeredTags.join(" ") : "Không kích hoạt"}</p>
+        </div>
+
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          {allProducts.map((p) => {
+            const isEnabled = !disabledIds.has(p.id);
+            return (
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-3 rounded-xl border bg-surface-2/40 px-3 py-2.5 text-xs"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{p.name}</p>
+                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="truncate font-mono">{p.id}</span>
+                    <span>·</span>
+                    <span className="shrink-0 font-semibold text-forest">{formatVND(p.price)}</span>
                   </div>
                 </div>
-                <div className="mt-2.5 rounded-lg bg-card p-3">
-                  <div className="mb-1 flex items-center gap-1.5 font-medium text-forest">
-                    <Bot className="size-3.5" /> Phản hồi mô phỏng
-                  </div>
-                  <p className="text-sm leading-relaxed text-foreground">{item.response}</p>
-                </div>
+                <Switch
+                  checked={isEnabled}
+                  disabled={!canEdit || saving || !config}
+                  onCheckedChange={() => toggleProduct(p.id)}
+                  aria-label={`Cho phép AI kê đơn ${p.name}`}
+                />
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-function ReportsTab({ canEdit }: { canEdit: boolean }) {
-  const list = useResourceList(reportsService);
-  const { update } = useResourceMutations(reportsService, { entity: "Báo cáo hội thoại" });
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [selected, setSelected] = useState<ConversationReport | null>(null);
-  const [note, setNote] = useState("");
+function TestingSandboxTab({
+  config,
+  sessions,
+  activeSessionId,
+  onSelectSession,
+  onCreateSession,
+  onDeleteSession,
+  onUpdateSessions,
+}: {
+  config?: AssistantConfig;
+  sessions: SandboxSession[];
+  activeSessionId: string | null;
+  onSelectSession: (id: string) => void;
+  onCreateSession: () => string;
+  onDeleteSession: (id: string) => void;
+  onUpdateSessions: (updater: (prev: SandboxSession[]) => SandboxSession[]) => void;
+}) {
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const products = useResourceList(productsService);
+  const productMap = new Map((products.data ?? []).map((p) => [p.id, p]));
 
-  useEffect(() => {
-    setNote(selected?.note ?? "");
-  }, [selected]);
+  const currentSession = sessions.find((s) => s.id === activeSessionId) ?? null;
 
-  const rows = useMemo(() => {
-    const s = search.toLowerCase();
-    return (list.data ?? []).filter(
-      (r) => (!s || r.userName.toLowerCase().includes(s) || r.preview.toLowerCase().includes(s)) && (status === "all" || r.status === status),
-    );
-  }, [list.data, search, status]);
-
-  const columns: ColumnDef<ConversationReport, unknown>[] = [
-    { accessorKey: "userName", header: "Người dùng", cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span> },
-    { accessorKey: "preview", header: "Nội dung hội thoại", cell: ({ getValue }) => <span className="line-clamp-1 max-w-xs text-xs text-muted-foreground">{getValue() as string}</span> },
-    { accessorKey: "reason", header: "Lý do báo cáo" },
-    { accessorKey: "at", header: "Thời gian", cell: ({ getValue }) => formatDateTime(getValue() as string) },
-    { accessorKey: "status", header: "Trạng thái", cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
+  const presets = [
+    "Cây trầu bà nhà mình bị đốm vàng lá, cần tưới hay xịt thuốc gì?",
+    "Viết giúp mình đoạn code Python sắp xếp mảng tăng dần",
+    "Cây kim tiền có độc với mèo không?",
   ];
 
-  const handleStatus = (next: ConversationReport["status"]) => {
-    if (!selected) return;
-    update.mutate(
-      { id: selected.id, patch: { status: next, note }, before: selected.status, label: selected.userName },
-      { onSuccess: (updated) => setSelected(updated) },
+  const send = async (text: string) => {
+    const q = text.trim();
+    if (!q || loading) return;
+
+    let targetId = activeSessionId;
+    if (!targetId || !sessions.some((s) => s.id === targetId)) {
+      targetId = onCreateSession();
+    }
+
+    const priorMessages = (sessions.find((s) => s.id === targetId)?.messages ?? []).map((m) => ({
+      role: m.role,
+      text: m.text,
+    }));
+
+    const userMsg: SandboxMessage = {
+      id: uid("msg"),
+      role: "user",
+      text: q,
+      createdAt: new Date().toISOString(),
+    };
+
+    onUpdateSessions((prev) =>
+      prev.map((s) =>
+        s.id === targetId
+          ? {
+              ...s,
+              title: s.messages.length === 0 ? (q.length > 42 ? `${q.slice(0, 42)}...` : q) : s.title,
+              messages: [...s.messages, userMsg],
+              updatedAt: new Date().toISOString(),
+            }
+          : s,
+      ),
     );
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await apiRequest<{
+        reply: string;
+        model: string;
+        latencyMs: number;
+      }>("/assistant/sandbox", {
+        method: "POST",
+        body: JSON.stringify({
+          message: q,
+          history: priorMessages,
+          name: config?.name,
+          tone: config?.tone,
+          defaultModel: config?.defaultModel,
+          systemPrompt: config?.systemPrompt,
+          guardrails: config?.guardrails,
+          disabledProductIds: config?.disabledProductIds,
+        }),
+      });
+
+      const botMsg: SandboxMessage = {
+        id: uid("msg"),
+        role: "model",
+        text: res.reply,
+        model: res.model,
+        latencyMs: res.latencyMs,
+        createdAt: new Date().toISOString(),
+      };
+
+      onUpdateSessions((prev) =>
+        prev.map((s) =>
+          s.id === targetId
+            ? { ...s, messages: [...s.messages, botMsg], updatedAt: new Date().toISOString() }
+            : s,
+        ),
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Lỗi gọi LLM Sandbox");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-      <DataTable
-        columns={columns}
-        data={rows}
-        loading={list.isLoading}
-        onRowClick={setSelected}
-        toolbar={
-          <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Tìm người dùng hoặc nội dung…" />
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              allLabel="Mọi trạng thái"
-              options={[
-                { value: "pending", label: statusLabel("pending") },
-                { value: "reviewed", label: statusLabel("reviewed") },
-                { value: "dismissed", label: statusLabel("dismissed") },
-              ]}
-            />
-          </>
-        }
-      />
+    <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+      {/* Cột trái: Danh sách hộp thoại & Câu hỏi mẫu */}
+      <div className="card-surface flex flex-col gap-4 p-4">
+        <Button className="w-full" onClick={onCreateSession} disabled={loading}>
+          <Plus className="size-4" /> Tạo hộp thoại mới
+        </Button>
 
-      <DetailDrawer
-        open={!!selected}
-        onOpenChange={(o) => !o && setSelected(null)}
-        title={selected ? `Báo cáo · ${selected.userName}` : ""}
-        description={selected ? `${selected.reason} · ${formatDateTime(selected.at)}` : undefined}
-        footer={
-          selected && canEdit ? (
-            <>
-              <Button variant="outline" onClick={() => handleStatus("dismissed")}>
-                Bỏ qua
-              </Button>
-              <Button onClick={() => handleStatus("reviewed")}>
-                <Check /> Đánh dấu đã xem xét
-              </Button>
-            </>
-          ) : undefined
-        }
-      >
-        {selected && (
-          <>
-            <DetailSection title="Trạng thái">
-              <InfoGrid items={[{ label: "Trạng thái", value: <StatusBadge status={selected.status} /> }, { label: "Lý do", value: selected.reason }]} />
-            </DetailSection>
-            <DetailSection title="Đoạn hội thoại">
-              <div className="space-y-2.5">
-                {selected.transcript.map((m, i) => (
-                  <div key={i} className={`rounded-xl p-3 text-sm ${m.from === "user" ? "bg-surface-2/70" : "border bg-card"}`}>
-                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                      {m.from === "user" ? "Người dùng" : <><Sparkles className="size-3 text-leaf" /> Floria Assistant</>}
-                    </p>
-                    <p>{m.text}</p>
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Hộp thoại đã lưu ({sessions.length})
+          </p>
+          {sessions.length === 0 ? (
+            <p className="rounded-xl border border-dashed p-3 text-center text-xs text-muted-foreground">
+              Chưa có hộp thoại nào. Hãy tạo mới hoặc gửi tin nhắn.
+            </p>
+          ) : (
+            <div className="max-h-64 space-y-1.5 overflow-y-auto pr-1">
+              {sessions.map((s) => {
+                const isActive = s.id === currentSession?.id;
+                return (
+                  <div
+                    key={s.id}
+                    className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs transition ${
+                      isActive ? "border-forest bg-accent font-semibold text-forest" : "bg-surface-2/40 hover:bg-muted/60"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onSelectSession(s.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="truncate">{s.title}</p>
+                      <p className="text-[10px] font-normal text-muted-foreground">
+                        {s.messages.length} tin nhắn
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      title="Xoá hộp thoại"
+                      onClick={() => onDeleteSession(s.id)}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2 border-t pt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Câu hỏi mẫu</p>
+          {presets.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => send(p)}
+              disabled={loading}
+              className="w-full rounded-xl border bg-surface-2/50 p-2.5 text-left text-xs transition hover:bg-accent"
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Cột phải: Khung hộp thoại chat liên tục */}
+      <div className="card-surface flex h-[640px] flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b px-5 py-3">
+          <div className="flex items-center gap-2">
+            <Bot className="size-4 text-forest" />
+            <h3 className="text-sm font-semibold">{currentSession ? currentSession.title : "Hộp thoại kiểm thử"}</h3>
+          </div>
+          {currentSession && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-danger hover:text-danger"
+              onClick={() => onDeleteSession(currentSession.id)}
+            >
+              <Trash2 className="size-3.5" /> Xoá hộp thoại
+            </Button>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+          {!currentSession || currentSession.messages.length === 0 ? (
+            <EmptyState
+              title="Bắt đầu cuộc trò chuyện kiểm thử"
+              description="Nhập câu hỏi bên dưới hoặc chọn câu hỏi mẫu ở cột trái. Các câu hỏi tiếp theo trong cùng hộp thoại sẽ giữ nguyên ngữ cảnh."
+            />
+          ) : (
+            currentSession.messages.map((m) => {
+              if (m.role === "user") {
+                return (
+                  <div key={m.id} className="flex justify-end">
+                    <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-forest px-4 py-2.5 text-sm text-primary-foreground shadow-xs">
+                      <p className="whitespace-pre-wrap">{m.text}</p>
+                    </div>
+                  </div>
+                );
+              }
+
+              const parsed = parseAssistantReply(m.text);
+              return (
+                <div key={m.id} className="flex justify-start">
+                  <div className="max-w-[85%] space-y-2.5 rounded-2xl rounded-bl-sm border bg-surface-2/40 px-4 py-3 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold text-forest">{config?.name || "Trợ lý Floria"}</span>
+                      {typeof m.latencyMs === "number" && (
+                        <StatusBadge status="active" label={`${m.latencyMs}ms`} />
+                      )}
+                    </div>
+
+                    <FormattedChatText text={parsed.cleanText} />
+
+                    {/* Hiển thị Thẻ sản phẩm đề xuất có hình ảnh, tên và giá */}
+                    {parsed.productIds.length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        {parsed.productIds.map((pid) => {
+                          const prod = productMap.get(pid);
+                          if (!prod) {
+                            return (
+                              <Badge key={pid} variant="secondary" className="font-mono text-[11px]">
+                                Sản phẩm đề xuất: {pid}
+                              </Badge>
+                            );
+                          }
+                          return (
+                            <div
+                              key={pid}
+                              className="flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-xs"
+                            >
+                              {prod.image ? (
+                                <img
+                                  src={prod.image}
+                                  alt={prod.name}
+                                  className="size-14 shrink-0 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="grid size-14 shrink-0 place-items-center rounded-lg bg-muted text-[10px] text-muted-foreground">
+                                  No img
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="inline-block rounded bg-forest/10 px-1.5 py-0.5 text-[10px] font-semibold text-forest">
+                                  Sản phẩm đề xuất
+                                </span>
+                                <p className="mt-0.5 truncate text-xs font-semibold text-foreground">{prod.name}</p>
+                                <p className="text-xs font-bold text-forest">{formatVND(prod.price)}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Hiển thị Lịch chăm sóc đề xuất nếu có */}
+                    {parsed.careSchedule && (
+                      <div className="rounded-xl border bg-card p-3 text-xs">
+                        <p className="font-semibold text-forest">Lịch chăm sóc đề xuất</p>
+                        <p className="mt-1 text-muted-foreground">
+                          Tưới mỗi <b>{parsed.careSchedule.water} ngày</b> · Bón phân mỗi{" "}
+                          <b>{parsed.careSchedule.fertilize} ngày</b> · Lau lá mỗi{" "}
+                          <b>{parsed.careSchedule.clean} ngày</b>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="inline-flex items-center gap-2 rounded-2xl border bg-surface-2/40 px-4 py-2.5 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin text-forest" /> Trợ lý Floria đang suy nghĩ...
               </div>
-            </DetailSection>
-            <DetailSection title="Ghi chú xử lý">
-              <Textarea rows={3} disabled={!canEdit} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ghi chú của botanist / quản trị viên…" />
-            </DetailSection>
-          </>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 border-t bg-card p-3">
+          <Textarea
+            rows={2}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send(input);
+              }
+            }}
+            placeholder="Nhập tin nhắn kiểm thử (Enter để gửi, Shift+Enter xuống dòng)..."
+            className="min-h-0 resize-none"
+          />
+          <Button className="h-auto px-4" disabled={!input.trim() || loading} onClick={() => send(input)}>
+            {loading ? <Loader2 className="animate-spin" /> : <Send />}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SandboxHistoryTab({
+  sessions,
+  onOpenSession,
+  onDeleteSession,
+  onClearAll,
+}: {
+  sessions: SandboxSession[];
+  onOpenSession: (id: string) => void;
+  onDeleteSession: (id: string) => void;
+  onClearAll: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-xl border bg-surface-2/40 px-4 py-2.5 text-xs text-muted-foreground">
+        <span>Danh sách các hộp thoại đã lưu trên Kiểm thử trợ lý ({sessions.length} hộp thoại).</span>
+        {sessions.length > 0 && (
+          <Button size="sm" variant="outline" onClick={onClearAll}>
+            <Trash2 className="size-3.5" /> Xoá tất cả
+          </Button>
         )}
-      </DetailDrawer>
-    </>
+      </div>
+
+      {sessions.length === 0 ? (
+        <div className="card-surface">
+          <EmptyState
+            title="Chưa có hộp thoại kiểm thử nào"
+            description="Hãy sang tab Kiểm thử trợ lý và bắt đầu nhắn tin để lưu hộp thoại tại đây."
+          />
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {sessions.map((s) => {
+            const lastMsg = s.messages[s.messages.length - 1];
+            return (
+              <div key={s.id} className="card-surface flex flex-col justify-between gap-3 p-4">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-forest">
+                      <MessageSquare className="size-3.5 shrink-0" />
+                      <span className="truncate">{s.title}</span>
+                    </span>
+                    <Badge variant="outline" className="shrink-0 text-[10px]">
+                      {s.messages.length} tin
+                    </Badge>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                    {lastMsg ? parseAssistantReply(lastMsg.text).cleanText : "Hộp thoại trống"}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border-t pt-2.5 text-xs">
+                  <span className="text-[11px] text-muted-foreground">{formatDateTime(s.updatedAt)}</span>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => onOpenSession(s.id)}>
+                      Mở hộp thoại
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-danger hover:text-danger"
+                      onClick={() => onDeleteSession(s.id)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

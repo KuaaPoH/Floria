@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/services/ai_config_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../garden/providers/garden_provider.dart';
@@ -174,6 +175,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       await Future.wait([
         _mascotController.forward().orCancel,
         _contentController.forward().orCancel,
+        AiConfigService.loadOnAppStart(),
         preloadTask,
       ]);
     } on TickerCanceled {
