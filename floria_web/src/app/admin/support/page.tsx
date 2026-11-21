@@ -1,261 +1,383 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { CheckCircle2, Clock, LifeBuoy, MessageSquarePlus, Send } from "lucide-react";
+import { Eye, EyeOff, FileQuestion, HelpCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { DataTable } from "@/components/shared/data-table";
 import { SearchInput } from "@/components/shared/search-input";
 import { FilterSelect } from "@/components/shared/filter-select";
-import { StatusBadge, statusLabel } from "@/components/shared/status-badge";
-import { DetailDrawer, DetailSection, InfoGrid } from "@/components/shared/detail-drawer";
-import { useResourceList, useResourceMutations } from "@/hooks/use-resource";
-import { useAuthStore } from "@/stores/auth-store";
+import { Field } from "@/components/shared/field";
+import { FormDialog } from "@/components/shared/form-dialog";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { usePermission } from "@/stores/rbac-store";
-import { ticketsService } from "@/services";
+import { apiRequest } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
-import type { Ticket, TicketStatus } from "@/types";
+import type { SupportArticle } from "@/app/api/admin/support/route";
 
-const CATEGORY_LABEL: Record<Ticket["category"], string> = {
-  app_error: "Lỗi ứng dụng",
-  ai_wrong: "AI nhận diện sai",
-  order: "Khiếu nại đơn hàng",
-  product: "Phản hồi sản phẩm",
-  suggestion: "Góp ý chung",
+const SUPPORT_CATEGORIES = [
+  { value: "scan", vi: "Quét ảnh & Chẩn đoán AI", en: "Photo Scan & AI Diagnosis" },
+  { value: "care", vi: "Lịch chăm sóc & Nhắc nhở", en: "Care Schedule & Reminders" },
+  { value: "account", vi: "Tài khoản & Mua sắm", en: "Account & Shopping" },
+  { value: "other", vi: "Hỗ trợ chung", en: "General Support" },
+] as const;
+
+interface ArticleFormState {
+  id?: string;
+  category: string;
+  questionVi: string;
+  questionEn: string;
+  answerVi: string;
+  answerEn: string;
+  order: number;
+  visible: boolean;
+}
+
+const EMPTY_FORM: ArticleFormState = {
+  category: "scan",
+  questionVi: "",
+  questionEn: "",
+  answerVi: "",
+  answerEn: "",
+  order: 1,
+  visible: true,
 };
 
 export default function SupportPage() {
-  const adminName = useAuthStore((s) => s.session?.name ?? "Admin");
-  const list = useResourceList(ticketsService);
-  const { update } = useResourceMutations(ticketsService, { entity: "Phiếu hỗ trợ" });
+  const qc = useQueryClient();
+  const canCreate = usePermission("support", "create");
   const canEdit = usePermission("support", "edit");
+  const canDelete = usePermission("support", "delete");
 
   const [search, setSearch] = useState("");
-  const [cat, setCat] = useState("all");
-  const [status, setStatus] = useState("all");
-  const [prio, setPrio] = useState("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [reply, setReply] = useState("");
-  const [note, setNote] = useState("");
+  const [catFilter, setCatFilter] = useState("all");
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState<ArticleFormState>(EMPTY_FORM);
+  const [deleteTarget, setDeleteTarget] = useState<SupportArticle | null>(null);
+
+  const list = useQuery({
+    queryKey: ["support-articles"],
+    queryFn: () => apiRequest<SupportArticle[]>("/support"),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: ArticleFormState) => {
+      const catMeta = SUPPORT_CATEGORIES.find((c) => c.value === data.category) ?? SUPPORT_CATEGORIES[3];
+      const payload = {
+        category: catMeta.value,
+        categoryVi: catMeta.vi,
+        categoryEn: catMeta.en,
+        questionVi: data.questionVi.trim(),
+        questionEn: data.questionEn.trim(),
+        answerVi: data.answerVi.trim(),
+        answerEn: data.answerEn.trim(),
+        order: Number(data.order) || 1,
+        visible: data.visible,
+      };
+      if (data.id) {
+        return apiRequest<SupportArticle>(`/support/${encodeURIComponent(data.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+      }
+      return apiRequest<SupportArticle>("/support", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["support-articles"] });
+      toast.success(form.id ? "Đã cập nhật bài viết hỗ trợ" : "Đã thêm bài viết hỗ trợ mới");
+      setFormOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Không thể lưu bài viết");
+    },
+  });
+
+  const toggleVisibleMutation = useMutation({
+    mutationFn: ({ id, visible }: { id: string; visible: boolean }) =>
+      apiRequest<SupportArticle>(`/support/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ visible }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["support-articles"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Không thể đổi trạng thái hiển thị");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest<{ ok: boolean }>(`/support/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["support-articles"] });
+      toast.success("Đã xóa bài viết hỗ trợ");
+      setDeleteTarget(null);
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Không thể xóa bài viết");
+    },
+  });
 
   const all = list.data ?? [];
-  const selected = all.find((t) => t.id === selectedId) ?? null;
+  const visibleCount = all.filter((a) => a.visible).length;
 
   const rows = useMemo(() => {
-    const s = search.toLowerCase();
+    const s = search.trim().toLowerCase();
     return all.filter(
-      (t) =>
-        (!s || t.code.toLowerCase().includes(s) || t.subject.toLowerCase().includes(s) || t.userName.toLowerCase().includes(s)) &&
-        (cat === "all" || t.category === cat) &&
-        (status === "all" || t.status === status) &&
-        (prio === "all" || t.priority === prio),
+      (a) =>
+        (!s ||
+          a.questionVi.toLowerCase().includes(s) ||
+          a.questionEn.toLowerCase().includes(s) ||
+          a.answerVi.toLowerCase().includes(s)) &&
+        (catFilter === "all" || a.category === catFilter),
     );
-  }, [all, search, cat, status, prio]);
+  }, [all, search, catFilter]);
 
-  const sendReply = () => {
-    if (!selected || !reply.trim()) return;
-    const nextStatus: TicketStatus = selected.status === "open" ? "in_progress" : selected.status;
-    update.mutate(
-      {
-        id: selected.id,
-        patch: {
-          status: nextStatus,
-          assignee: selected.assignee || adminName,
-          messages: [...selected.messages, { from: "admin", text: reply.trim(), at: new Date().toISOString() }],
-        },
-        label: selected.code,
-      },
-      { onSuccess: () => setReply("") },
-    );
+  const openCreate = () => {
+    const maxOrder = all.reduce((m, item) => Math.max(m, item.order || 0), 0);
+    setForm({ ...EMPTY_FORM, order: maxOrder + 1 });
+    setFormOpen(true);
   };
 
-  const addInternalNote = () => {
-    if (!selected || !note.trim()) return;
-    update.mutate(
-      {
-        id: selected.id,
-        patch: {
-          notes: [...selected.notes, { by: adminName, text: note.trim(), at: new Date().toISOString() }],
-        },
-        label: selected.code,
-      },
-      {
-        onSuccess: () => {
-          setNote("");
-          toast.success("Đã thêm ghi chú nội bộ");
-        },
-      },
-    );
+  const openEdit = (item: SupportArticle) => {
+    setForm({
+      id: item.id,
+      category: item.category,
+      questionVi: item.questionVi,
+      questionEn: item.questionEn,
+      answerVi: item.answerVi,
+      answerEn: item.answerEn,
+      order: item.order,
+      visible: item.visible,
+    });
+    setFormOpen(true);
   };
 
-  const columns: ColumnDef<Ticket, unknown>[] = [
-    { accessorKey: "code", header: "Mã phiếu", cell: ({ getValue }) => <span className="font-mono text-xs font-semibold">{getValue() as string}</span> },
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.questionVi.trim() || !form.answerVi.trim()) {
+      toast.error("Vui lòng nhập đầy đủ câu hỏi và nội dung trả lời (Tiếng Việt)");
+      return;
+    }
+    saveMutation.mutate(form);
+  };
+
+  const columns: ColumnDef<SupportArticle, unknown>[] = [
     {
-      accessorKey: "subject",
-      header: "Tiêu đề",
+      accessorKey: "order",
+      header: "Thứ tự",
+      cell: ({ getValue }) => <span className="font-mono text-xs text-muted-foreground">#{getValue() as number}</span>,
+    },
+    {
+      accessorKey: "questionVi",
+      header: "Bài viết / Câu hỏi",
       cell: ({ row }) => (
-        <div>
-          <p className="font-medium">{row.original.subject}</p>
-          <p className="text-xs text-muted-foreground">
-            {row.original.userName} · {row.original.email}
-          </p>
+        <div className="max-w-md">
+          <p className="font-medium text-foreground">{row.original.questionVi}</p>
+          <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.answerVi}</p>
         </div>
       ),
     },
-    { accessorKey: "category", header: "Phân loại", cell: ({ getValue }) => CATEGORY_LABEL[getValue() as Ticket["category"]] },
-    { accessorKey: "priority", header: "Ưu tiên", cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
-    { accessorKey: "assignee", header: "Phụ trách", cell: ({ getValue }) => (getValue() as string) || <span className="text-xs text-muted-foreground">Chưa phân công</span> },
-    { accessorKey: "createdAt", header: "Ngày tạo", cell: ({ getValue }) => formatDateTime(getValue() as string) },
-    { accessorKey: "status", header: "Trạng thái", cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
+    {
+      accessorKey: "categoryVi",
+      header: "Nhóm danh mục",
+      cell: ({ getValue }) => <span className="text-xs font-medium">{getValue() as string}</span>,
+    },
+    {
+      accessorKey: "visible",
+      header: "Hiển thị",
+      cell: ({ row }) => (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            row.original.visible ? "bg-success-soft text-success" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {row.original.visible ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
+          {row.original.visible ? "Đang hiện" : "Đang ẩn"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      header: "Cập nhật",
+      cell: ({ getValue }) => <span className="text-xs text-muted-foreground">{formatDateTime(getValue() as string)}</span>,
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          {canEdit && (
+            <>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                title={row.original.visible ? "Ẩn khỏi app" : "Hiện trên app"}
+                onClick={() => toggleVisibleMutation.mutate({ id: row.original.id, visible: !row.original.visible })}
+              >
+                {row.original.visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </Button>
+              <Button type="button" size="icon" variant="ghost" title="Chỉnh sửa" onClick={() => openEdit(row.original)}>
+                <Pencil className="size-4" />
+              </Button>
+            </>
+          )}
+          {canDelete && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="text-danger hover:text-danger"
+              title="Xóa bài viết"
+              onClick={() => setDeleteTarget(row.original)}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
     <>
-      <PageHeader title="Trung tâm hỗ trợ" description="Tiếp nhận và xử lý phiếu hỗ trợ từ người dùng ứng dụng Floria." />
+      <PageHeader
+        title="Trung tâm hỗ trợ"
+        description="Quản lý danh sách bài viết & câu hỏi thường gặp hiển thị trong mục Trung tâm hỗ trợ trên ứng dụng Floria."
+        actions={
+          canCreate && (
+            <Button type="button" onClick={openCreate}>
+              <Plus /> Thêm bài viết
+            </Button>
+          )
+        }
+      />
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Tổng phiếu" value={String(all.length)} icon={LifeBuoy} tone="leaf" />
-        <StatCard label="Mới tiếp nhận" value={String(all.filter((t) => t.status === "open").length)} icon={MessageSquarePlus} tone="info" />
-        <StatCard label="Đang xử lý" value={String(all.filter((t) => t.status === "in_progress").length)} icon={Clock} tone="warning" />
-        <StatCard label="Đã giải quyết" value={String(all.filter((t) => t.status === "resolved").length)} icon={CheckCircle2} tone="sage" />
+      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Tổng bài viết" value={String(all.length)} icon={HelpCircle} tone="leaf" />
+        <StatCard label="Đang hiển thị trên app" value={String(visibleCount)} icon={Eye} tone="sage" />
+        <StatCard label="Đang ẩn" value={String(all.length - visibleCount)} icon={FileQuestion} tone="warning" />
       </div>
 
       <DataTable
         columns={columns}
         data={rows}
         loading={list.isLoading}
-        onRowClick={(t) => setSelectedId(t.id)}
+        onRowClick={(item) => canEdit && openEdit(item)}
         toolbar={
           <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Mã phiếu, tiêu đề, người gửi…" />
+            <SearchInput value={search} onChange={setSearch} placeholder="Tìm theo tiêu đề câu hỏi, nội dung…" />
             <FilterSelect
-              value={cat}
-              onChange={setCat}
-              allLabel="Mọi phân loại"
-              options={Object.entries(CATEGORY_LABEL).map(([value, label]) => ({ value, label }))}
-            />
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              allLabel="Mọi trạng thái"
-              options={["open", "in_progress", "resolved"].map((v) => ({ value: v, label: statusLabel(v) }))}
-            />
-            <FilterSelect
-              value={prio}
-              onChange={setPrio}
-              allLabel="Mọi mức ưu tiên"
-              options={["high", "medium", "low"].map((v) => ({ value: v, label: statusLabel(v) }))}
+              value={catFilter}
+              onChange={setCatFilter}
+              allLabel="Mọi danh mục"
+              options={SUPPORT_CATEGORIES.map((c) => ({ value: c.value, label: c.vi }))}
             />
           </>
         }
       />
 
-      <DetailDrawer
-        open={!!selected}
-        onOpenChange={(o) => !o && setSelectedId(null)}
+      <FormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={form.id ? "Chỉnh sửa bài viết hỗ trợ" : "Thêm bài viết hỗ trợ mới"}
+        description="Nội dung này sẽ được đồng bộ trực tiếp tới màn hình Trung tâm hỗ trợ của ứng dụng Floria."
+        onSubmit={handleSave}
+        submitLabel={form.id ? "Lưu thay đổi" : "Thêm bài viết"}
+        pending={saveMutation.isPending}
         className="sm:max-w-2xl"
-        title={selected ? `${selected.code} · ${selected.subject}` : ""}
-        description={selected ? `${selected.userName} (${selected.email}) · ${formatDateTime(selected.createdAt)}` : undefined}
-        footer={
-          selected && canEdit ? (
-            <div className="flex w-full flex-wrap items-center justify-between gap-2">
-              <Select
-                value={selected.status}
-                onValueChange={(v) =>
-                  update.mutate({
-                    id: selected.id,
-                    patch: { status: v as TicketStatus, assignee: selected.assignee || adminName },
-                    before: selected.status,
-                    label: selected.code,
-                  })
-                }
-              >
-                <SelectTrigger className="w-44 bg-card">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Mới</SelectItem>
-                  <SelectItem value="in_progress">Đang xử lý</SelectItem>
-                  <SelectItem value="resolved">Đã giải quyết</SelectItem>
-                </SelectContent>
-              </Select>
-              {selected.status !== "resolved" && (
-                <Button onClick={() => update.mutate({ id: selected.id, patch: { status: "resolved", assignee: selected.assignee || adminName }, label: selected.code })}>
-                  <CheckCircle2 /> Đánh dấu đã giải quyết
-                </Button>
-              )}
-            </div>
-          ) : undefined
-        }
       >
-        {selected && (
-          <>
-            <DetailSection title="Thông tin phiếu">
-              <InfoGrid
-                items={[
-                  { label: "Phân loại", value: CATEGORY_LABEL[selected.category] },
-                  { label: "Mức ưu tiên", value: <StatusBadge status={selected.priority} /> },
-                  { label: "Trạng thái", value: <StatusBadge status={selected.status} /> },
-                  { label: "Phụ trách", value: selected.assignee || "Chưa phân công" },
-                ]}
-              />
-            </DetailSection>
-
-            <DetailSection title="Trao đổi với người dùng">
-              <div className="space-y-2.5">
-                {selected.messages.map((m, i) => (
-                  <div key={i} className={`rounded-xl p-3 text-sm ${m.from === "user" ? "bg-surface-2/70" : "border border-leaf/25 bg-success-soft/40"}`}>
-                    <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-foreground">{m.from === "user" ? selected.userName : "Floria Support"}</span>
-                      <span>{formatDateTime(m.at)}</span>
-                    </div>
-                    <p>{m.text}</p>
-                  </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nhóm danh mục">
+            <Select value={form.category} onValueChange={(v) => setForm((prev) => ({ ...prev, category: v }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORT_CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.vi}
+                  </SelectItem>
                 ))}
-              </div>
-              {canEdit && (
-                <div className="mt-3 flex gap-2">
-                  <Input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Nhập phản hồi gửi người dùng…" />
-                  <Button type="button" onClick={sendReply}>
-                    <Send /> Gửi
-                  </Button>
-                </div>
-              )}
-            </DetailSection>
+              </SelectContent>
+            </Select>
+          </Field>
 
-            <DetailSection title="Ghi chú nội bộ">
-              <div className="space-y-2">
-                {selected.notes.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Chưa có ghi chú nội bộ.</p>
-                ) : (
-                  selected.notes.map((n, i) => (
-                    <div key={i} className="rounded-lg border bg-surface-2/40 p-2.5 text-xs">
-                      <p className="font-semibold">
-                        {n.by} · <span className="font-normal text-muted-foreground">{formatDateTime(n.at)}</span>
-                      </p>
-                      <p className="mt-0.5">{n.text}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-              {canEdit && (
-                <div className="mt-2.5 flex gap-2">
-                  <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ghi chú xử lý cho nội bộ team…" />
-                  <Button type="button" variant="outline" onClick={addInternalNote}>
-                    Lưu
-                  </Button>
-                </div>
-              )}
-            </DetailSection>
-          </>
-        )}
-      </DetailDrawer>
+          <Field label="Thứ tự hiển thị">
+            <Input
+              type="number"
+              min={1}
+              value={form.order}
+              onChange={(e) => setForm((prev) => ({ ...prev, order: Number(e.target.value) || 1 }))}
+            />
+          </Field>
+
+          <Field label="Câu hỏi / Tiêu đề (Tiếng Việt) *" className="sm:col-span-2">
+            <Input
+              value={form.questionVi}
+              onChange={(e) => setForm((prev) => ({ ...prev, questionVi: e.target.value }))}
+              placeholder="VD: Làm sao để chụp ảnh lá cho kết quả chính xác nhất?"
+            />
+          </Field>
+
+          <Field label="Nội dung trả lời (Tiếng Việt) *" className="sm:col-span-2">
+            <Textarea
+              rows={4}
+              value={form.answerVi}
+              onChange={(e) => setForm((prev) => ({ ...prev, answerVi: e.target.value }))}
+              placeholder="Nhập hướng dẫn chi tiết cho người dùng…"
+            />
+          </Field>
+
+          <Field label="Câu hỏi (Tiếng Anh - tuỳ chọn)" className="sm:col-span-2">
+            <Input
+              value={form.questionEn}
+              onChange={(e) => setForm((prev) => ({ ...prev, questionEn: e.target.value }))}
+              placeholder="Để trống sẽ tự dùng tiêu đề Tiếng Việt"
+            />
+          </Field>
+
+          <Field label="Nội dung trả lời (Tiếng Anh - tuỳ chọn)" className="sm:col-span-2">
+            <Textarea
+              rows={3}
+              value={form.answerEn}
+              onChange={(e) => setForm((prev) => ({ ...prev, answerEn: e.target.value }))}
+              placeholder="Để trống sẽ tự dùng nội dung Tiếng Việt"
+            />
+          </Field>
+
+          <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
+            <div>
+              <p className="text-sm font-medium">Hiển thị trên ứng dụng</p>
+              <p className="text-xs text-muted-foreground">Bật để người dùng thấy bài viết này trong Trung tâm hỗ trợ.</p>
+            </div>
+            <Switch checked={form.visible} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, visible: checked }))} />
+          </div>
+        </div>
+      </FormDialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Xóa bài viết hỗ trợ?"
+        description={`Bài viết "${deleteTarget?.questionVi ?? ""}" sẽ bị xóa khỏi CSDL Firestore và không còn hiển thị trên app.`}
+        confirmLabel="Xóa"
+        tone="danger"
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+      />
     </>
   );
 }

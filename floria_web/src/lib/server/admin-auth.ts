@@ -6,6 +6,7 @@ export interface VerifiedAdmin {
   name: string;
   email: string;
   role: RoleId;
+  avatar?: string;
 }
 
 const VALID_ROLES = new Set<RoleId>(["super_admin", "botanist", "operations"]);
@@ -38,6 +39,14 @@ export class AdminAuthError extends Error {
 
 const ADMIN_CACHE_TTL_MS = 2 * 60_000;
 const adminProfileCache = new Map<string, { admin: VerifiedAdmin; expiresAt: number }>();
+
+export function invalidateAdminCache(uid?: string) {
+  if (uid) {
+    adminProfileCache.delete(uid);
+  } else {
+    adminProfileCache.clear();
+  }
+}
 
 export async function verifyAdminRequest(req: Request): Promise<VerifiedAdmin> {
   const authHeader = req.headers.get("authorization") ?? "";
@@ -89,6 +98,7 @@ async function resolveVerifiedAdmin(decoded: {
       name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : fallbackName,
       email: typeof data.email === "string" && data.email.trim() ? data.email.trim() : email,
       role,
+      avatar: typeof data.avatar === "string" && data.avatar.trim() ? data.avatar.trim() : (typeof decoded.picture === "string" ? decoded.picture : undefined),
     };
   }
 
@@ -106,6 +116,7 @@ async function resolveVerifiedAdmin(decoded: {
         name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : fallbackName,
         email,
         role,
+        avatar: typeof data.avatar === "string" && data.avatar.trim() ? data.avatar.trim() : (typeof decoded.picture === "string" ? decoded.picture : undefined),
       };
     }
   }

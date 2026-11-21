@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -13,20 +14,85 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useRbacStore } from "@/stores/rbac-store";
 import { useUiStore } from "@/stores/ui-store";
 import { useNavBadges } from "@/hooks/use-nav-badges";
-import { can, ROLES } from "@/lib/rbac";
+import { apiRequest } from "@/lib/api-client";
+import { IS_MOCK } from "@/lib/config";
+import { resolveIcon } from "@/lib/icon-registry";
+import { can, ROLES, type ModuleId } from "@/lib/rbac";
+import type { MenuItemDoc } from "@/lib/server/menu-seed";
 import { cn } from "@/lib/utils";
-import { NAV, type NavItem, type NavLeaf, type BadgeKey } from "./nav-config";
+import { NAV, type NavGroup, type NavItem, type NavLeaf, type BadgeKey } from "./nav-config";
+
+function buildNavFromDocs(docs: MenuItemDoc[]): NavGroup[] {
+  const visible = docs.filter((d) => d.visible !== false).sort((a, b) => a.order - b.order);
+  const roots = visible.filter((d) => !d.parentId);
+  const byParent = new Map<string, MenuItemDoc[]>();
+  for (const item of visible) {
+    if (!item.parentId) continue;
+    const arr = byParent.get(item.parentId) ?? [];
+    arr.push(item);
+    byParent.set(item.parentId, arr);
+  }
+
+  return roots
+    .map((root): NavGroup => {
+      const level1 = byParent.get(root.id) ?? [];
+      const items: NavItem[] = level1.map((it) => {
+        const children = byParent.get(it.id) ?? [];
+        const Icon = resolveIcon(it.icon);
+        if (children.length > 0) {
+          return {
+            title: it.title,
+            icon: Icon,
+            children: children.map((c) => ({
+              title: c.title,
+              to: c.route || "/admin/overview",
+              icon: resolveIcon(c.icon),
+              module: (c.module || "overview") as ModuleId,
+              badge: (c.badgeKey || undefined) as BadgeKey | undefined,
+            })),
+          };
+        }
+        return {
+          title: it.title,
+          to: it.route || "/admin/overview",
+          icon: Icon,
+          module: (it.module || "overview") as ModuleId,
+          badge: (it.badgeKey || undefined) as BadgeKey | undefined,
+        };
+      });
+      return { label: root.title, items };
+    })
+    .filter((g) => g.items.length > 0);
+}
 
 function useVisibleNav() {
   const role = useAuthStore((s) => s.session?.role);
   const matrix = useRbacStore((s) => s.matrix);
-  const allowed = (m?: NavLeaf["module"]) => !!role && !!m && can(matrix, role, m, "view");
-  return NAV.map((g) => ({
-    ...g,
-    items: g.items
-      .map((it) => (it.children ? { ...it, children: it.children.filter((c) => allowed(c.module)) } : it))
-      .filter((it) => (it.children ? it.children.length > 0 : allowed(it.module))),
-  })).filter((g) => g.items.length > 0);
+  const menuQuery = useQuery({
+    queryKey: ["admin-menus", "admin_sidebar"],
+    queryFn: () => apiRequest<MenuItemDoc[]>("/menus?target=admin_sidebar"),
+    enabled: !IS_MOCK,
+  });
+
+  const sourceNav = useMemo(() => {
+    if (!IS_MOCK && menuQuery.data && menuQuery.data.length > 0) {
+      const built = buildNavFromDocs(menuQuery.data);
+      if (built.length > 0) return built;
+    }
+    return NAV;
+  }, [menuQuery.data]);
+
+  return useMemo(() => {
+    const allowed = (m?: NavLeaf["module"]) => !!role && (!m || can(matrix, role, m, "view"));
+    return sourceNav
+      .map((g) => ({
+        ...g,
+        items: g.items
+          .map((it) => (it.children ? { ...it, children: it.children.filter((c) => allowed(c.module)) } : it))
+          .filter((it) => (it.children ? it.children.length > 0 : allowed(it.module))),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [sourceNav, role, matrix]);
 }
 
 const isActive = (path: string, to: string) => path === to || path.startsWith(to + "/");
@@ -57,9 +123,11 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
   useEffect(() => {
     // keep the group containing the active route expanded
     const next: Record<string, boolean> = {};
-    NAV.forEach((g) => g.items.forEach((it) => it.children?.some((c) => isActive(path, c.to)) && (next[it.title] = true)));
-    setOpen((o) => ({ ...o, ...next }));
-  }, [path]);
+    groups.forEach((g) => g.items.forEach((it) => it.children?.some((c) => isActive(path, c.to)) && (next[it.title] = true)));
+    const keys = Object.keys(next);
+    if (keys.length === 0) return;
+    setOpen((o) => (keys.every((k) => o[k]) ? o : { ...o, ...next }));
+  }, [path, groups]);
 
   const sumBadges = (it: NavItem) => it.children?.reduce((s, c) => s + (c.badge ? badges[c.badge] : 0), 0) ?? 0;
 
@@ -180,16 +248,23 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 
       <div className="shrink-0 border-t border-sidebar-border/60 p-3">
         {session && (
-          <div className={cn("flex items-center gap-3 rounded-xl bg-sidebar-accent/50 p-2", collapsed && "justify-center bg-transparent p-0")}>
-            <UserAvatar name={session.name} className="size-9 bg-sidebar-primary text-sidebar-primary-foreground" />
+          <div className={cn("flex items-center gap-2 rounded-xl bg-sidebar-accent/50 p-2", collapsed && "justify-center bg-transparent p-0")}>
+            <Link
+              href="/admin/profile"
+              onClick={onNavigate}
+              title="Hồ sơ cá nhân"
+              className={cn("flex min-w-0 flex-1 items-center gap-3 rounded-lg transition hover:opacity-90", collapsed && "justify-center")}
+            >
+              <UserAvatar name={session.name} src={session.avatar} className="size-9 bg-sidebar-primary text-sidebar-primary-foreground" />
+              {!collapsed && (
+                <div className="min-w-0 flex-1 leading-tight">
+                  <p className="truncate text-[13px] font-semibold text-sidebar-accent-foreground">{session.name}</p>
+                  <p className="truncate text-[11px] text-sidebar-muted">{ROLES.find((r) => r.id === session.role)?.name}</p>
+                </div>
+              )}
+            </Link>
             {!collapsed && (
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="truncate text-[13px] font-semibold text-sidebar-accent-foreground">{session.name}</p>
-                <p className="truncate text-[11px] text-sidebar-muted">{ROLES.find((r) => r.id === session.role)?.name}</p>
-              </div>
-            )}
-            {!collapsed && (
-              <button onClick={logout} className="grid size-8 place-items-center rounded-lg text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Đăng xuất" title="Đăng xuất">
+              <button onClick={logout} className="grid size-8 shrink-0 place-items-center rounded-lg text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Đăng xuất" title="Đăng xuất">
                 <LogOut className="size-4" />
               </button>
             )}

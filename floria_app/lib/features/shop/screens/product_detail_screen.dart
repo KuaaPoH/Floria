@@ -49,7 +49,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   color: Colors.black.withValues(alpha: 0.35),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -68,7 +72,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           color: Colors.black.withValues(alpha: 0.35),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.shopping_bag_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                       if (shopProvider.cartCount > 0)
                         Positioned(
@@ -106,10 +114,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  CustomImage(
-                    imageUrl: p.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  CustomImage(imageUrl: p.imageUrl, fit: BoxFit.cover),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -128,7 +133,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       top: 90,
                       left: 16,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: c.primary,
                           borderRadius: BorderRadius.circular(20),
@@ -166,7 +174,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: c.surfaceTint,
                           borderRadius: BorderRadius.circular(8),
@@ -183,7 +194,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded, color: Color(0xFFF9A825), size: 20),
+                          const Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFF9A825),
+                            size: 20,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             "${p.rating}",
@@ -248,36 +263,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 10),
                   // Trạng thái tồn kho thực tế
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: p.isOutOfStock
                           ? const Color(0xFFFEE2E2)
-                          : (p.stock <= 5 ? const Color(0xFFFEF3C7) : c.surfaceTint),
+                          : (p.stock <= 5
+                                ? const Color(0xFFFEF3C7)
+                                : c.surfaceTint),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          p.isOutOfStock ? Icons.inventory_2_outlined : Icons.inventory_2_rounded,
+                          p.isOutOfStock
+                              ? Icons.inventory_2_outlined
+                              : Icons.inventory_2_rounded,
                           size: 14,
                           color: p.isOutOfStock
                               ? const Color(0xFFB91C1C)
-                              : (p.stock <= 5 ? const Color(0xFFB45309) : c.primary),
+                              : (p.stock <= 5
+                                    ? const Color(0xFFB45309)
+                                    : c.primary),
                         ),
                         const SizedBox(width: 6),
                         Text(
                           p.isOutOfStock
                               ? context.tr("Tạm hết hàng", "Out of stock")
                               : p.stock <= 5
-                                  ? context.tr("Sắp hết hàng (còn ${p.stock} sản phẩm)", "Low stock (${p.stock} left)")
-                                  : context.tr("Còn ${p.stock} sản phẩm trong kho", "${p.stock} in stock"),
+                              ? context.tr(
+                                  "Sắp hết hàng (còn ${p.stock} sản phẩm)",
+                                  "Low stock (${p.stock} left)",
+                                )
+                              : context.tr(
+                                  "Còn ${p.stock} sản phẩm trong kho",
+                                  "${p.stock} in stock",
+                                ),
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: p.isOutOfStock
                                 ? const Color(0xFFB91C1C)
-                                : (p.stock <= 5 ? const Color(0xFFB45309) : c.primary),
+                                : (p.stock <= 5
+                                      ? const Color(0xFFB45309)
+                                      : c.primary),
                           ),
                         ),
                       ],
@@ -294,7 +326,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         Icon(Icons.healing_rounded, color: c.primary, size: 22),
                         const SizedBox(width: 8),
                         Text(
-                          context.tr("Chỉ định điều trị", "Treatment Indications"),
+                          context.tr(
+                            "Chỉ định điều trị",
+                            "Treatment Indications",
+                          ),
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -309,16 +344,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       runSpacing: 8,
                       children: p.indications.map((ind) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: c.surfaceTint,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: c.primary.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: c.primary.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle_rounded, color: c.primary, size: 14),
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: c.primary,
+                                size: 14,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 ind,
@@ -338,7 +382,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                   // Mô tả chi tiết
                   Text(
-                    context.tr("Công dụng & Đặc tính", "Uses & Characteristics"),
+                    context.tr(
+                      "Công dụng & Đặc tính",
+                      "Uses & Characteristics",
+                    ),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -369,10 +416,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.menu_book_rounded, color: c.primary, size: 20),
+                            Icon(
+                              Icons.menu_book_rounded,
+                              color: c.primary,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Text(
-                              context.tr("Hướng dẫn pha & Sử dụng", "Mixing & Usage Guide"),
+                              context.tr(
+                                "Hướng dẫn pha & Sử dụng",
+                                "Mixing & Usage Guide",
+                              ),
                               style: GoogleFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -397,7 +451,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                   // Đánh giá thực tế từ khách hàng
                   _buildCustomerReviewsSection(context, p),
-                  const SizedBox(height: 100), // Khoảng trống cho Bottom Navigation Bar
+                  const SizedBox(
+                    height: 100,
+                  ), // Khoảng trống cho Bottom Navigation Bar
                 ],
               ),
             ),
@@ -435,7 +491,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.remove_rounded, size: 18, color: c.primary),
+                      icon: Icon(
+                        Icons.remove_rounded,
+                        size: 18,
+                        color: c.primary,
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -465,7 +525,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               if (_quantity >= p.stock) {
                                 AppToast.show(
                                   context,
-                                  context.tr('Số lượng tối đa còn trong kho là ${p.stock}.', 'Maximum stock available is ${p.stock}.'),
+                                  context.tr(
+                                    'Số lượng tối đa còn trong kho là ${p.stock}.',
+                                    'Maximum stock available is ${p.stock}.',
+                                  ),
                                   isError: true,
                                 );
                                 return;
@@ -489,16 +552,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     if (p.isOutOfStock) {
                       AppToast.show(
                         context,
-                        context.tr('Sản phẩm hiện đã hết hàng.', 'This product is out of stock.'),
+                        context.tr(
+                          'Sản phẩm hiện đã hết hàng.',
+                          'This product is out of stock.',
+                        ),
                         isError: true,
                       );
                       return;
                     }
-                    final added = shopProvider.addToCart(p, quantity: _quantity);
+                    final added = shopProvider.addToCart(
+                      p,
+                      quantity: _quantity,
+                    );
                     if (!added) {
                       AppToast.show(
                         context,
-                        context.tr('Giỏ hàng đã đạt số lượng tối đa trong kho (${p.stock}).', 'Cart reached max available stock (${p.stock}).'),
+                        context.tr(
+                          'Giỏ hàng đã đạt số lượng tối đa trong kho (${p.stock}).',
+                          'Cart reached max available stock (${p.stock}).',
+                        ),
                         isError: true,
                       );
                       return;
@@ -536,7 +608,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       border: Border.all(
                         color: p.isOutOfStock
                             ? c.border
-                            : (_justAdded ? c.primary : c.primary.withValues(alpha: 0.3)),
+                            : (_justAdded
+                                  ? c.primary
+                                  : c.primary.withValues(alpha: 0.3)),
                         width: 1.2,
                       ),
                     ),
@@ -544,7 +618,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: Icon(
                         p.isOutOfStock
                             ? Icons.remove_shopping_cart_outlined
-                            : (_justAdded ? Icons.check_rounded : Icons.add_shopping_cart_rounded),
+                            : (_justAdded
+                                  ? Icons.check_rounded
+                                  : Icons.add_shopping_cart_rounded),
                         color: p.isOutOfStock
                             ? c.textMuted
                             : (_justAdded ? Colors.white : c.primary),
@@ -564,22 +640,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     onPressed: p.isOutOfStock
                         ? null
                         : () {
-                            final added = shopProvider.addToCart(p, quantity: _quantity);
-                            if (!added && !shopProvider.cart.containsKey(p.id)) {
+                            final added = shopProvider.addToCart(
+                              p,
+                              quantity: _quantity,
+                            );
+                            if (!added &&
+                                !shopProvider.cart.containsKey(p.id)) {
                               AppToast.show(
                                 context,
-                                context.tr('Sản phẩm không đủ số lượng trong kho.', 'Insufficient stock.'),
+                                context.tr(
+                                  'Sản phẩm không đủ số lượng trong kho.',
+                                  'Insufficient stock.',
+                                ),
                                 isError: true,
                               );
                               return;
                             }
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const CartScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const CartScreen(),
+                              ),
                             );
                           },
                     icon: Icon(
-                      p.isOutOfStock ? Icons.block_rounded : Icons.flash_on_rounded,
+                      p.isOutOfStock
+                          ? Icons.block_rounded
+                          : Icons.flash_on_rounded,
                       color: Colors.white,
                       size: 20,
                     ),
@@ -595,7 +682,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.primary,
-                      disabledBackgroundColor: c.textMuted.withValues(alpha: 0.4),
+                      disabledBackgroundColor: c.textMuted.withValues(
+                        alpha: 0.4,
+                      ),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -611,7 +700,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildCustomerReviewsSection(BuildContext context, ShopProduct product) {
+  Widget _buildCustomerReviewsSection(
+    BuildContext context,
+    ShopProduct product,
+  ) {
     final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,7 +746,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             final docs = snapshot.data?.docs ?? [];
             final visibleDocs = docs.where((doc) {
               final data = doc.data() as Map<String, dynamic>;
-              final status = (data['status'] ?? 'approved').toString().toLowerCase();
+              final status = (data['status'] ?? 'approved')
+                  .toString()
+                  .toLowerCase();
               return status != 'hidden' && status != 'rejected';
             }).toList();
 
@@ -662,15 +756,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ..sort((a, b) {
                 final aData = a.data() as Map<String, dynamic>;
                 final bData = b.data() as Map<String, dynamic>;
-                final aTime = (aData['createdAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
-                final bTime = (bData['createdAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+                final aTime =
+                    (aData['createdAt'] as Timestamp?)?.toDate() ??
+                    DateTime(2000);
+                final bTime =
+                    (bData['createdAt'] as Timestamp?)?.toDate() ??
+                    DateTime(2000);
                 return bTime.compareTo(aTime);
               });
 
             if (sortedDocs.isEmpty) {
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: c.surface,
                   borderRadius: BorderRadius.circular(16),
@@ -695,7 +796,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         'Be the first to experience and leave a review for this product!',
                       ),
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: c.textMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -708,7 +812,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               final d = doc.data() as Map<String, dynamic>;
               totalStars += (d['rating'] as num?)?.toDouble() ?? 5.0;
             }
-            final avgRating = (totalStars / sortedDocs.length).toStringAsFixed(1);
+            final avgRating = (totalStars / sortedDocs.length).toStringAsFixed(
+              1,
+            );
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,13 +841,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                           Row(
                             children: List.generate(5, (index) {
-                              return const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF9A825));
+                              return const Icon(
+                                Icons.star_rounded,
+                                size: 16,
+                                color: Color(0xFFF9A825),
+                              );
                             }),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${sortedDocs.length} ${context.tr('đánh giá', 'reviews')}',
-                            style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: c.textMuted,
+                            ),
                           ),
                         ],
                       ),
@@ -753,7 +866,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              context.tr('Đánh giá thực tế từ khách hàng Floria', 'Real reviews from Floria customers'),
+                              context.tr(
+                                'Đánh giá thực tế từ khách hàng Floria',
+                                'Real reviews from Floria customers',
+                              ),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -766,7 +882,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 'Hình ảnh thực tế & phản hồi sau khi nhận hàng và chăm cây.',
                                 'Real photos & feedback after delivery and plant care.',
                               ),
-                              style: GoogleFonts.inter(fontSize: 11, color: c.textSecondary),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: c.textSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -784,12 +903,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, idx) {
                     final data = sortedDocs[idx].data() as Map<String, dynamic>;
-                    final userName = (data['userName'] ?? 'Khách hàng Floria').toString();
+                    final userName = (data['userName'] ?? 'Khách hàng Floria')
+                        .toString();
                     final userAvatar = (data['userAvatar'] ?? '').toString();
                     final rating = (data['rating'] as num?)?.toInt() ?? 5;
                     final comment = (data['comment'] ?? '').toString();
-                    final images = (data['images'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-                    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+                    final images =
+                        (data['images'] as List<dynamic>?)
+                            ?.map((e) => e.toString())
+                            .toList() ??
+                        [];
+                    final createdAt = (data['createdAt'] as Timestamp?)
+                        ?.toDate();
                     final dateStr = createdAt != null
                         ? '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}'
                         : context.tr('Vừa xong', 'Just now');
@@ -809,13 +934,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               CircleAvatar(
                                 radius: 18,
                                 backgroundColor: c.surfaceTint,
-                                backgroundImage: (userAvatar.isNotEmpty && !userAvatar.startsWith('preset:'))
+                                backgroundImage:
+                                    (userAvatar.isNotEmpty &&
+                                        !userAvatar.startsWith('preset:'))
                                     ? NetworkImage(userAvatar)
                                     : null,
-                                child: (userAvatar.isEmpty || userAvatar.startsWith('preset:'))
+                                child:
+                                    (userAvatar.isEmpty ||
+                                        userAvatar.startsWith('preset:'))
                                     ? Text(
-                                        userName.isNotEmpty ? userName[0].toUpperCase() : 'F',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: c.primary),
+                                        userName.isNotEmpty
+                                            ? userName[0].toUpperCase()
+                                            : 'F',
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w700,
+                                          color: c.primary,
+                                        ),
                                       )
                                     : null,
                               ),
@@ -835,7 +969,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       dateStr,
-                                      style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: c.textMuted,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -843,9 +980,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               Row(
                                 children: List.generate(5, (sIdx) {
                                   return Icon(
-                                    sIdx < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                    sIdx < rating
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
                                     size: 15,
-                                    color: sIdx < rating ? const Color(0xFFF9A825) : const Color(0xFFCBD5E1),
+                                    color: sIdx < rating
+                                        ? const Color(0xFFF9A825)
+                                        : const Color(0xFFCBD5E1),
                                   );
                                 }),
                               ),
@@ -869,17 +1010,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: images.length,
-                                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 8),
                                 itemBuilder: (context, iIdx) {
                                   final imgUrl = images[iIdx];
                                   return GestureDetector(
-                                    onTap: () => _showFullImageDialog(context, imgUrl),
+                                    onTap: () =>
+                                        _showFullImageDialog(context, imgUrl),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10),
                                       child: SizedBox(
                                         width: 72,
                                         height: 72,
-                                        child: CustomImage(imageUrl: imgUrl, fit: BoxFit.cover),
+                                        child: CustomImage(
+                                          imageUrl: imgUrl,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
                                   );
@@ -887,7 +1033,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ),
                           ],
-                          if ((data['reply'] ?? '').toString().trim().isNotEmpty) ...[
+                          if ((data['reply'] ?? '')
+                              .toString()
+                              .trim()
+                              .isNotEmpty) ...[
                             const SizedBox(height: 10),
                             Container(
                               width: double.infinity,
@@ -895,17 +1044,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               decoration: BoxDecoration(
                                 color: c.surfaceTint,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: c.primary.withValues(alpha: 0.2)),
+                                border: Border.all(
+                                  color: c.primary.withValues(alpha: 0.2),
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.support_agent_rounded, size: 15, color: c.primary),
+                                      Icon(
+                                        Icons.support_agent_rounded,
+                                        size: 15,
+                                        color: c.primary,
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        context.tr('Phản hồi từ Floria', 'Reply from Floria'),
+                                        context.tr(
+                                          'Phản hồi từ Floria',
+                                          'Reply from Floria',
+                                        ),
                                         style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
@@ -962,7 +1120,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   color: Colors.black54,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               onPressed: () => Navigator.pop(context),
             ),

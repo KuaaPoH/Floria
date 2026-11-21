@@ -47,6 +47,7 @@ class NotificationService {
       final androidImplementation = _localNotifications.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
+        await androidImplementation.requestNotificationsPermission();
         await androidImplementation.createNotificationChannel(
           const AndroidNotificationChannel(
             'floria_care_channel',

@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_constants.dart';
+import 'core/services/push_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/app_settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -11,7 +15,6 @@ import 'features/garden/providers/garden_provider.dart';
 import 'features/history/providers/history_provider.dart';
 import 'features/shop/providers/shop_provider.dart';
 import 'features/chatbot/providers/chat_provider.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'features/splash/screens/splash_screen.dart';
 
@@ -24,6 +27,8 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    unawaited(PushNotificationService.initialize());
   } catch (e) {
     debugPrint('Firebase init error: $e');
   }
@@ -67,6 +72,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = context.watch<AppSettingsProvider>();
     return MaterialApp(
+      navigatorKey: PushNotificationService.navigatorKey,
       title: 'Floria',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

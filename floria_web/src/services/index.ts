@@ -18,7 +18,7 @@ export { auditService, logAudit } from "./audit.service";
 
 // Users & RBAC (Nhóm 1 - đã nối dữ liệu thật)
 export const usersService = createResourceService<T.AppUser>("users", seedUsers);
-export const adminsService = createResourceService<T.AdminAccount>("admins", seedAdmins, { forceMock: true });
+export const adminsService = createResourceService<T.AdminAccount>("roles/admins", seedAdmins);
 
 // Botanical (Nhóm 2 - đã nối dữ liệu thật)
 export const plantsService = createResourceService<T.Plant>("plants", seedPlants);

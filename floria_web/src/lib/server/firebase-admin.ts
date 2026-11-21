@@ -3,6 +3,7 @@ import path from "node:path";
 import { cert, getApp, getApps, initializeApp, type App, type ServiceAccount } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 
 function loadServiceAccount(): ServiceAccount | null {
   const inlineJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -55,4 +56,8 @@ export function getAdminAuth() {
 
 export function getAdminDb() {
   return getFirestore(getAdminApp());
+}
+
+export function getAdminMessaging() {
+  return getMessaging(getAdminApp());
 }

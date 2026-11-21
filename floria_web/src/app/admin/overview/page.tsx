@@ -52,6 +52,16 @@ export default function OverviewPage() {
           orders: number;
           revenue: number;
         };
+        growth?: {
+          users: number;
+          dauMau: number;
+          plantScans: number;
+          diseaseScans: number;
+          scanSuccessRate: number;
+          orders: number;
+          revenue: number;
+          chatSessions: number;
+        };
         topDiseases: { name: string; value: number }[];
         series: DailyMetric[];
       }>(`/overview?days=${days}`),
@@ -137,14 +147,14 @@ export default function OverviewPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Tổng người dùng" value={formatNumber(totalUsers)} change={pct(totalUsers, prevUsers)} icon={Users} tone="leaf" trend={trend("users")} />
-        <StatCard label="DAU / MAU" value={dauMauRatio} change={IS_MOCK ? 2.1 : 0} icon={Activity} tone="info" hint={dauMauHint} trend={trend("sessions")} />
-        <StatCard label="Lượt nhận diện cây" value={formatNumber(scans)} change={pct(scans, scansPrev)} icon={ScanLine} tone="sage" trend={trend("plantScans")} />
-        <StatCard label="Lượt chẩn đoán bệnh" value={formatNumber(dis)} change={pct(dis, disPrev)} icon={Microscope} tone="warning" trend={trend("diseaseScans")} />
-        <StatCard label="Tỉ lệ nhận diện thành công" value={successRateStr} change={IS_MOCK ? 1.4 : 0} icon={Target} tone="leaf" hint="Độ tin cậy ≥ 50%" />
-        <StatCard label="Tổng đơn hàng" value={formatNumber(ord)} change={pct(ord, ordPrev)} icon={ShoppingBag} tone="info" trend={trend("orders")} />
-        <StatCard label="Doanh thu" value={formatVND(rev)} change={pct(rev, revPrev)} icon={Wallet} tone="sage" trend={trend("revenue")} />
-        <StatCard label="Phiên trợ lý AI" value={formatNumber(ses)} change={pct(ses, sesPrev)} icon={Bot} tone="danger" trend={trend("sessions")} />
+        <StatCard label="Tổng người dùng" value={formatNumber(totalUsers)} change={IS_MOCK ? pct(totalUsers, prevUsers) : (realOverview.data?.growth?.users ?? 0)} icon={Users} tone="leaf" trend={trend("users")} />
+        <StatCard label="DAU / MAU" value={dauMauRatio} change={IS_MOCK ? 2.1 : (realOverview.data?.growth?.dauMau ?? 0)} icon={Activity} tone="info" hint={dauMauHint} trend={trend("sessions")} />
+        <StatCard label="Lượt nhận diện cây" value={formatNumber(scans)} change={IS_MOCK ? pct(scans, scansPrev) : (realOverview.data?.growth?.plantScans ?? 0)} icon={ScanLine} tone="sage" trend={trend("plantScans")} />
+        <StatCard label="Lượt chẩn đoán bệnh" value={formatNumber(dis)} change={IS_MOCK ? pct(dis, disPrev) : (realOverview.data?.growth?.diseaseScans ?? 0)} icon={Microscope} tone="warning" trend={trend("diseaseScans")} />
+        <StatCard label="Tỉ lệ nhận diện thành công" value={successRateStr} change={IS_MOCK ? 1.4 : (realOverview.data?.growth?.scanSuccessRate ?? 0)} icon={Target} tone="leaf" hint="Độ tin cậy ≥ 50%" />
+        <StatCard label="Tổng đơn hàng" value={formatNumber(ord)} change={IS_MOCK ? pct(ord, ordPrev) : (realOverview.data?.growth?.orders ?? 0)} icon={ShoppingBag} tone="info" trend={trend("orders")} />
+        <StatCard label="Doanh thu" value={formatVND(rev)} change={IS_MOCK ? pct(rev, revPrev) : (realOverview.data?.growth?.revenue ?? 0)} icon={Wallet} tone="sage" trend={trend("revenue")} />
+        <StatCard label="Phiên trợ lý AI" value={formatNumber(ses)} change={IS_MOCK ? pct(ses, sesPrev) : (realOverview.data?.growth?.chatSessions ?? 0)} icon={Bot} tone="danger" trend={trend("sessions")} />
       </div>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-2">

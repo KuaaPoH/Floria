@@ -5,19 +5,18 @@ import {
   BookOpen,
   Bot,
   BrainCircuit,
-  DatabaseBackup,
   FileClock,
   Flower2,
   LayoutDashboard,
   LayoutTemplate,
   Leaf,
   LifeBuoy,
+  Menu,
   MessageSquareHeart,
   Microscope,
   Package,
   ShieldCheck,
   ShoppingBag,
-  Smartphone,
   Sparkles,
   Star,
   Tags,
@@ -33,7 +32,7 @@ import type { ModuleId } from "@/lib/rbac";
 
 export type AppPath = string;
 
-export type BadgeKey = "labelReviews" | "pendingOrders" | "openTickets" | "pendingReviews";
+export type BadgeKey = "labelReviews" | "pendingOrders" | "pendingReviews";
 
 export interface NavLeaf {
   title: string;
@@ -96,7 +95,6 @@ export const NAV: NavGroup[] = [
         children: [
           { title: "Cẩm nang", to: "/admin/handbook", icon: BookOpen, module: "content" },
           { title: "Banner trang chủ", to: "/admin/banners", icon: ImageIcon, module: "content" },
-          { title: "Remote UI Config", to: "/admin/remote-config", icon: Smartphone, module: "remote_config" },
         ],
       },
       {
@@ -104,7 +102,7 @@ export const NAV: NavGroup[] = [
         icon: Megaphone,
         children: [
           { title: "Thông báo đẩy", to: "/admin/notifications", icon: BellRing, module: "notifications" },
-          { title: "Trung tâm hỗ trợ", to: "/admin/support", icon: LifeBuoy, module: "support", badge: "openTickets" },
+          { title: "Trung tâm hỗ trợ", to: "/admin/support", icon: LifeBuoy, module: "support" },
         ],
       },
     ],
@@ -119,7 +117,7 @@ export const NAV: NavGroup[] = [
           { title: "Quản trị & Phân quyền", to: "/admin/settings/roles", icon: ShieldCheck, module: "system" },
           { title: "Tình trạng hệ thống", to: "/admin/settings/health", icon: Activity, module: "system" },
           { title: "Nhật ký hoạt động", to: "/admin/settings/audit", icon: FileClock, module: "system" },
-          { title: "Sao lưu & Cấu hình", to: "/admin/settings/backup", icon: DatabaseBackup, module: "system" },
+          { title: "Quản lý Menu", to: "/admin/settings/menus", icon: Menu, module: "system" },
         ],
       },
     ],

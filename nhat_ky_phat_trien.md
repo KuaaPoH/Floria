@@ -1429,3 +1429,39 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
     *   Hỗ trợ tạo hộp thoại mới, xoá hộp thoại, gửi tin nhắn đa lượt giữ nguyên ngữ cảnh (`history`), lưu lịch sử hộp thoại cục bộ trên trình duyệt.
     *   Tự động ẩn raw tags `[RECOMMEND_PRODUCT]` / `[CARE_SCHEDULE]`, render thẻ Sản phẩm đề xuất kèm hình ảnh & giá từ `ShopProducts`, hiển thị chuẩn Markdown (`**in đậm**`, `` `code` ``, danh sách) và bỏ hiển thị tên model trong bong bóng chat.
 *   **Việt hoá giao diện**: Chuyển toàn bộ tên tab ở AI Lab và Floria Assistant sang tiếng Việt, cập nhật slogan động cho [plants/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/plants/page.tsx).
+
+
+---
+
+## Ca làm việc ngày 21/11/2026: Thông Báo Đẩy FCM, Trung Tâm Hỗ Trợ, RBAC Thật, Giám Sát Cloudinary/ZaloPay, Quản Lý Menu & Hồ Sơ Admin
+
+### 1. Tinh chỉnh Sidebar & Nối thật Thông báo đẩy (FCM) giữa `floria_web` và `floria_app`
+*   **Gỡ bỏ mục thừa**: Xóa `Remote UI Config` và `Sao lưu & Cấu hình` khỏi [nav-config.ts](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/nav-config.ts) cùng các route cũ không dùng.
+*   **Gửi thông báo đẩy thật từ Admin (`floria_web`)**:
+    *   [firebase-admin.ts](file:///d:/Plan/utrasupervip/floria_web/src/lib/server/firebase-admin.ts): Bổ sung `getAdminMessaging()`.
+    *   [campaigns/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/campaigns/route.ts) & [notifications/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/notifications/page.tsx): Gỡ nhãn/số liệu mô phỏng, gửi Push Notification thật qua FCM topic `floria_broadcast` (`channelId: "floria_care_channel"`, `clickAction: "FLUTTER_NOTIFICATION_CLICK"`).
+*   **Nhận & mở app khi chạm thông báo (`floria_app`)**:
+    *   Cài đặt `firebase_messaging: ^16.7.1` ([pubspec.yaml](file:///d:/Plan/utrasupervip/floria_app/pubspec.yaml)) và cấu hình `FLUTTER_NOTIFICATION_CLICK` / `default_notification_channel_id` trong [AndroidManifest.xml](file:///d:/Plan/utrasupervip/floria_app/android/app/src/main/AndroidManifest.xml).
+    *   Tạo [push_notification_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/services/push_notification_service.dart) và tích hợp vào [main.dart](file:///d:/Plan/utrasupervip/floria_app/lib/main.dart) + [notification_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/services/notification_service.dart): xin quyền thông báo, đăng ký topic `floria_broadcast`, lưu token vào `DeviceTokens`, hiển thị banner khi app đang mở (`onMessage`) và xử lý mở app từ background/terminated.
+
+### 2. Chuyển Trung tâm hỗ trợ sang Firestore (`SupportArticles`)
+*   **`floria_app`**: Xóa toàn bộ dữ liệu hardcode trong [support_center_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/profile/screens/support_center_screen.dart), đọc real-time từ Firestore `SupportArticles` (`visible != false`, sắp xếp theo `order`).
+*   **`floria_web`**: Tạo API [support/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/support/route.ts) & [support/[id]/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/support/%5Bid%5D/route.ts) (tự seed 10 bài gốc nếu trống) và cập nhật [support/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/support/page.tsx) cho phép thêm, sửa, xóa, ẩn/hiện bài viết; gỡ badge ticket ảo khỏi [use-nav-badges.ts](file:///d:/Plan/utrasupervip/floria_web/src/hooks/use-nav-badges.ts).
+
+### 3. Quản trị & Phân quyền (RBAC) dữ liệu thật & Căn thẳng hàng Checkbox
+*   **Căn thẳng hàng bảng Checkbox**: Bọc `Checkbox` trong `flex items-center justify-center` với cột `w-24 text-center` tại [roles/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/settings/roles/page.tsx); xóa module `remote_config` khỏi [rbac.ts](file:///d:/Plan/utrasupervip/floria_web/src/lib/rbac.ts) và bỏ cột 2FA.
+*   **Nối thật `AdminAccounts` & `SystemConfig/rbac_matrix`**:
+    *   Tạo API [roles/admins/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/roles/admins/route.ts), [roles/admins/[id]/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/roles/admins/%5Bid%5D/route.ts) (tạo user thật trên Firebase Auth kèm mật khẩu, đồng bộ trạng thái `disabled`, xóa cache qua `invalidateAdminCache`) và [roles/matrix/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/roles/matrix/route.ts).
+    *   Cập nhật [rbac-store.ts](file:///d:/Plan/utrasupervip/floria_web/src/stores/rbac-store.ts), [admin/layout.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/layout.tsx) và [services/index.ts](file:///d:/Plan/utrasupervip/floria_web/src/services/index.ts).
+
+### 4. Giám sát Cloudinary & ZaloPay Sandbox + Sửa tăng trưởng 0% ở Tổng quan
+*   **Health Probe mở rộng**: Bổ sung kiểm tra kết nối thật tới **Cloudinary CDN** và **ZaloPay Sandbox** trong [health/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/health/route.ts), [service-health-grid.tsx](file:///d:/Plan/utrasupervip/floria_web/src/features/system/service-health-grid.tsx) và [health/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/settings/health/page.tsx).
+*   **Sửa tỉ lệ tăng trưởng 0% ở `/admin/overview`**: Mở rộng cửa sổ thống kê lên `2 × days` ngày trong [overview/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/overview/route.ts) để tính `growth` thực tế cho cả 8 thẻ trên [overview/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/overview/page.tsx).
+
+### 5. Quản lý Menu đa nền tảng (`MenuItems`)
+*   **`floria_web`**: Tạo [menu-seed.ts](file:///d:/Plan/utrasupervip/floria_web/src/lib/server/menu-seed.ts), [icon-registry.ts](file:///d:/Plan/utrasupervip/floria_web/src/lib/icon-registry.ts), API [menus/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/menus/route.ts) & [menus/[id]/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/menus/%5Bid%5D/route.ts), trang quản lý cây menu [menus/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/settings/menus/page.tsx) (3 tab: Sidebar Admin, Menu App Mobile, Menu Web User), và nối động vào [app-sidebar.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/app-sidebar.tsx) (đã sửa lỗi `Maximum update depth exceeded`).
+*   **`floria_app`**: Tạo [menu_icon_helper.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/utils/menu_icon_helper.dart) và nối [main_navigation_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/screens/main_navigation_screen.dart) lắng nghe real-time từ `MenuItems` (`target == "mobile_app"`), giữ nguyên 5 cặp icon gốc của app.
+
+### 6. Xác nhận mật khẩu khi đăng ký (`floria_app`) & Hồ sơ cá nhân Admin (`floria_web`)
+*   **`floria_app`**: Thêm ô **Xác nhận mật khẩu** kèm nút ẩn/hiện và kiểm tra khớp mật khẩu trong [register_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/auth/screens/register_screen.dart).
+*   **`floria_web`**: Tạo trang Hồ sơ cá nhân [profile/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/profile/page.tsx) & API [profile/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/profile/route.ts) (thay ảnh đại diện Cloudinary, sửa tên, đổi mật khẩu tối thiểu 6 ký tự qua Firebase Auth), đồng bộ `avatar` lên [admin-auth.ts](file:///d:/Plan/utrasupervip/floria_web/src/lib/server/admin-auth.ts), [auth-store.ts](file:///d:/Plan/utrasupervip/floria_web/src/stores/auth-store.ts), [app-sidebar.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/app-sidebar.tsx), [app-header.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/app-header.tsx) và bảng Tài khoản quản trị [roles/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/settings/roles/page.tsx).

@@ -20,6 +20,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const logout = useAuthStore((s) => s.logout);
   const refreshSession = useAuthStore((s) => s.refreshSession);
   const matrix = useRbacStore((s) => s.matrix);
+  const loadMatrix = useRbacStore((s) => s.loadMatrix);
   const path = usePathname() ?? "/";
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -50,11 +51,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         return;
       }
       await refreshSession();
+      await loadMatrix();
     });
     return () => {
       active = false;
     };
-  }, [mounted, isLoginRoute, logout, refreshSession, router]);
+  }, [mounted, isLoginRoute, logout, refreshSession, loadMatrix, router]);
 
   if (isLoginRoute) {
     return <>{children}</>;

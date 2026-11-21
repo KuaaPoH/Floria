@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChevronRight, Command, LogOut, Menu, Search, ShieldCheck, UserCog } from "lucide-react";
+import { Bell, ChevronRight, Command, LogOut, Menu, Search, ShieldCheck, User, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -242,7 +242,7 @@ export function AppHeader() {
       {session && (
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg p-1 hover:bg-muted">
-            <UserAvatar name={session.name} className="size-8" />
+            <UserAvatar name={session.name} src={session.avatar} className="size-8" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel className="font-normal">
@@ -250,20 +250,25 @@ export function AppHeader() {
               <p className="text-xs text-muted-foreground">{session.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <UserCog /> Xem với vai trò (demo)
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup value={session.role} onValueChange={(v) => { switchRole(v as RoleId); router.push("/admin/overview"); }}>
-                  {ROLES.map((r) => (
-                    <DropdownMenuRadioItem key={r.id} value={r.id}>
-                      {r.name}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            <DropdownMenuItem onSelect={() => router.push("/admin/profile")}>
+              <User /> Hồ sơ cá nhân
+            </DropdownMenuItem>
+            {IS_MOCK && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <UserCog /> Xem với vai trò (demo)
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup value={session.role} onValueChange={(v) => { switchRole(v as RoleId); router.push("/admin/overview"); }}>
+                    {ROLES.map((r) => (
+                      <DropdownMenuRadioItem key={r.id} value={r.id}>
+                        {r.name}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            )}
             <DropdownMenuItem onSelect={() => router.push("/admin/settings/roles")}>
               <ShieldCheck /> Quản trị & phân quyền
             </DropdownMenuItem>

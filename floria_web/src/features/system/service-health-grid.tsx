@@ -21,6 +21,8 @@ const ICONS: Record<string, typeof Server> = {
   firestore: Database,
   "ai-engine": Cpu,
   "spring-backend": Server,
+  cloudinary: HardDrive,
+  zalopay: CreditCard,
 };
 
 interface RealHealthResponse {
@@ -89,7 +91,7 @@ export function ServiceHealthGrid({ compact }: { compact?: boolean }) {
       </div>
       <div className={cn("grid gap-3", compact ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-3")}>
         {isLoading || !data
-          ? Array.from({ length: IS_MOCK ? 5 : 3 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
+          ? Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
           : rows.map((s) => {
               const Icon = ICONS[s.id] ?? Server;
               const dot = s.status === "operational" ? "bg-success" : s.status === "degraded" ? "bg-warning" : "bg-danger";

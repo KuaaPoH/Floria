@@ -18,16 +18,20 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   final _nameFocus = FocusNode();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
+  final _confirmPasswordFocus = FocusNode();
 
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isSubmitting = false;
   bool _nameFocused = false;
   bool _emailFocused = false;
   bool _passwordFocused = false;
+  bool _confirmPasswordFocused = false;
 
   late final AnimationController _entranceController;
   late final AnimationController _mascotWaveController;
@@ -68,6 +72,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     _passwordFocus.addListener(() {
       if (mounted && _passwordFocused != _passwordFocus.hasFocus) {
         setState(() => _passwordFocused = _passwordFocus.hasFocus);
+      }
+    });
+    _confirmPasswordFocus.addListener(() {
+      if (mounted && _confirmPasswordFocused != _confirmPasswordFocus.hasFocus) {
+        setState(() => _confirmPasswordFocused = _confirmPasswordFocus.hasFocus);
       }
     });
 
@@ -139,9 +148,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     _nameFocus.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -314,10 +325,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                                         icon: Icons.lock_outline_rounded,
                                         isPassword: true,
                                         obscureText: _obscurePassword,
-                                        textInputAction: TextInputAction.done,
-                                        onFieldSubmitted: (_) {
-                                          if (!_isSubmitting) _submit();
-                                        },
+                                        textInputAction: TextInputAction.next,
                                         onSuffixIconTap: () {
                                           setState(() => _obscurePassword = !_obscurePassword);
                                         },
@@ -329,6 +337,43 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                                             return context.tr(
                                               'Mật khẩu phải từ 6 ký tự trở lên',
                                               'Password must be at least 6 characters',
+                                            );
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+
+                                  // Confirm Password Input
+                                  FadeTransition(
+                                    opacity: _passwordFade,
+                                    child: SlideTransition(
+                                      position: _passwordSlide,
+                                      child: _buildInputField(
+                                        controller: _confirmPasswordController,
+                                        focusNode: _confirmPasswordFocus,
+                                        isFocused: _confirmPasswordFocused,
+                                        hintText: context.tr('Xác nhận mật khẩu', 'Confirm password'),
+                                        icon: Icons.lock_reset_rounded,
+                                        isPassword: true,
+                                        obscureText: _obscureConfirmPassword,
+                                        textInputAction: TextInputAction.done,
+                                        onFieldSubmitted: (_) {
+                                          if (!_isSubmitting) _submit();
+                                        },
+                                        onSuffixIconTap: () {
+                                          setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return context.tr('Vui lòng xác nhận mật khẩu', 'Please confirm password');
+                                          }
+                                          if (value != _passwordController.text) {
+                                            return context.tr(
+                                              'Mật khẩu xác nhận không khớp',
+                                              'Passwords do not match',
                                             );
                                           }
                                           return null;

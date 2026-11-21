@@ -29,7 +29,6 @@ export const MODULES = [
   { id: "products", name: "Sản phẩm & Kho" },
   { id: "reviews", name: "Đánh giá" },
   { id: "content", name: "Nội dung & Banner" },
-  { id: "remote_config", name: "Remote UI Config" },
   { id: "notifications", name: "Thông báo đẩy" },
   { id: "support", name: "Hỗ trợ khách hàng" },
   { id: "system", name: "Cài đặt hệ thống" },

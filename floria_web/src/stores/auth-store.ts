@@ -12,6 +12,7 @@ export interface AdminSession {
   name: string;
   email: string;
   role: RoleId;
+  avatar?: string;
 }
 
 export const DEMO_ACCOUNTS: (AdminSession & { password: string })[] = [
@@ -26,6 +27,7 @@ interface AuthState {
   loginWithFirebase: (email: string, password: string) => Promise<AdminSession>;
   loginWithGoogle: () => Promise<AdminSession>;
   refreshSession: () => Promise<AdminSession | null>;
+  updateSession: (patch: Partial<AdminSession>) => void;
   logout: () => Promise<void>;
   switchRole: (role: RoleId) => void;
 }
@@ -38,7 +40,7 @@ async function verifyFirebaseSession(idToken: string): Promise<AdminSession> {
   if (!res.ok) {
     throw new Error(data.error ?? "Không thể xác thực quyền quản trị");
   }
-  return { id: data.id, name: data.name, email: data.email, role: data.role };
+  return { id: data.id, name: data.name, email: data.email, role: data.role, avatar: data.avatar };
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -96,7 +98,8 @@ export const useAuthStore = create<AuthState>()(
             current.id === newSession.id &&
             current.name === newSession.name &&
             current.email === newSession.email &&
-            current.role === newSession.role
+            current.role === newSession.role &&
+            current.avatar === newSession.avatar
           ) {
             return current;
           }
@@ -105,6 +108,11 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           return get().session;
         }
+      },
+      updateSession: (patch) => {
+        const current = get().session;
+        if (!current) return;
+        set({ session: { ...current, ...patch } });
       },
       logout: async () => {
         set({ session: null });

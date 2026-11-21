@@ -16,22 +16,20 @@ import { DataTable } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Field } from "@/components/shared/field";
 import { ImageUploader } from "@/components/shared/image-uploader";
-import { DemoBadge } from "@/components/shared/demo-badge";
 import { useResourceList, useResourceMutations } from "@/hooks/use-resource";
 import { usePermission } from "@/stores/rbac-store";
 import { campaignsService } from "@/services";
-import { IMAGES } from "@/mocks/images";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { uid } from "@/lib/id";
 import type { AudienceKind, Campaign } from "@/types";
 
-const AUDIENCE_LABELS: Record<AudienceKind, { label: string; estimate: number }> = {
-  all: { label: "Tất cả người dùng", estimate: 31200 },
-  active: { label: "Người dùng hoạt động (30 ngày)", estimate: 18420 },
-  inactive: { label: "Người dùng không hoạt động (>30 ngày)", estimate: 9210 },
-  species: { label: "Người dùng đang trồng loài cây cụ thể", estimate: 2450 },
-  diagnosed: { label: "Người dùng từng chẩn đoán bệnh", estimate: 7340 },
-  custom: { label: "Phân khúc tuỳ chỉnh", estimate: 1500 },
+const AUDIENCE_LABELS: Record<AudienceKind, string> = {
+  all: "Tất cả thiết bị đã cài Floria",
+  active: "Người dùng hoạt động (30 ngày)",
+  inactive: "Người dùng không hoạt động (>30 ngày)",
+  species: "Người dùng đang trồng loài cây cụ thể",
+  diagnosed: "Người dùng từng chẩn đoán bệnh",
+  custom: "Phân khúc tuỳ chỉnh",
 };
 
 export default function NotificationsPage() {
@@ -42,9 +40,9 @@ export default function NotificationsPage() {
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [image, setImage] = useState(IMAGES.monstera);
-  const [deepLink, setDeepLink] = useState("floria://garden");
-  const [audience, setAudience] = useState<AudienceKind>("active");
+  const [image, setImage] = useState("");
+  const [deepLink, setDeepLink] = useState("floria://home");
+  const [audience, setAudience] = useState<AudienceKind>("all");
   const [audienceDetail, setAudienceDetail] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
 
@@ -57,6 +55,7 @@ export default function NotificationsPage() {
     () =>
       all
         .filter((c) => c.status === "sent")
+        .slice(0, 8)
         .map((c) => ({
           name: c.name.slice(0, 18),
           thanhCong: c.success,
@@ -66,34 +65,37 @@ export default function NotificationsPage() {
   );
 
   const submit = (sendNow: boolean) => {
-    if (!name.trim() || !title.trim() || !body.trim()) {
-      toast.error("Vui lòng nhập tên chiến dịch, tiêu đề và nội dung thông báo");
+    if (!title.trim() || !body.trim()) {
+      toast.error("Vui lòng nhập tiêu đề và nội dung thông báo");
       return;
     }
-    const est = AUDIENCE_LABELS[audience].estimate;
-    const item: Campaign = {
+    const item: Campaign & { sendNow: boolean } = {
       id: uid("cmp"),
-      name: name.trim(),
+      name: name.trim() || title.trim(),
       title: title.trim(),
       body: body.trim(),
       image,
       deepLink: deepLink.trim() || "floria://home",
       audience,
-      audienceDetail: audienceDetail.trim() || AUDIENCE_LABELS[audience].label,
+      audienceDetail: audienceDetail.trim() || AUDIENCE_LABELS[audience],
       scheduledAt: sendNow ? new Date().toISOString() : scheduledAt ? new Date(scheduledAt).toISOString() : new Date().toISOString(),
       status: sendNow ? "sent" : "scheduled",
-      targeted: est,
-      success: sendNow ? Math.round(est * 0.97) : 0,
-      failed: sendNow ? Math.round(est * 0.03) : 0,
-      opened: sendNow ? Math.round(est * 0.34) : 0,
+      targeted: 0,
+      success: 0,
+      failed: 0,
+      opened: 0,
+      sendNow,
     };
     create.mutate(item, {
       onSuccess: () => {
-        toast.success(sendNow ? "Đã gửi chiến dịch (mô phỏng)" : "Đã lên lịch chiến dịch");
+        toast.success(sendNow ? "Đã gửi thông báo đẩy tới tất cả thiết bị!" : "Đã lên lịch chiến dịch");
         setName("");
         setTitle("");
         setBody("");
         setAudienceDetail("");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Không thể gửi thông báo đẩy");
       },
     });
   };
@@ -119,7 +121,7 @@ export default function NotificationsPage() {
 
   return (
     <>
-      <PageHeader title="Thông báo đẩy" description="Tạo chiến dịch Push Notification phân khúc người dùng và theo dõi hiệu quả gửi." badge={<DemoBadge label="Mô phỏng FCM" />} />
+      <PageHeader title="Thông báo đẩy" description="Gửi Push Notification thực tế qua Firebase Cloud Messaging tới các thiết bị cài đặt Floria." />
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Chiến dịch" value={String(all.length)} icon={BellRing} tone="leaf" />
@@ -130,51 +132,51 @@ export default function NotificationsPage() {
 
       <div className="mb-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="card-surface p-5">
-          <h3 className="mb-4 text-base font-semibold">Tạo chiến dịch mới</h3>
+          <h3 className="mb-4 text-base font-semibold">Tạo thông báo mới</h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Tên chiến dịch nội bộ" className="sm:col-span-2">
-              <Input value={name} disabled={!canCreate} onChange={(e) => setName(e.target.value)} placeholder="VD: Nhắc chăm cây cuối tuần" />
+            <Field label="Tên chiến dịch nội bộ (tuỳ chọn)" className="sm:col-span-2">
+              <Input value={name} disabled={!canCreate || create.isPending} onChange={(e) => setName(e.target.value)} placeholder="VD: Nhắc chăm cây cuối tuần" />
             </Field>
             <Field label="Tiêu đề thông báo" className="sm:col-span-2">
-              <Input value={title} disabled={!canCreate} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Cây của bạn cần kiểm tra độ ẩm!" />
+              <Input value={title} disabled={!canCreate || create.isPending} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Cây của bạn cần kiểm tra độ ẩm!" />
             </Field>
             <Field label="Nội dung thông báo" className="sm:col-span-2">
-              <Textarea rows={3} value={body} disabled={!canCreate} onChange={(e) => setBody(e.target.value)} placeholder="Nội dung ngắn gọn hiển thị trên màn hình khoá…" />
+              <Textarea rows={3} value={body} disabled={!canCreate || create.isPending} onChange={(e) => setBody(e.target.value)} placeholder="Nội dung ngắn gọn hiển thị trên màn hình khoá…" />
             </Field>
             <Field label="Phân khúc đối tượng">
-              <Select value={audience} disabled={!canCreate} onValueChange={(v) => setAudience(v as AudienceKind)}>
+              <Select value={audience} disabled={!canCreate || create.isPending} onValueChange={(v) => setAudience(v as AudienceKind)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(AUDIENCE_LABELS).map(([k, v]) => (
+                  {Object.entries(AUDIENCE_LABELS).map(([k, label]) => (
                     <SelectItem key={k} value={k}>
-                      {v.label} (~{formatNumber(v.estimate)})
+                      {label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
             <Field label="Chi tiết phân khúc (tuỳ chọn)">
-              <Input value={audienceDetail} disabled={!canCreate} onChange={(e) => setAudienceDetail(e.target.value)} placeholder="VD: Trồng Monstera…" />
+              <Input value={audienceDetail} disabled={!canCreate || create.isPending} onChange={(e) => setAudienceDetail(e.target.value)} placeholder="VD: Toàn bộ người dùng app…" />
             </Field>
             <Field label="Deep link đích">
-              <Input className="font-mono text-xs" value={deepLink} disabled={!canCreate} onChange={(e) => setDeepLink(e.target.value)} />
+              <Input className="font-mono text-xs" value={deepLink} disabled={!canCreate || create.isPending} onChange={(e) => setDeepLink(e.target.value)} />
             </Field>
             <Field label="Thời gian hẹn gửi (nếu lên lịch)">
-              <Input type="datetime-local" value={scheduledAt} disabled={!canCreate} onChange={(e) => setScheduledAt(e.target.value)} />
+              <Input type="datetime-local" value={scheduledAt} disabled={!canCreate || create.isPending} onChange={(e) => setScheduledAt(e.target.value)} />
             </Field>
-            <Field label="Ảnh đính kèm" className="sm:col-span-2">
+            <Field label="Ảnh đính kèm (tuỳ chọn)" className="sm:col-span-2">
               <ImageUploader value={image} aspect="wide" onChange={setImage} />
             </Field>
           </div>
           {canCreate && (
             <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => submit(false)}>
+              <Button type="button" variant="outline" disabled={create.isPending} onClick={() => submit(false)}>
                 <Plus /> Lên lịch gửi
               </Button>
-              <Button type="button" onClick={() => submit(true)}>
-                <Send /> Gửi ngay (Demo)
+              <Button type="button" disabled={create.isPending} onClick={() => submit(true)}>
+                <Send /> {create.isPending ? "Đang gửi..." : "Gửi ngay"}
               </Button>
             </div>
           )}
@@ -184,7 +186,7 @@ export default function NotificationsPage() {
           <div className="card-surface p-5">
             <h3 className="mb-3 text-base font-semibold">Xem trước trên điện thoại</h3>
             <div className="rounded-3xl bg-[#1a221d] p-5 text-white">
-              <p className="mb-4 text-center text-xs opacity-60">Thứ Tư, 18/11 · 09:30</p>
+              <p className="mb-4 text-center text-xs opacity-60">Màn hình khóa điện thoại</p>
               <div className="rounded-2xl bg-white/95 p-3.5 text-[#26372D] shadow-md">
                 <div className="flex items-center justify-between text-[11px] text-[#718074]">
                   <span className="font-semibold text-forest">FLORIA</span>
@@ -193,7 +195,7 @@ export default function NotificationsPage() {
                 <div className="mt-1.5 flex gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{title || "Tiêu đề thông báo Floria"}</p>
-                    <p className="mt-0.5 text-xs text-[#55635a]">{body || "Nội dung thông báo sẽ hiển thị tại đây cho nhóm người dùng đã chọn."}</p>
+                    <p className="mt-0.5 text-xs text-[#55635a]">{body || "Nội dung thông báo sẽ hiển thị tại đây và mở ứng dụng khi chạm vào."}</p>
                   </div>
                   {image && <img src={image} alt="" className="size-12 shrink-0 rounded-lg object-cover" />}
                 </div>

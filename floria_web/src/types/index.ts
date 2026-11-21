@@ -365,6 +365,7 @@ export interface AdminAccount {
   name: string;
   email: string;
   role: RoleId;
+  avatar?: string;
   status: "active" | "disabled";
   lastLogin: string;
   twoFA: boolean;

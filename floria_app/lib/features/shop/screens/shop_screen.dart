@@ -45,7 +45,10 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!added) {
       AppToast.show(
         context,
-        context.tr('Đã đạt số lượng tối đa trong kho (${product.stock}).', 'Reached max stock (${product.stock}).'),
+        context.tr(
+          'Đã đạt số lượng tối đa trong kho (${product.stock}).',
+          'Reached max stock (${product.stock}).',
+        ),
         isError: true,
       );
       return;
@@ -75,7 +78,10 @@ class _ShopScreenState extends State<ShopScreen> {
   List<Map<String, String>> _getCategories(BuildContext context) => [
     {'title': context.tr('Tất cả', 'All'), 'key': 'all'},
     {'title': context.tr('Thuốc trị bệnh', 'Medicine'), 'key': 'medicine'},
-    {'title': context.tr('Phân bón & Dưỡng', 'Fertilizer'), 'key': 'fertilizer'},
+    {
+      'title': context.tr('Phân bón & Dưỡng', 'Fertilizer'),
+      'key': 'fertilizer',
+    },
     {'title': context.tr('Dụng cụ', 'Tools'), 'key': 'tools'},
     {'title': context.tr('Đất trồng', 'Soil'), 'key': 'soil'},
   ];
@@ -115,7 +121,10 @@ class _ShopScreenState extends State<ShopScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            context.tr('VẬT TƯ & DƯỢC PHẨM CÂY TRỒNG', 'SUPPLIES & PLANT CARE'),
+                            context.tr(
+                              'VẬT TƯ & DƯỢC PHẨM CÂY TRỒNG',
+                              'SUPPLIES & PLANT CARE',
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
@@ -149,7 +158,9 @@ class _ShopScreenState extends State<ShopScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const OrderHistoryScreen(),
+                                ),
                               );
                             },
                             borderRadius: BorderRadius.circular(14),
@@ -169,7 +180,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                 ],
                               ),
                               child: Center(
-                                child: Icon(Icons.receipt_long_outlined, color: c.primaryText, size: 21),
+                                child: Icon(
+                                  Icons.receipt_long_outlined,
+                                  color: c.primaryText,
+                                  size: 21,
+                                ),
                               ),
                             ),
                           ),
@@ -186,18 +201,26 @@ class _ShopScreenState extends State<ShopScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const CartScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const CartScreen(),
+                                ),
                               );
                             },
                             borderRadius: BorderRadius.circular(14),
                             child: Container(
                               height: 44,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: _cartBouncing ? c.surfaceTint : c.surface,
+                                color: _cartBouncing
+                                    ? c.surfaceTint
+                                    : c.surface,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: _cartBouncing ? c.primaryText : c.border,
+                                  color: _cartBouncing
+                                      ? c.primaryText
+                                      : c.border,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
@@ -210,14 +233,24 @@ class _ShopScreenState extends State<ShopScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.shopping_bag_outlined, color: c.primaryText, size: 21),
+                                  Icon(
+                                    Icons.shopping_bag_outlined,
+                                    color: c.primaryText,
+                                    size: 21,
+                                  ),
                                   const SizedBox(width: 5),
                                   AnimatedSwitcher(
                                     duration: const Duration(milliseconds: 220),
-                                    transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                                    transitionBuilder: (child, anim) =>
+                                        ScaleTransition(
+                                          scale: anim,
+                                          child: child,
+                                        ),
                                     child: Text(
                                       '${shopProvider.cartCount}',
-                                      key: ValueKey<int>(shopProvider.cartCount),
+                                      key: ValueKey<int>(
+                                        shopProvider.cartCount,
+                                      ),
                                       style: GoogleFonts.inter(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w800,
@@ -245,12 +278,24 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
-                    style: GoogleFonts.inter(color: c.textPrimary, fontSize: 13),
+                    style: GoogleFonts.inter(
+                      color: c.textPrimary,
+                      fontSize: 13,
+                    ),
                     onChanged: (val) => shopProvider.setSearchQuery(val),
                     decoration: InputDecoration(
-                      hintText: context.tr("Tìm thuốc trị nấm, rệp, kéo tỉa, đất...", "Search fungicides, neem oil, shears, soil..."),
-                      hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
-                      prefixIcon: Icon(Icons.search_rounded, color: c.textMuted),
+                      hintText: context.tr(
+                        "Tìm thuốc trị nấm, rệp, kéo tỉa, đất...",
+                        "Search fungicides, neem oil, shears, soil...",
+                      ),
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: c.textMuted,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: c.textMuted,
+                      ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear_rounded, size: 18),
@@ -284,7 +329,8 @@ class _ShopScreenState extends State<ShopScreen> {
                     children: [
                       Positioned.fill(
                         child: CustomImage(
-                          imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80',
+                          imageUrl:
+                              'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80',
                           fit: BoxFit.cover,
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -308,13 +354,19 @@ class _ShopScreenState extends State<ShopScreen> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF4F9D69),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  context.tr('🛡️ Dược phẩm sinh học', '🛡️ Biological Products'),
+                                  context.tr(
+                                    '🛡️ Dược phẩm sinh học',
+                                    '🛡️ Biological Products',
+                                  ),
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -324,7 +376,10 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                context.tr('Bộ Đôi Khắc Tinh Bệnh Lá & Sâu Hại', 'Leaf Disease & Pest Control Duo'),
+                                context.tr(
+                                  'Bộ Đôi Khắc Tinh Bệnh Lá & Sâu Hại',
+                                  'Leaf Disease & Pest Control Duo',
+                                ),
                                 style: GoogleFonts.inter(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -333,7 +388,10 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                context.tr('Nano Bạc Đồng & Tinh dầu Neem giúp bảo vệ cây toàn diện không độc hại.', 'Nano Silver Copper & Neem Oil provide non-toxic, total plant protection.'),
+                                context.tr(
+                                  'Nano Bạc Đồng & Tinh dầu Neem giúp bảo vệ cây toàn diện không độc hại.',
+                                  'Nano Silver Copper & Neem Oil provide non-toxic, total plant protection.',
+                                ),
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.white.withValues(alpha: 0.85),
@@ -357,7 +415,8 @@ class _ShopScreenState extends State<ShopScreen> {
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
                       final cat = categories[index];
-                      final isSelected = shopProvider.selectedCategoryKey == cat['key'];
+                      final isSelected =
+                          shopProvider.selectedCategoryKey == cat['key'];
 
                       return GestureDetector(
                         onTap: () => shopProvider.setCategory(cat['key']!),
@@ -366,18 +425,30 @@ class _ShopScreenState extends State<ShopScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: isSelected ? (c.isDark ? c.primaryText : const Color(0xFF364534)) : c.surface,
+                            color: isSelected
+                                ? (c.isDark
+                                      ? c.primaryText
+                                      : const Color(0xFF364534))
+                                : c.surface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isSelected ? (c.isDark ? c.primaryText : const Color(0xFF364534)) : c.border,
+                              color: isSelected
+                                  ? (c.isDark
+                                        ? c.primaryText
+                                        : const Color(0xFF364534))
+                                  : c.border,
                             ),
                           ),
                           child: Text(
                             cat['title']!,
                             style: GoogleFonts.inter(
                               fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected ? (c.isDark ? Colors.black : Colors.white) : c.textSecondary,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? (c.isDark ? Colors.black : Colors.white)
+                                  : c.textSecondary,
                             ),
                           ),
                         ),
@@ -395,8 +466,14 @@ class _ShopScreenState extends State<ShopScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(40),
                       child: Text(
-                        context.tr("Không tìm thấy sản phẩm nào phù hợp.", "No matching products found."),
-                        style: GoogleFonts.inter(fontSize: 14, color: c.textMuted),
+                        context.tr(
+                          "Không tìm thấy sản phẩm nào phù hợp.",
+                          "No matching products found.",
+                        ),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: c.textMuted,
+                        ),
                       ),
                     ),
                   )
@@ -404,12 +481,13 @@ class _ShopScreenState extends State<ShopScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.65,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 14,
+                          childAspectRatio: 0.65,
+                        ),
                     itemCount: products.length,
                     itemBuilder: (context, index) {
                       final product = products[index];
@@ -467,7 +545,11 @@ class _ShopScreenState extends State<ShopScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         ShimmerLoading(width: 60, height: 16),
-                        ShimmerLoading(width: 28, height: 28, shape: BoxShape.circle),
+                        ShimmerLoading(
+                          width: 28,
+                          height: 28,
+                          shape: BoxShape.circle,
+                        ),
                       ],
                     ),
                   ],
@@ -480,13 +562,19 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, ShopProduct product, ShopProvider provider) {
+  Widget _buildProductCard(
+    BuildContext context,
+    ShopProduct product,
+    ShopProvider provider,
+  ) {
     final c = context.colors;
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product)),
+          MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(product: product),
+          ),
         );
       },
       borderRadius: BorderRadius.circular(16),
@@ -510,7 +598,9 @@ class _ShopScreenState extends State<ShopScreen> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: SizedBox(
                     height: 130,
                     width: double.infinity,
@@ -525,7 +615,10 @@ class _ShopScreenState extends State<ShopScreen> {
                     top: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF2E6F40),
                         borderRadius: BorderRadius.circular(8),
@@ -545,7 +638,10 @@ class _ShopScreenState extends State<ShopScreen> {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFB91C1C).withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(8),
@@ -597,7 +693,11 @@ class _ShopScreenState extends State<ShopScreen> {
                     // Đánh giá sao thật và số lượng đã bán
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 14,
+                          color: Color(0xFFF59E0B),
+                        ),
                         const SizedBox(width: 3),
                         Text(
                           product.rating.toStringAsFixed(1),
@@ -615,8 +715,12 @@ class _ShopScreenState extends State<ShopScreen> {
                                 : '${context.tr('• Đã bán ', '• Sold ')}${product.soldCount} · ${context.tr('Còn ', '')}${product.stock}',
                             style: GoogleFonts.inter(
                               fontSize: 10.5,
-                              fontWeight: product.isOutOfStock ? FontWeight.w600 : FontWeight.w400,
-                              color: product.isOutOfStock ? const Color(0xFFBA1A1A) : c.textMuted,
+                              fontWeight: product.isOutOfStock
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: product.isOutOfStock
+                                  ? const Color(0xFFBA1A1A)
+                                  : c.textMuted,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -667,22 +771,22 @@ class _ShopScreenState extends State<ShopScreen> {
                               color: product.isOutOfStock
                                   ? c.surfaceMuted
                                   : _justAddedIds.contains(product.id)
-                                      ? const Color(0xFF2E6F40)
-                                      : c.surfaceTint,
+                                  ? const Color(0xFF2E6F40)
+                                  : c.surfaceTint,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
                               product.isOutOfStock
                                   ? Icons.remove_shopping_cart_outlined
                                   : _justAddedIds.contains(product.id)
-                                      ? Icons.check_rounded
-                                      : Icons.add_shopping_cart_rounded,
+                                  ? Icons.check_rounded
+                                  : Icons.add_shopping_cart_rounded,
                               size: 16,
                               color: product.isOutOfStock
                                   ? c.textMuted
                                   : _justAddedIds.contains(product.id)
-                                      ? Colors.white
-                                      : c.primaryText,
+                                  ? Colors.white
+                                  : c.primaryText,
                             ),
                           ),
                         ),
