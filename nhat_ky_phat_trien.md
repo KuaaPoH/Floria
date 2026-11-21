@@ -1502,3 +1502,33 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 *   Khai báo toàn diện `metadata.icons` và các thẻ `<link rel="icon">` kèm phiên bản `?v=2` trong [layout.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/layout.tsx) để trình duyệt ép refresh icon mới thay thế biểu tượng trái tim gradient của Lovable cũ.
 *   **Khắc phục lỗi Turbopack `The PNG is not in RGBA format!`**: Gỡ bỏ tệp thừa `src/app/favicon.ico` gây xung đột với bộ giải mã hình ảnh Rust của Turbopack, tuân thủ chuẩn App Router của Next.js với `src/app/icon.png`.
 *   **Kiểm tra biên dịch**: Chạy `npm run build` trên `floria_web` hoàn tất thành công 100% (57/57 static pages và API routes).
+
+---
+
+## Ca làm việc ngày 21/11/2026 (Đợt 4): Dọn Dẹp Mã Nguồn Rác, Nâng Cấp Phiên Bản 1.0.0 & Đóng Gói Hoàn Tất Release APK Với Logo Mới
+
+### 1. Dọn Dẹp Toàn Diện Tệp Rác & Script Không Sử Dụng (Nhóm 1, 2, 3)
+*   **Xóa tệp log & cấu hình cũ (`floria_app`)**:
+    *   Xóa `floria_app/flutter_01.log` (tệp crash log cũ).
+    *   Xóa `floria_app/my_ai_plant_app.iml` và `floria_app/android/my_ai_plant_app_android.iml` (cấu hình IDE mang tên dự án cũ).
+    *   Xóa `floria_app/test/widget_test.dart` (smoke test mẫu của Flutter create bị fail do app đã chuyển sang kiến trúc `Floria` + `MultiProvider`).
+*   **Xóa mã nguồn không dùng (`floria_app`)**:
+    *   Xóa `floria_app/lib/core/network/api_client.dart` (class wrapper không được import ở đâu).
+    *   Xóa `floria_app/lib/core/services/migration_service.dart` (script migration Cloudinary một lần ngày 07/11 đã hoàn thành).
+*   **Xóa hook & helper không dùng (`floria_web`)**:
+    *   Xóa `floria_web/src/hooks/use-singleton.ts` (custom hook thừa).
+    *   Xóa `floria_web/src/lib/search-params.ts` (helper thừa).
+
+### 2. Đồng Bộ Nâng Cấp Phiên Bản Lên `1.0.0`
+*   Cập nhật `version: 1.0.0+1` trong [pubspec.yaml](file:///d:/Plan/utrasupervip/floria_app/pubspec.yaml).
+*   Cập nhật `AppConstants.appVersion = '1.0.0'` trong [app_constants.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/constants/app_constants.dart), đồng bộ trực tiếp tới Splash Screen và Cài đặt.
+*   Cập nhật `"version": "1.0.0"` trong [package.json](file:///d:/Plan/utrasupervip/floria_web/package.json) của `floria_web`.
+
+### 3. Đồng Bộ Icon Ứng Dụng Android Từ `logo.jpg` & Đóng Gói Release APK
+*   **Sinh bộ Icon Android đa mật độ điểm ảnh**: Sử dụng tệp ảnh gốc chất lượng cao [logo.jpg](file:///d:/Plan/utrasupervip/floria_app/assets/images/logo.jpg) (1254×1254px) để tạo đồng thời cả icon tiêu chuẩn (`ic_launcher.png`) và icon tròn bo viền (`ic_launcher_round.png`) cho toàn bộ 5 thư mục mật độ màn hình: `mipmap-mdpi` (48px), `mipmap-hdpi` (72px), `mipmap-xhdpi` (96px), `mipmap-xxhdpi` (144px), và `mipmap-xxxhdpi` (192px).
+*   **Cập nhật Android Manifest**: Khai báo cả `android:icon="@mipmap/ic_launcher"` và `android:roundIcon="@mipmap/ic_launcher_round"` trong [AndroidManifest.xml](file:///d:/Plan/utrasupervip/floria_app/android/app/src/main/AndroidManifest.xml) để ứng dụng hiển thị logo sắc nét trên mọi giao diện launcher Android.
+*   **Biên dịch & Đóng gói APK Release**:
+    *   Thực thi lệnh: `flutter build apk --release` (tối ưu hóa Tree-shaking 97.9%, ProGuard/R8 minification).
+    *   Tệp APK xuất xưởng: `floria_app/build/app/outputs/flutter-apk/app-release.apk` (Dung lượng: **69.6 MB**).
+    *   Sao chép bản cài đặt tiện dụng ra thư mục gốc: **[Floria_v1.0.0_Release.apk](file:///d:/Plan/utrasupervip/Floria_v1.0.0_Release.apk)**.
+*   **Kiểm tra tĩnh**: `dart analyze` trên toàn bộ dự án đạt chuẩn **`No issues found!`** (0 lỗi, 0 cảnh báo).

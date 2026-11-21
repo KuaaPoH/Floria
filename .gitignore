@@ -12,6 +12,7 @@ floria_app/.dart_tool/
 floria_app/windows/flutter/ephemeral/
 floria_app/linux/flutter/ephemeral/
 floria_app/macos/Flutter/ephemeral/
+*.apk
 my_ai_plant_app/build/
 my_ai_plant_app/.dart_tool/
 my_ai_plant_app/windows/flutter/ephemeral/

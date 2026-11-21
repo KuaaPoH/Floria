@@ -4,7 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 class AppConstants {
   /// Phiên bản ứng dụng đọc động từ bản build (`pubspec.yaml`) khi khởi động
-  static String appVersion = '0.0.1';
+  static String appVersion = '1.0.0';
 
   static Future<void> loadAppVersion() async {
     try {
