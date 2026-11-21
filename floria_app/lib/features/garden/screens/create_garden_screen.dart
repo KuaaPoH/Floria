@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../providers/garden_provider.dart';
 
 class CreateGardenScreen extends StatefulWidget {
@@ -93,37 +94,16 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
     });
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "${context.tr("Đã tạo khu vườn", "Created garden")} '${_nameController.text.trim()}' ${context.tr("thành công!", "successfully!")}",
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF364534),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 3),
-        ),
+      AppToast.show(
+        context,
+        "${context.tr("Đã tạo khu vườn", "Created garden")} '${_nameController.text.trim()}' ${context.tr("thành công!", "successfully!")}",
       );
       Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            gardenProvider.errorMessage ?? context.tr("Có lỗi khi tạo khu vườn.", "Error creating garden."),
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
-          ),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        gardenProvider.errorMessage ?? context.tr("Có lỗi khi tạo khu vườn.", "Error creating garden."),
+        isError: true,
       );
     }
   }

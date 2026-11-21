@@ -1465,3 +1465,40 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
 ### 6. Xác nhận mật khẩu khi đăng ký (`floria_app`) & Hồ sơ cá nhân Admin (`floria_web`)
 *   **`floria_app`**: Thêm ô **Xác nhận mật khẩu** kèm nút ẩn/hiện và kiểm tra khớp mật khẩu trong [register_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/auth/screens/register_screen.dart).
 *   **`floria_web`**: Tạo trang Hồ sơ cá nhân [profile/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/profile/page.tsx) & API [profile/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/profile/route.ts) (thay ảnh đại diện Cloudinary, sửa tên, đổi mật khẩu tối thiểu 6 ký tự qua Firebase Auth), đồng bộ `avatar` lên [admin-auth.ts](file:///d:/Plan/utrasupervip/floria_web/src/lib/server/admin-auth.ts), [auth-store.ts](file:///d:/Plan/utrasupervip/floria_web/src/stores/auth-store.ts), [app-sidebar.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/app-sidebar.tsx), [app-header.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/app-header.tsx) và bảng Tài khoản quản trị [roles/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/settings/roles/page.tsx).
+
+---
+
+## Ca làm việc ngày 21/11/2026 (Đợt 2): Đồng Bộ Chuẩn Hóa `AppToast` Toàn Ứng Dụng & Khắc Phục Thanh Điều Hướng Android Che Khuất Nút Lưu Thay Đổi
+
+### 1. Đồng Bộ Chuẩn Hóa Màu Sắc Toast Thông Báo (`AppToast`)
+*   **Nguyên nhân**: Khi thêm cây từ màn hình Khu vườn ([add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/add_plant_to_garden_screen.dart)) và tạo khu vườn mới ([create_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/create_garden_screen.dart)), hệ thống vẫn dùng `SnackBar` cũ có màu nền xám đen cứng `const Color(0xFF364534)`, không đồng bộ với hệ màu pastel dịu mắt của `AppToast` toàn hệ thống.
+*   **Giải pháp đã xử lý**:
+    *   Chuyển đổi toàn bộ thông báo thêm cây thành công, lỗi chọn ảnh, thông báo chưa chọn ảnh lá và lỗi kết nối sang `AppToast.show(context, ...)` trong [add_plant_to_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/add_plant_to_garden_screen.dart).
+    *   Chuyển đổi thông báo tạo vườn thành công/thất bại trong [create_garden_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/create_garden_screen.dart) sang `AppToast.show`.
+    *   Đồng bộ thông báo cập nhật cây thành công sau khi chỉnh sửa trong [plant_detail_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/plant_detail_screen.dart) sang `_showActionToast` dùng chung `AppToast.decoration`.
+    *   Tất cả toast giờ đây hiển thị viên thuốc bo tròn tinh tế, tự động chuyển màu hài hòa theo cả Light Mode và Dark Mode.
+
+### 2. Khắc Phục Lỗi Thanh Điều Hướng Android Che Nút "Lưu Thay Đổi" ([plant_detail_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/plant_detail_screen.dart))
+*   **Nguyên nhân**: Trong Modal BottomSheet Chỉnh sửa cây (`_showEditPlantModal`), padding đáy chỉ tính `MediaQuery.of(modalContext).viewInsets.bottom + 24` (bàn phím) mà thiếu `MediaQuery.paddingOf(modalContext).bottom` (vùng an toàn thanh điều hướng hệ thống). Khi người dùng dùng Android với thanh điều hướng 3 nút ảo (~48dp), nút "Lưu thay đổi" bị thanh điều hướng che mất nửa dưới.
+*   **Giải pháp đã xử lý**:
+    *   Cập nhật padding đáy của Container: `bottom: MediaQuery.of(modalContext).viewInsets.bottom + MediaQuery.paddingOf(modalContext).bottom + 20`.
+    *   Bổ sung thêm khoảng đệm `const SizedBox(height: 12)` ngay sau nút "Lưu thay đổi" trong danh sách cuộn.
+    *   Đảm bảo khi cuộn xuống tận cùng, nút "Lưu thay đổi" luôn nổi cao hơn thanh điều hướng Android ít nhất 32dp, hiển thị trọn vẹn và thao tác bấm êm ái 100%.
+*   **Kiểm tra tĩnh**: `dart analyze` trên cả 3 file đạt **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+---
+
+## Ca làm việc ngày 21/11/2026 (Đợt 3): Cập Nhật Logo Web Admin & Favicon Tab Trình Duyệt Bằng `adminicon.jpg`
+
+### 1. Đồng Bộ Logo Web Admin (`floria_web`)
+*   **Tệp nguồn**: Lấy ảnh [adminicon.jpg](file:///d:/Plan/utrasupervip/adminicon.jpg) từ thư mục gốc, copy vào `floria_web/public/adminicon.jpg`.
+*   **Cập nhật `FloriaMark` ([floria-logo.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/shared/floria-logo.tsx))**:
+    *   Thay thế mã vẽ SVG lá cây cũ bằng thẻ `<img>` trỏ trực tiếp tới `/adminicon.jpg`.
+    *   Bo góc tròn mềm mại `rounded-[9px]`, phủ bóng `shadow-sm`, hiển thị sắc nét với tỷ lệ `size-8` / `size-9` trên header của Sidebar ([app-sidebar.tsx](file:///d:/Plan/utrasupervip/floria_web/src/components/layout/app-sidebar.tsx)) và trang đăng nhập ([login/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/login/page.tsx)).
+
+### 2. Cập Nhật Favicon Tab Trình Duyệt (Tránh Cache Cũ) & Khắc Phục Lỗi Turbopack Image Decoding
+*   Chuyển đổi `adminicon.jpg` sang chuẩn ICO đa kích thước (16x16, 32x32, 48x48) ghi đè [favicon.ico](file:///d:/Plan/utrasupervip/floria_web/public/favicon.ico).
+*   Xuất bản định dạng PNG sắc nét vào [favicon.png](file:///d:/Plan/utrasupervip/floria_web/public/favicon.png) và [src/app/icon.png](file:///d:/Plan/utrasupervip/floria_web/src/app/icon.png) (Next.js App Router metadata icon).
+*   Khai báo toàn diện `metadata.icons` và các thẻ `<link rel="icon">` kèm phiên bản `?v=2` trong [layout.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/layout.tsx) để trình duyệt ép refresh icon mới thay thế biểu tượng trái tim gradient của Lovable cũ.
+*   **Khắc phục lỗi Turbopack `The PNG is not in RGBA format!`**: Gỡ bỏ tệp thừa `src/app/favicon.ico` gây xung đột với bộ giải mã hình ảnh Rust của Turbopack, tuân thủ chuẩn App Router của Next.js với `src/app/icon.png`.
+*   **Kiểm tra biên dịch**: Chạy `npm run build` trên `floria_web` hoàn tất thành công 100% (57/57 static pages và API routes).

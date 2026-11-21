@@ -1329,7 +1329,7 @@ class PlantDetailScreen extends StatelessWidget {
                 left: 20,
                 right: 20,
                 top: 16,
-                bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+                bottom: MediaQuery.of(modalContext).viewInsets.bottom + MediaQuery.paddingOf(modalContext).bottom + 20,
               ),
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.88,
@@ -1884,53 +1884,18 @@ class PlantDetailScreen extends StatelessWidget {
 
                           if (context.mounted) {
                             if (success) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: const Color(0xFF1E3A24),
-                                  elevation: 6,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  content: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 20),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "${context.tr("Đã cập nhật cây", "Updated plant")} '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
-                                              style: GoogleFonts.inter(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 13.5,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              context.tr("Thông tin và lịch chăm sóc mới đã được lưu thành công.", "Care information and new schedule have been saved successfully."),
-                                              style: GoogleFonts.inter(
-                                                color: const Color(0xFFB4F4C2),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  duration: const Duration(seconds: 3),
-                                ),
+                              _showActionToast(
+                                context,
+                                title: "${context.tr("Đã cập nhật cây", "Updated plant")} '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
+                                subtitle: context.tr("Thông tin và lịch chăm sóc mới đã được lưu thành công.", "Care information and new schedule have been saved successfully."),
+                                icon: Icons.check_circle_rounded,
+                                iconColor: AppToast.accentColor(context),
+                              );
+                            } else {
+                              AppToast.show(
+                                context,
+                                gardenProvider.errorMessage ?? context.tr("Có lỗi khi cập nhật cây.", "Error updating plant."),
+                                isError: true,
                               );
                             }
                           }
@@ -1947,6 +1912,7 @@ class PlantDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),

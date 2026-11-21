@@ -10,7 +10,13 @@ export const metadata: Metadata = {
   },
   description: "Floria Admin: quản trị AI nhận diện cây, chẩn đoán bệnh, từ điển thực vật và cửa hàng làm vườn.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/icon.png?v=2", type: "image/png" },
+      { url: "/favicon.ico?v=2" },
+      { url: "/adminicon.jpg?v=2", type: "image/jpeg" },
+    ],
+    shortcut: "/favicon.ico?v=2",
+    apple: "/adminicon.jpg?v=2",
   },
 };
 
@@ -18,6 +24,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi">
       <head>
+        <link rel="icon" href="/icon.png?v=2" type="image/png" />
+        <link rel="shortcut icon" href="/favicon.ico?v=2" />
+        <link rel="apple-touch-icon" href="/adminicon.jpg?v=2" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

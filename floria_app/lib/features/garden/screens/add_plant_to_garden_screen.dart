@@ -13,6 +13,7 @@ import '../../../core/services/notification_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../providers/garden_provider.dart';
 import '../models/user_garden.dart';
 
@@ -77,15 +78,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Lỗi khi chọn ảnh: $e",
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppToast.show(
+          context,
+          "${context.tr("Lỗi khi chọn ảnh:", "Error selecting photo:")} $e",
+          isError: true,
         );
       }
     }
@@ -180,15 +176,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
   // Quét AI: Ưu tiên Gemini Multimodal (Ảnh + Miêu tả nhận dạng), Fallback về AI Engine
   Future<void> _handleScan() async {
     if (_imageBytes == null || _selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Vui lòng chụp ảnh hoặc chọn ảnh lá cây trước nhé!",
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
-          ),
-          backgroundColor: const Color(0xFFE06C00),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.show(
+        context,
+        context.tr("Vui lòng chụp ảnh hoặc chọn ảnh lá cây trước nhé!", "Please take or choose a plant leaf photo first!"),
+        isError: true,
       );
       return;
     }
@@ -369,15 +360,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
           _isLoading = false;
           _statusText = null;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "$e".replaceAll("Exception: ", ""),
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppToast.show(
+          context,
+          "$e".replaceAll("Exception: ", ""),
+          isError: true,
         );
       }
     }
@@ -1374,41 +1360,17 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
 
                           if (mounted) {
                             if (success) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          "${context.tr("Đã thêm", "Added")} '$finalNickname' ${context.tr("vào", "to")} '$finalZone' ${context.tr("thành công!", "successfully!")}",
-                                          style: GoogleFonts.inter(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                            fontSize: 13.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  backgroundColor: const Color(0xFF364534),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  duration: const Duration(seconds: 4),
-                                ),
+                              AppToast.show(
+                                context,
+                                "${context.tr("Đã thêm", "Added")} '$finalNickname' ${context.tr("vào", "to")} '$finalZone' ${context.tr("thành công!", "successfully!")}",
+                                duration: const Duration(seconds: 4),
                               );
                               Navigator.pop(context, true); // Trở về màn hình Vườn
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    gardenProvider.errorMessage ?? context.tr("Có lỗi khi lưu cây.", "Error saving plant."),
-                                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500),
-                                  ),
-                                  backgroundColor: Colors.red.shade700,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppToast.show(
+                                context,
+                                gardenProvider.errorMessage ?? context.tr("Có lỗi khi lưu cây.", "Error saving plant."),
+                                isError: true,
                               );
                             }
                           }
