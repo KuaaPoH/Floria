@@ -270,13 +270,26 @@ export interface Banner {
 export interface WeatherRule {
   id: string;
   name: string;
+  title?: string;
+  badgeText?: string;
+  advice?: string;
+  tip: string;
+  conditionType?: "temperature_high" | "temperature_low" | "humidity_high" | "humidity_low" | "rain" | "storm_wind";
   condition: "rain" | "sunny" | "humid" | "cold" | "hot";
+  minTemp?: number | null;
+  maxTemp?: number | null;
   tempMin: number;
   tempMax: number;
+  minHumidity?: number | null;
+  maxHumidity?: number | null;
   humidityMin: number;
   humidityMax: number;
-  tip: string;
+  weatherCodes?: number[];
+  minWindSpeed?: number | null;
+  iconName?: string;
   active: boolean;
+  priority?: number;
+  order?: number;
 }
 
 export interface FeatureFlag {

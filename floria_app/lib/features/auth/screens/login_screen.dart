@@ -25,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   bool _obscurePassword = true;
   bool _rememberMe = true;
   bool _isSubmitting = false;
+  bool _isGoogleSubmitting = false;
   bool _emailFocused = false;
   bool _passwordFocused = false;
 
@@ -152,6 +153,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting || _isGoogleSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
@@ -178,20 +180,37 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   Future<void> _handleGoogleLogin() async {
-    final auth = context.read<AuthProvider>();
-    final success = await auth.loginWithGoogle();
-    if (!mounted) return;
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr('Đăng nhập Google thất bại', 'Google sign-in failed')),
-        ),
-      );
+    if (_isSubmitting || _isGoogleSubmitting) return;
+    setState(() => _isGoogleSubmitting = true);
+
+    try {
+      final auth = context.read<AuthProvider>();
+      final success = await auth.loginWithGoogle();
+      if (!mounted) return;
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('Đăng nhập Google thất bại', 'Google sign-in failed')),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.tr('Đăng nhập Google thất bại', 'Google sign-in failed')}: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleSubmitting = false);
+      }
     }
   }
 
@@ -444,7 +463,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                                       width: 19,
                                                       height: 19,
                                                     ),
-                                                    onTap: _handleGoogleLogin,
+                                                    isLoading: _isGoogleSubmitting,
+                                                    onTap: (_isSubmitting || _isGoogleSubmitting)
+                                                        ? null
+                                                        : _handleGoogleLogin,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 12),
@@ -666,6 +688,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Widget _buildGradientLoginButton(BuildContext context) {
     final c = context.colors;
+    final isBusy = _isSubmitting || _isGoogleSubmitting;
     final gradientColors = c.isDark
         ? const [Color(0xFF2B6B40), Color(0xFF479B62)]
         : const [Color(0xFF256137), Color(0xFF4CA364)];
@@ -676,7 +699,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: _isSubmitting
+          colors: isBusy
               ? gradientColors.map((color) => color.withValues(alpha: 0.7)).toList()
               : gradientColors,
         ),
@@ -692,7 +715,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _isSubmitting ? null : _submit,
+          onTap: isBusy ? null : _submit,
           borderRadius: BorderRadius.circular(28),
           child: Center(
             child: _isSubmitting
@@ -792,6 +815,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     required String label,
     required Widget iconWidget,
     VoidCallback? onTap,
+    bool isLoading = false,
   }) {
     final c = context.colors;
     return Container(
@@ -801,33 +825,49 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: c.border),
       ),
-      child: InkWell(
-        onTap: onTap ??
-            () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    "${context.tr('Phương thức đăng nhập', 'Sign in method')} $label ${context.tr('đang được tích hợp', 'is coming soon')}",
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading
+              ? null
+              : (onTap ??
+                  () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "${context.tr('Phương thức đăng nhập', 'Sign in method')} $label ${context.tr('đang được tích hợp', 'is coming soon')}",
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }),
+          borderRadius: BorderRadius.circular(25),
+          child: Center(
+            child: isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      color: c.primary,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      iconWidget,
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: c.textPrimary,
+                        ),
+                      ),
+                    ],
                   ),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-        borderRadius: BorderRadius.circular(25),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            iconWidget,
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.beVietnamPro(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: c.textPrimary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

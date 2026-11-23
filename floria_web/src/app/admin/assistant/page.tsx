@@ -152,7 +152,10 @@ export default function AssistantPage() {
   const rawTab = searchParams.get("tab") as Tab | null;
   const tab: Tab = rawTab && TABS.includes(rawTab) ? rawTab : "settings";
 
+  const canCreate = usePermission("assistant", "create");
   const canEdit = usePermission("assistant", "edit");
+  const canDelete = usePermission("assistant", "delete");
+  const canConfigure = usePermission("assistant", "configure");
   const qc = useQueryClient();
 
   const [sessions, setSessions] = useState<SandboxSession[]>([]);
@@ -250,6 +253,7 @@ export default function AssistantPage() {
             config={cfgQuery.data}
             loading={cfgQuery.isLoading}
             canEdit={canEdit}
+            canConfigure={canConfigure}
             saving={saveMutation.isPending}
             onSave={(next) => saveMutation.mutate(next)}
           />
@@ -259,7 +263,9 @@ export default function AssistantPage() {
           <GuardrailsTab
             config={cfgQuery.data}
             loading={cfgQuery.isLoading}
+            canCreate={canCreate}
             canEdit={canEdit}
+            canDelete={canDelete}
             saving={saveMutation.isPending}
             onSave={(next) => saveMutation.mutate(next)}
           />
@@ -306,12 +312,14 @@ function GeneralAndPromptTab({
   config,
   loading,
   canEdit,
+  canConfigure,
   saving,
   onSave,
 }: {
   config?: AssistantConfig;
   loading: boolean;
   canEdit: boolean;
+  canConfigure: boolean;
   saving: boolean;
   onSave: (next: AssistantConfig) => void;
 }) {
@@ -319,6 +327,7 @@ function GeneralAndPromptTab({
   const [tone, setTone] = useState("");
   const [defaultModel, setDefaultModel] = useState("gemini-3-flash-preview");
   const [systemPrompt, setSystemPrompt] = useState("");
+  const canModify = canConfigure || canEdit;
 
   useEffect(() => {
     if (config) {
@@ -333,23 +342,12 @@ function GeneralAndPromptTab({
 
   return (
     <div className="card-surface max-w-4xl space-y-5 p-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Tên xưng hô của trợ lý">
-          <Input value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit || saving} />
+          <Input value={name} onChange={(e) => setName(e.target.value)} disabled={!canModify || saving} />
         </Field>
         <Field label="Giọng điệu & phong cách">
-          <Input value={tone} onChange={(e) => setTone(e.target.value)} disabled={!canEdit || saving} />
-        </Field>
-        <Field label="Model LLM mặc định">
-          <Select value={defaultModel} onValueChange={setDefaultModel} disabled={!canEdit || saving}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gemini-3-flash-preview">gemini-3-flash-preview</SelectItem>
-              <SelectItem value="gemini-flash-lite-latest">gemini-flash-lite-latest</SelectItem>
-              <SelectItem value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</SelectItem>
-              <SelectItem value="gemini-3.6-flash">gemini-3.6-flash</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input value={tone} onChange={(e) => setTone(e.target.value)} disabled={!canModify || saving} />
         </Field>
       </div>
 
@@ -361,7 +359,7 @@ function GeneralAndPromptTab({
           rows={8}
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
-          disabled={!canEdit || saving}
+          disabled={!canConfigure || saving}
           className="font-mono text-xs leading-relaxed"
         />
       </Field>
@@ -372,7 +370,7 @@ function GeneralAndPromptTab({
             ? `Cập nhật lần cuối: ${formatDateTime(config.updatedAt)}${config.updatedBy ? ` bởi ${config.updatedBy}` : ""}`
             : "Đang dùng cấu hình mặc định"}
         </p>
-        {canEdit && (
+        {canModify && (
           <Button
             disabled={saving}
             onClick={() =>
@@ -396,13 +394,17 @@ function GeneralAndPromptTab({
 function GuardrailsTab({
   config,
   loading,
+  canCreate,
   canEdit,
+  canDelete,
   saving,
   onSave,
 }: {
   config?: AssistantConfig;
   loading: boolean;
+  canCreate: boolean;
   canEdit: boolean;
+  canDelete: boolean;
   saving: boolean;
   onSave: (next: AssistantConfig) => void;
 }) {
@@ -432,6 +434,7 @@ function GuardrailsTab({
   };
 
   const toggleRule = (id: string) => {
+    if (!canEdit) return;
     const nextRules = config.guardrails.map((g) => (g.id === id ? { ...g, enabled: !g.enabled } : g));
     onSave({ ...config, guardrails: nextRules });
   };
@@ -441,6 +444,7 @@ function GuardrailsTab({
     if (!name.trim() || !ruleText.trim()) return;
 
     if (editingId) {
+      if (!canEdit) return;
       const nextRules = config.guardrails.map((g) =>
         g.id === editingId
           ? { ...g, name: name.trim(), category, ruleText: ruleText.trim() }
@@ -448,6 +452,7 @@ function GuardrailsTab({
       );
       onSave({ ...config, guardrails: nextRules });
     } else {
+      if (!canCreate) return;
       const nextRule: AssistantGuardrail = {
         id: uid("gr"),
         name: name.trim(),
@@ -461,7 +466,7 @@ function GuardrailsTab({
   };
 
   const confirmDelete = () => {
-    if (!deletingRule) return;
+    if (!deletingRule || !canDelete) return;
     const nextRules = config.guardrails.filter((g) => g.id !== deletingRule.id);
     onSave({ ...config, guardrails: nextRules });
     setDeletingRule(null);
@@ -473,7 +478,7 @@ function GuardrailsTab({
         <p className="text-sm text-muted-foreground">
           Các quy tắc an toàn đang bật ({config.guardrails.filter((g) => g.enabled).length}/{config.guardrails.length}) sẽ được ghép vào System Instruction của Trợ lý Floria.
         </p>
-        {canEdit && (
+        {canCreate && (
           <Button onClick={openCreate}>
             <Plus /> Thêm quy tắc
           </Button>
@@ -502,20 +507,24 @@ function GuardrailsTab({
               />
             </div>
 
-            {canEdit && (
+            {(canEdit || canDelete) && (
               <div className="flex justify-end gap-1.5 border-t pt-2.5">
-                <Button size="sm" variant="ghost" onClick={() => openEdit(g)} disabled={saving}>
-                  <Pencil className="size-3.5" /> Chỉnh sửa
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-danger hover:text-danger"
-                  onClick={() => setDeletingRule(g)}
-                  disabled={saving}
-                >
-                  <Trash2 className="size-3.5" /> Xoá
-                </Button>
+                {canEdit && (
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(g)} disabled={saving}>
+                    <Pencil className="size-3.5" /> Chỉnh sửa
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-danger hover:text-danger"
+                    onClick={() => setDeletingRule(g)}
+                    disabled={saving}
+                  >
+                    <Trash2 className="size-3.5" /> Xoá
+                  </Button>
+                )}
               </div>
             )}
           </div>

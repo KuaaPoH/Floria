@@ -84,6 +84,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   AuthProvider() {
+    _auth.setLanguageCode('vi');
     // Lắng nghe sự thay đổi trạng thái đăng nhập và cập nhật hồ sơ (userChanges)
     _auth.userChanges().listen((User? user) {
       if (user != null && user.emailVerified) {
@@ -636,6 +637,7 @@ class AuthProvider extends ChangeNotifier {
       await userCredential.user?.updateDisplayName(name);
 
       // GỬI EMAIL XÁC THỰC
+      await _auth.setLanguageCode('vi');
       await userCredential.user?.sendEmailVerification();
 
       // Đăng xuất ngay lập tức để ép user vào email kích hoạt
@@ -757,6 +759,7 @@ class AuthProvider extends ChangeNotifier {
   // Gửi email khôi phục mật khẩu
   Future<String?> resetPassword(String email) async {
     try {
+      await _auth.setLanguageCode('vi');
       await _auth.sendPasswordResetEmail(email: email);
       return null;
     } on FirebaseAuthException catch (e) {

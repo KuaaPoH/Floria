@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/garden/models/garden_plant.dart';
-import '../../features/garden/providers/garden_provider.dart';
-import '../../features/garden/screens/plant_detail_screen.dart';
-import 'package:provider/provider.dart';
+import '../../features/home/screens/main_navigation_screen.dart';
+import 'push_notification_service.dart';
 
 class NotificationService {
   static const String _prefKeyEnabled = 'notifications_enabled';
@@ -18,7 +16,6 @@ class NotificationService {
   static const String _prefKeyQuietStart = 'reminder_quiet_start';
   static const String _prefKeyQuietEnd = 'reminder_quiet_end';
 
-  static OverlayEntry? _activeOverlayEntry;
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   static bool _isLocalNotificationsInitialized = false;
 
@@ -41,6 +38,16 @@ class NotificationService {
         settings: initSettings,
         onDidReceiveNotificationResponse: (response) {
           debugPrint('Đã chạm vào thông báo hệ thống: ${response.payload}');
+          // Tự động điều hướng đến tab Khu vườn khi chạm vào thông báo
+          final nav = PushNotificationService.navigatorKey.currentState;
+          if (nav != null) {
+            nav.pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => const MainNavigationScreen(initialIndex: 1),
+              ),
+              (route) => false,
+            );
+          }
         },
       );
 
@@ -66,7 +73,7 @@ class NotificationService {
     }
   }
 
-  /// Bắn thông báo đẩy thật lên thanh trạng thái của thiết bị
+  /// Bắn thông báo đẩy thật lên thanh trạng thái của thiết bị Android/iOS
   static Future<void> showSystemNotification({
     required int id,
     required String title,
@@ -78,19 +85,25 @@ class NotificationService {
         await initSystemNotifications();
       }
 
-      const androidDetails = AndroidNotificationDetails(
+      final androidDetails = AndroidNotificationDetails(
         'floria_care_channel',
         'Lịch chăm sóc cây Floria',
         channelDescription: 'Thông báo nhắc nhở tưới nước, bón phân và chăm sóc cây từ Floria',
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        styleInformation: BigTextStyleInformation(''),
+        playSound: true,
+        enableVibration: true,
+        styleInformation: BigTextStyleInformation(
+          body,
+          contentTitle: title,
+          summaryText: 'Floria Nhắc nhở',
+        ),
       );
 
-      const notificationDetails = NotificationDetails(
+      final notificationDetails = NotificationDetails(
         android: androidDetails,
-        iOS: DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
@@ -227,7 +240,7 @@ class NotificationService {
     await prefs.setString('$_prefKeyPrefixNotified${plantId}_$taskType', _getTodayKey());
   }
 
-  /// Động cơ quét và kích hoạt thông báo nhắc nhở chăm sóc cây
+  /// Động cơ quét và kích hoạt thông báo đẩy hệ điều hành nhắc nhở chăm sóc cây
   static Future<void> checkAndNotifyPendingTasks(
     BuildContext context,
     List<GardenPlant> plants,
@@ -261,23 +274,13 @@ class NotificationService {
         final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'water$slot');
         if (!alreadyNotified) {
           await _markNotifiedToday(plant.id, 'water$slot');
-          if (context.mounted) {
-            _showSmartCareBanner(
-              context: context,
-              plant: plant,
-              taskTitle: '$titlePrefixĐã đến giờ tưới nước!',
-              taskDesc: 'Cây ${plant.nickname} cần được cấp ẩm để duy trì độ tươi tốt.',
-              icon: Icons.water_drop,
-              iconColor: const Color(0xFF38BDF8),
-              actionLabel: 'Tưới ngay',
-              onAction: () async {
-                final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
-                await gardenProvider.waterPlant(plant.id);
-                silenceForToday(plant.id, 'water');
-              },
-            );
-          }
-          break; // Chỉ hiện 1 banner tại một thời điểm để không làm phiền
+          await showSystemNotification(
+            id: plant.id.hashCode,
+            title: '🌿 Floria: $titlePrefixĐã đến giờ tưới nước!',
+            body: 'Cây ${plant.nickname} cần được cấp ẩm để duy trì độ tươi tốt.',
+            payload: plant.id,
+          );
+          break; // Giới hạn 1 thông báo mỗi lượt quét để không làm phiền người dùng
         }
       }
 
@@ -286,22 +289,12 @@ class NotificationService {
         final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'fertilize$slot');
         if (!alreadyNotified) {
           await _markNotifiedToday(plant.id, 'fertilize$slot');
-          if (context.mounted) {
-            _showSmartCareBanner(
-              context: context,
-              plant: plant,
-              taskTitle: '$titlePrefixĐã đến lịch bón phân vi lượng!',
-              taskDesc: 'Bổ sung dinh dưỡng định kỳ cho ${plant.nickname}.',
-              icon: Icons.science,
-              iconColor: const Color(0xFFFBBF24),
-              actionLabel: 'Đã bón phân',
-              onAction: () async {
-                final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
-                await gardenProvider.fertilizePlant(plant.id);
-                silenceForToday(plant.id, 'fertilize');
-              },
-            );
-          }
+          await showSystemNotification(
+            id: plant.id.hashCode + 1,
+            title: '🌿 Floria: $titlePrefixĐã đến lịch bón phân vi lượng!',
+            body: 'Bổ sung dinh dưỡng định kỳ cho ${plant.nickname}.',
+            payload: plant.id,
+          );
           break;
         }
       }
@@ -311,29 +304,19 @@ class NotificationService {
         final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'clean$slot');
         if (!alreadyNotified) {
           await _markNotifiedToday(plant.id, 'clean$slot');
-          if (context.mounted) {
-            _showSmartCareBanner(
-              context: context,
-              plant: plant,
-              taskTitle: '${titlePrefix}Vệ sinh lá & kiểm tra sâu bệnh!',
-              taskDesc: 'Lau bụi phiến lá cho ${plant.nickname} để quang hợp tối ưu.',
-              icon: Icons.eco,
-              iconColor: const Color(0xFF4ADE80),
-              actionLabel: 'Đã lau sạch',
-              onAction: () async {
-                final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
-                await gardenProvider.cleanPlant(plant.id);
-                silenceForToday(plant.id, 'clean');
-              },
-            );
-          }
+          await showSystemNotification(
+            id: plant.id.hashCode + 2,
+            title: '🌿 Floria: ${titlePrefix}Vệ sinh lá & kiểm tra sâu bệnh!',
+            body: 'Lau bụi phiến lá cho ${plant.nickname} để quang hợp tối ưu.',
+            payload: plant.id,
+          );
           break;
         }
       }
     }
   }
 
-  /// Kích hoạt thử thông báo ngay lập tức (dành cho nút Test trong Cài đặt)
+  /// Kích hoạt thử thông báo đẩy thật lên thiết bị (dành cho nút "Kiểm tra thử thông báo ngay" trong Cài đặt)
   static void showTestNotification(BuildContext context, {GardenPlant? samplePlant}) {
     final now = DateTime.now();
     final plant = samplePlant ??
@@ -352,312 +335,25 @@ class NotificationService {
           createdAt: now,
         );
 
-    _showSmartCareBanner(
-      context: context,
-      plant: plant,
-      taskTitle: 'Đã đến lịch tưới nước (Thử nghiệm)!',
-      taskDesc: 'Cây ${plant.nickname} cần được tưới nước theo lịch chăm sóc.',
-      icon: Icons.water_drop,
-      iconColor: const Color(0xFF38BDF8),
-      actionLabel: 'Tưới ngay',
-      onAction: () {
-        debugPrint("Đã xác nhận tưới nước thành công trong chế độ thử nghiệm!");
-      },
-    );
-  }
-
-  /// Hiển thị Banner nổi thông minh chuẩn thiết kế thẩm mỹ cao Floria
-  static void _showSmartCareBanner({
-    required BuildContext context,
-    required GardenPlant plant,
-    required String taskTitle,
-    required String taskDesc,
-    required IconData icon,
-    required Color iconColor,
-    required String actionLabel,
-    required FutureOr<void> Function() onAction,
-  }) {
-    _activeOverlayEntry?.remove();
-    _activeOverlayEntry = null;
-
-    // Đồng thời bắn thông báo đẩy cấp hệ điều hành lên thanh trạng thái máy
+    // Bắn thông báo đẩy thật lên thanh trạng thái hệ điều hành Android / iOS
     unawaited(
       showSystemNotification(
         id: plant.id.hashCode,
-        title: '🌿 Floria: $taskTitle',
-        body: taskDesc,
+        title: '🌿 Floria: Đã đến lịch tưới nước (Thử nghiệm)!',
+        body: 'Cây ${plant.nickname} cần được tưới nước theo lịch chăm sóc.',
         payload: plant.id,
       ),
     );
 
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
-
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (ctx) {
-        return _SmartNotificationWidget(
-          plant: plant,
-          taskTitle: taskTitle,
-          taskDesc: taskDesc,
-          icon: icon,
-          iconColor: iconColor,
-          actionLabel: actionLabel,
-          onDismiss: () {
-            entry.remove();
-            if (_activeOverlayEntry == entry) {
-              _activeOverlayEntry = null;
-            }
-          },
-          onAction: () async {
-            entry.remove();
-            if (_activeOverlayEntry == entry) {
-              _activeOverlayEntry = null;
-            }
-            await onAction();
-          },
-          onOpenPlantDetail: () {
-            entry.remove();
-            if (_activeOverlayEntry == entry) {
-              _activeOverlayEntry = null;
-            }
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PlantDetailScreen(gardenPlant: plant),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    _activeOverlayEntry = entry;
-    overlay.insert(entry);
-  }
-}
-
-class _SmartNotificationWidget extends StatefulWidget {
-  final GardenPlant plant;
-  final String taskTitle;
-  final String taskDesc;
-  final IconData icon;
-  final Color iconColor;
-  final String actionLabel;
-  final VoidCallback onDismiss;
-  final VoidCallback onAction;
-  final VoidCallback onOpenPlantDetail;
-
-  const _SmartNotificationWidget({
-    required this.plant,
-    required this.taskTitle,
-    required this.taskDesc,
-    required this.icon,
-    required this.iconColor,
-    required this.actionLabel,
-    required this.onDismiss,
-    required this.onAction,
-    required this.onOpenPlantDetail,
-  });
-
-  @override
-  State<_SmartNotificationWidget> createState() => _SmartNotificationWidgetState();
-}
-
-class _SmartNotificationWidgetState extends State<_SmartNotificationWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-  Timer? _autoDismissTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 380),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutBack));
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
-
-    _animController.forward();
-
-    // Tự động đóng sau 7 giây
-    _autoDismissTimer = Timer(const Duration(seconds: 7), () {
-      _closeBanner();
-    });
-  }
-
-  void _closeBanner() {
-    if (!mounted) return;
-    _animController.reverse().then((_) {
-      widget.onDismiss();
-    });
-  }
-
-  @override
-  void dispose() {
-    _autoDismissTimer?.cancel();
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 12,
-      left: 16,
-      right: 16,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E3A24), // Xanh rêu đậm hoàng gia
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Hàng tiêu đề + Nút đóng
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: widget.iconColor.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(widget.icon, color: widget.iconColor, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    widget.taskTitle,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    widget.plant.reminderTime,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFFB4F4C2),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.taskDesc,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: const Color(0xFFD1E7D6),
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70, size: 18),
-                        onPressed: _closeBanner,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Hàng nút hành động nhanh
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: widget.onOpenPlantDetail,
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFD1E7D6),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        ),
-                        child: Text(
-                          'Chi tiết cây',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _animController.reverse().then((_) {
-                            widget.onAction();
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4ADE80),
-                          foregroundColor: const Color(0xFF0F2913),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.check, size: 16),
-                        label: Text(
-                          widget.actionLabel,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+    // Phản hồi SnackBar nhẹ trong app báo hiệu thành công
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã phát thông báo đẩy thử nghiệm lên thanh trạng thái thiết bị!'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
         ),
-      ),
-    );
+      );
+    }
   }
 }

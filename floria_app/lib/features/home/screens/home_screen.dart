@@ -20,6 +20,8 @@ import '../models/weather_widget_config.dart';
 import '../services/weather_widget_service.dart';
 import '../models/current_weather_data.dart';
 import '../services/realtime_weather_service.dart';
+import '../models/weather_advice_rule.dart';
+import '../services/weather_advice_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isEmbedded;
@@ -631,37 +633,147 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 6),
                     _buildHeroStat(Icons.wb_sunny_outlined, statLight),
-                    if (config.advice.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.tips_and_updates_outlined, color: Color(0xFFFDE047), size: 13),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                config.advice,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10.5,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  fontStyle: FontStyle.italic,
-                                  height: 1.25,
+
+                    // Mẹo chăm sóc thích ứng thông minh (Phương Án A)
+                    StreamBuilder<List<WeatherAdviceRule>>(
+                      stream: WeatherAdviceService.streamRules(),
+                      initialData: WeatherAdviceService.fallbackRules,
+                      builder: (context, ruleSnap) {
+                        final rules = ruleSnap.data ?? WeatherAdviceService.fallbackRules;
+                        final matchedRule = WeatherAdviceService.findActiveAdvice(weather, rules);
+
+                        if (matchedRule != null) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                onTap: () {
+                                  _showAdviceDetailModal(
+                                    context: context,
+                                    title: matchedRule.badgeText,
+                                    subtitle: "${weather.conditionText} • ${weather.formattedTemp}",
+                                    advice: matchedRule.advice,
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.tips_and_updates_outlined,
+                                        color: Color(0xFFFDE047),
+                                        size: 13,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text.rich(
+                                          TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: "${matchedRule.badgeText} • ",
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(0xFFFDE047),
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: matchedRule.advice,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  color: Colors.white.withValues(alpha: 0.95),
+                                                  fontStyle: FontStyle.italic,
+                                                  height: 1.25,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 10,
+                                        color: Colors.white.withValues(alpha: 0.7),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          );
+                        }
+
+                        // Khi thời tiết ổn định: hiển thị mẹo theo khung giờ nhịp sinh học
+                        if (config.advice.isNotEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                onTap: () {
+                                  _showAdviceDetailModal(
+                                    context: context,
+                                    title: "Mẹo chăm sóc nhịp sinh học",
+                                    subtitle: "${weather.conditionText} • ${weather.formattedTemp}",
+                                    advice: config.advice,
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.tips_and_updates_outlined, color: Color(0xFFFDE047), size: 13),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          config.advice,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            color: Colors.white.withValues(alpha: 0.95),
+                                            fontStyle: FontStyle.italic,
+                                            height: 1.25,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 10,
+                                        color: Colors.white.withValues(alpha: 0.7),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return const SizedBox.shrink();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -687,6 +799,136 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Modal BottomSheet xem trọn vẹn nội dung mẹo chăm sóc khi người dùng bấm vào
+  void _showAdviceDetailModal({
+    required BuildContext context,
+    required String title,
+    required String advice,
+    String? subtitle,
+    IconData icon = Icons.tips_and_updates_outlined,
+  }) {
+    final c = context.colors;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (modalContext) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            12,
+            20,
+            MediaQuery.paddingOf(modalContext).bottom + 20,
+          ),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.border.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDE047).withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: const Color(0xFFB45309),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                        ),
+                        if (subtitle != null && subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: c.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: c.surfaceTint,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.border),
+                ),
+                child: Text(
+                  advice,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: c.textPrimary,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(modalContext),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: Text(
+                    "Đã hiểu",
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1471,7 +1713,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      article.readTime,
+                                      article.formattedDate,
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
                                         color: Colors.white,
@@ -1610,7 +1852,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           Text(
-                            article.readTime,
+                            article.formattedDate,
                             style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
                           ),
                         ],

@@ -71,6 +71,9 @@ class HandbookArticle {
 
   bool get isPublished => status != 'draft' && visible;
 
+  String get formattedDate =>
+      '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}';
+
   factory HandbookArticle.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     final rawBlocks = data['blocks'] as List<dynamic>? ?? [];

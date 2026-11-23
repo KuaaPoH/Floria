@@ -308,6 +308,14 @@ class GardenProvider extends ChangeNotifier {
           ? plant.healthStatus
           : (stillNeedsCare ? 'Cần chú ý' : 'Khỏe mạnh');
 
+      // Optimistic Update: Cập nhật state cục bộ ngay lập tức và phát thông báo rebuild UI (0ms)
+      _plants[plantIndex] = plant.copyWith(
+        lastWatered: now,
+        nextWatering: nextDate,
+        healthStatus: newHealthStatus,
+      );
+      notifyListeners();
+
       await _firestore
           .collection(plantsCollection)
           .doc(plantId)
@@ -349,6 +357,14 @@ class GardenProvider extends ChangeNotifier {
       final newHealthStatus = (plant.healthStatus.startsWith('Bị') || plant.healthStatus == 'Đang phục hồi')
           ? plant.healthStatus
           : (stillNeedsCare ? 'Cần chú ý' : 'Khỏe mạnh');
+
+      // Optimistic Update: Cập nhật state cục bộ ngay lập tức và phát thông báo rebuild UI (0ms)
+      _plants[plantIndex] = plant.copyWith(
+        lastFertilized: now,
+        nextFertilizing: nextDate,
+        healthStatus: newHealthStatus,
+      );
+      notifyListeners();
 
       await _firestore
           .collection(plantsCollection)
@@ -392,6 +408,14 @@ class GardenProvider extends ChangeNotifier {
           ? plant.healthStatus
           : (stillNeedsCare ? 'Cần chú ý' : 'Khỏe mạnh');
 
+      // Optimistic Update: Cập nhật state cục bộ ngay lập tức và phát thông báo rebuild UI (0ms)
+      _plants[plantIndex] = plant.copyWith(
+        lastCleaned: now,
+        nextCheckPest: nextCheck,
+        healthStatus: newHealthStatus,
+      );
+      notifyListeners();
+
       await _firestore
           .collection(plantsCollection)
           .doc(plantId)
@@ -430,23 +454,44 @@ class GardenProvider extends ChangeNotifier {
       final now = DateTime.now();
       final Map<String, dynamic> updateData = {'healthStatus': 'Khỏe mạnh'};
 
-      // Nếu cần tưới nước thì mới cập nhật tưới
+      DateTime nextWater = plant.nextWatering;
+      DateTime lastWater = plant.lastWatered;
       if (plant.isNeedsWater) {
+        nextWater = now.add(Duration(days: plant.waterFrequencyDays));
+        lastWater = now;
         updateData['lastWatered'] = Timestamp.fromDate(now);
-        updateData['nextWatering'] = Timestamp.fromDate(now.add(Duration(days: plant.waterFrequencyDays)));
+        updateData['nextWatering'] = Timestamp.fromDate(nextWater);
       }
 
-      // Nếu cần bón phân thì mới cập nhật bón phân
+      DateTime nextFert = plant.nextFertilizing;
+      DateTime lastFert = plant.lastFertilized;
       if (plant.isNeedsFertilizer) {
+        nextFert = now.add(Duration(days: plant.fertilizeFrequencyDays));
+        lastFert = now;
         updateData['lastFertilized'] = Timestamp.fromDate(now);
-        updateData['nextFertilizing'] = Timestamp.fromDate(now.add(Duration(days: plant.fertilizeFrequencyDays)));
+        updateData['nextFertilizing'] = Timestamp.fromDate(nextFert);
       }
 
-      // Nếu cần kiểm tra sâu bệnh / lau lá thì mới cập nhật
+      DateTime nextClean = plant.nextCheckPest;
+      DateTime lastClean = plant.lastCleaned;
       if (plant.isNeedsClean) {
+        nextClean = now.add(Duration(days: plant.checkPestFrequencyDays));
+        lastClean = now;
         updateData['lastCleaned'] = Timestamp.fromDate(now);
-        updateData['nextCheckPest'] = Timestamp.fromDate(now.add(Duration(days: plant.checkPestFrequencyDays)));
+        updateData['nextCheckPest'] = Timestamp.fromDate(nextClean);
       }
+
+      // Optimistic Update: Cập nhật state cục bộ ngay lập tức và phát thông báo rebuild UI (0ms)
+      _plants[plantIndex] = plant.copyWith(
+        lastWatered: lastWater,
+        nextWatering: nextWater,
+        lastFertilized: lastFert,
+        nextFertilizing: nextFert,
+        lastCleaned: lastClean,
+        nextCheckPest: nextClean,
+        healthStatus: 'Khỏe mạnh',
+      );
+      notifyListeners();
 
       await _firestore
           .collection(plantsCollection)

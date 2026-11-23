@@ -29,9 +29,9 @@ class PlantDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<GardenProvider>(
       builder: (context, gardenProvider, child) {
-        // Tìm cây mới nhất từ provider theo ID để đồng bộ thời gian thực
+        // Tìm cây mới nhất từ provider theo ID để đồng bộ thời gian thực từ toàn bộ khu vườn
         final GardenPlant? currentGardenPlant = gardenPlant != null
-            ? gardenProvider.plants.firstWhere(
+            ? gardenProvider.allUserPlants.firstWhere(
                 (p) => p.id == gardenPlant!.id,
                 orElse: () => gardenPlant!,
               )

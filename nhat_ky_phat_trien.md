@@ -1532,3 +1532,148 @@ Lưu trữ bộ sưu tập cây trồng cá nhân trong "Khu Vườn Của Tôi"
     *   Tệp APK xuất xưởng: `floria_app/build/app/outputs/flutter-apk/app-release.apk` (Dung lượng: **69.6 MB**).
     *   Sao chép bản cài đặt tiện dụng ra thư mục gốc: **[Floria_v1.0.0_Release.apk](file:///d:/Plan/utrasupervip/Floria_v1.0.0_Release.apk)**.
 *   **Kiểm tra tĩnh**: `dart analyze` trên toàn bộ dự án đạt chuẩn **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+---
+
+## Ca làm việc ngày 21/11/2026 (Đợt 5): Triển Khai Thẻ Mẹo Vi Khí Hậu Thích Ứng (Phương Án A) & Thiết Kế Lại Quản Lý Banner Admin 2 Tab
+
+### 1. Cơ Sở Dữ Liệu & Quy Tắc Vi Khí Hậu Sinh Thái (`WeatherAdviceRules`)
+*   Khởi tạo và nạp 5 quy tắc vi khí hậu chuẩn sinh thái vào collection Firestore `WeatherAdviceRules`:
+    1. `rule_storm_wind` (Độ ưu tiên: 100): **Dông lốc & Gió mạnh** (Mã thời tiết 95, 96, 99 hoặc gió $\ge 25\text{ km/h}$) — Nhắc nhở đưa chậu treo và cây lá to giòn vào nơi kín gió để tránh gãy cành.
+    2. `rule_extreme_heat` (Độ ưu tiên: 90): **Nắng nóng gay gắt** (Nhiệt độ $\ge 33^\circ\text{C}$) — Nhắc nhở chống sốc nhiệt, không tưới trưa nắng tránh luộc rễ, dời xa cửa kính hấp xạ nhiệt.
+    3. `rule_frost_cold` (Độ ưu tiên: 85): **Thời tiết trở lạnh** (Nhiệt độ $< 18^\circ\text{C}$) — Giảm 50% lượng tưới, dùng nước ấm vừa phải, tránh tưới nước lạnh gây buốt rễ cây nhiệt đới.
+    4. `rule_heavy_rain` (Độ ưu tiên: 75): **Mưa dầm & Ẩm ướt cao** (Mã mưa 51–82 hoặc độ ẩm $\ge 85\%$) — Tạm dừng tưới, kiểm tra lỗ thoát nước đáy chậu phòng ngập úng và nấm thối rễ.
+    5. `rule_dry_air` (Độ ưu tiên: 60): **Không khí khô hanh** (Độ ẩm $\le 50\%$) — Phun sương bù ẩm tán lá cho cây nhiệt đới ưa ẩm (Monstera, trầu bà, dương xỉ).
+
+### 2. Tái Thiết Kế Trang Quản Trị Banner Web Admin (`floria_web`)
+*   **Mở rộng Kiểu dữ liệu ([types/index.ts](file:///d:/Plan/utrasupervip/floria_web/src/types/index.ts))**: Bổ sung đầy đủ các thuộc tính vi khí hậu cho `WeatherRule`: `conditionType`, `minTemp`, `maxTemp`, `minHumidity`, `maxHumidity`, `weatherCodes`, `minWindSpeed`, `iconName`, `priority`, `badgeText`, `advice`, `title`.
+*   **Hệ thống API RESTful Backend**:
+    *   [route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/weather-rules/route.ts): GET danh sách và POST tạo mới quy tắc trên Firestore `WeatherAdviceRules`.
+    *   [[id]/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/weather-rules/[id]/route.ts): PATCH cập nhật thông tin / bật tắt kích hoạt và DELETE xóa quy tắc.
+*   **Giao diện Quản Lý 2 Tab ([banners/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/banners/page.tsx))**:
+    *   **Tab 1 - Banner trang chủ (`HomeWeatherWidgets`)**: Giữ nguyên vẹn 100% giao diện và trải nghiệm gốc trước khi sửa:
+        *   Khung "Xem trước banner đang hoạt động" dạng thẻ lớn nền tối với lớp phủ gradient và nút CTA.
+        *   Lưới hiển thị banner tỷ lệ 2:1 có gắn nhãn thời gian thực `startHour – endHour`, huy hiệu trạng thái hiển thị, công tắc bật/tắt trực tiếp và bộ nút Thao tác (Sửa/Xóa).
+        *   Hộp thoại `FormDialog` và `ConfirmDialog` chuẩn xác với các trường: Ảnh banner (`ImageUploader`), Tiêu đề chính (`mainTitle`), Nhãn khung giờ (`cta`), Lời khuyên chăm sóc (`subtitle/advice`), Giờ bắt đầu (`startHour`) và Giờ kết thúc (`endHour`).
+    *   **Tab 2 - Mẹo vi khí hậu thích ứng (`WeatherAdviceRules`)**:
+        *   Hiển thị danh sách thẻ trực quan sắp xếp theo độ ưu tiên (`priority`).
+        *   Thẻ hiển thị đầy đủ: Badge cảnh báo với màu sắc nhận diện (cam dông bão, vàng nắng nóng, xanh tuyết rét lạnh, xanh mưa ẩm, ngọc bích hanh khô), ngưỡng kích hoạt (nhiệt độ, độ ẩm, gió, mã thời tiết), nội dung lời khuyên sinh thái.
+        *   Switch bật/tắt nhanh trạng thái hoạt động ngay trên thẻ.
+        *   Hộp thoại Modal Thêm mới / Chỉnh sửa trực quan: Chọn loại điều kiện vi khí hậu, nhập ngưỡng nhiệt độ / độ ẩm / tốc độ gió, badge hiển thị, lời khuyên và độ ưu tiên.
+        *   Modal xác nhận xóa an toàn.
+*   **Biên dịch & Kiểm thử**: `tsc --noEmit` đạt 0 lỗi, `npm run build` hoàn thành toàn bộ 57 trang tĩnh và API routes.
+
+### 3. Tích Hợp Thẻ Mẹo Thích Ứng Thông Minh Vào Mobile App (`floria_app`)
+*   **Mô hình dữ liệu & Dịch vụ**:
+    *   Tạo [weather_advice_rule.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/models/weather_advice_rule.dart): Định nghĩa model quy tắc vi khí hậu kèm hàm logic `matches(CurrentWeatherData weather)` kiểm tra độ thỏa mãn điều kiện theo nhiệt độ, độ ẩm, tốc độ gió và mã thời tiết Open-Meteo.
+    *   Tạo [weather_advice_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/services/weather_advice_service.dart): Lắng nghe real-time qua Stream Firestore, tích hợp bộ quy tắc dự phòng offline (`fallbackRules`) và thuật toán `findActiveAdvice(weather, rules)` chọn quy tắc khớp có độ ưu tiên cao nhất.
+*   **Giao diện Hero Banner Thích Ứng ([home_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/screens/home_screen.dart))**:
+    *   Tại `_buildWeatherHeroCard`: Lồng `StreamBuilder<List<WeatherAdviceRule>>` tự động đánh giá dữ liệu thời tiết thực tế từ `_weatherFuture`.
+    *   **Tinh chỉnh UI đồng bộ với phong cách Floria (Tối ưu trải nghiệm thị giác)**:
+        *   Xóa bỏ hoàn toàn khung đen đục và viền màu neon gây lệch tông. Thay thế bằng hiệu ứng kính mờ (Frosted glass) tinh tế đồng bộ toàn hệ thống: `color: Colors.white.withValues(alpha: 0.15)` cùng viền kính mỏng `Border.all(color: Colors.white.withValues(alpha: 0.2))`.
+        *   Quay lại biểu tượng chiếc đèn vàng thân thuộc của Floria (`Icons.tips_and_updates_outlined`, kích thước 13, màu vàng `Color(0xFFFDE047)`).
+        *   Thu nhỏ cỡ chữ xuống `fontSize: 10`, sử dụng `Text.rich` lồng nhãn cảnh báo in đậm nhẹ (`badgeText • `) màu vàng sáng với câu thoại chăm sóc nghiêng màu trắng sáng mờ, tự động giới hạn tối đa 2 dòng hiển thị gọn gàng, thanh lịch và không làm rối mắt.
+        *   **Xem trọn vẹn thông tin mẹo qua BottomSheet**: Bọc ô mẹo bằng `InkWell` kèm icon điều hướng nhỏ `arrow_forward_ios_rounded` ở cuối. Khi người dùng bấm vào ô mẹo, hệ thống mở Modal BottomSheet (`_showAdviceDetailModal`) hiển thị toàn bộ tiêu đề, thời tiết thực tế và toàn văn nội dung lời khuyên chăm sóc với cỡ chữ lớn dễ đọc cùng nút "Đã hiểu" đóng tiện lợi.
+    *   Khi thời tiết ôn hòa, tự động chuyển về hiển thị mẹo chăm sóc theo khung giờ nhịp sinh học ban ngày/đêm (`config.advice`) với cùng kiểu dáng kính mờ đồng nhất.
+*   **Kiểm tra tĩnh**: `dart analyze lib/features/home/` đạt **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+---
+
+## Ca làm việc ngày 23/11/2026: Tích Hợp Hiệu Ứng Loading Cho Nút Đăng Nhập Google (Khắc Phục Cảm Giác Lag App)
+
+### 1. Vấn Đề
+*   Khi người dùng đăng nhập bằng Email/Mật khẩu thông thường, nút có vòng xoay `CircularProgressIndicator` phản hồi ngay lập tức.
+*   Tuy nhiên khi bấm nút **"Google"**, hệ thống gọi `auth.loginWithGoogle()` nhưng giao diện nút giữ nguyên tĩnh, không có phản hồi trạng thái chờ trong vài giây Google Sign-In xác thực, khiến người dùng tưởng app bị đơ hoặc lag.
+
+### 2. Giải Pháp Đã Triển Khai ([login_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/auth/screens/login_screen.dart))
+*   Bổ sung biến trạng thái `_isGoogleSubmitting`.
+*   Nâng cấp hàm `_handleGoogleLogin()` với cơ chế chặn double-tap (`if (_isSubmitting || _isGoogleSubmitting) return;`) và khối `try ... finally` đảm bảo luôn giải phóng trạng thái tải.
+*   Nâng cấp component `_buildSocialButton()` hỗ trợ thuộc tính `isLoading`:
+    *   Khi đang xác thực Google: Tự động thay thế icon và nhãn bằng vòng tròn xoay `CircularProgressIndicator` màu xanh thương hiệu (`c.primary`, strokeWidth 2.2), đồng thời vô hiệu hóa thao tác chạm `onTap`.
+    *   Đồng bộ khóa chéo: Trong lúc Google đang đăng nhập thì nút đăng nhập email chính cũng chuyển sang trạng thái chờ và ngược lại, ngăn ngừa xung đột luồng đăng nhập.
+*   **Kiểm tra tĩnh**: `dart analyze lib/features/auth/` đạt **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+---
+
+## Ca làm việc ngày 23/11/2026 (Đợt 2): Khắc Phục Lỗi Trùng Lặp Thông Báo Kép & Chuẩn Hóa Toàn Diện Hệ Thống Thông Báo Đẩy Android/iOS
+
+### 1. Vấn Đề
+*   Khi có thông báo nhắc lịch chăm sóc (tưới nước, bón phân, lau lá) hoặc khi người dùng bấm "Kiểm tra thử thông báo ngay" trong Cài đặt:
+    *   Hệ thống vừa phát thông báo hệ điều hành Android (Heads-up notification màu trắng trên thanh trạng thái).
+    *   Vừa chèn một thẻ in-app banner nổi màu xanh đen (`_SmartNotificationWidget` thông qua `OverlayEntry`) đè lên giữa màn hình ứng dụng.
+*   Tình trạng này gây ra thông báo kép trùng lặp, che khuất giao diện và gây khó chịu cho người dùng.
+
+### 2. Giải Pháp Đã Triển Khai ([notification_service.dart](file:///d:/Plan/utrasupervip/floria_app/lib/core/services/notification_service.dart))
+*   **Loại bỏ hoàn toàn thông báo nổi trong app (`OverlayEntry`)**:
+    *   Xóa bỏ `_activeOverlayEntry`, gỡ bỏ hoàn toàn widget `_SmartNotificationWidget` và cơ chế chèn đè giao diện.
+    *   Khi có lịch nhắc nhở hoặc kích hoạt thông báo thử nghiệm, hệ thống **chỉ phát duy nhất thông báo đẩy của hệ điều hành** (`showSystemNotification`), hiển thị sạch sẽ, chuyên nghiệp trên khay thông báo Android/iOS.
+*   **Nâng cấp toàn diện Thông báo đẩy hệ điều hành (`showSystemNotification`)**:
+    *   Bổ sung `BigTextStyleInformation(body, contentTitle: title, summaryText: 'Floria Nhắc nhở')` giúp thông báo hiển thị trọn vẹn văn bản dài, không bị rỗng/trắng khi người dùng vuốt mở rộng thông báo trên Android.
+    *   Kích hoạt đầy đủ âm thanh (`playSound: true`), rung (`enableVibration: true`), mức ưu tiên cao nhất (`importance: Importance.high`, `priority: Priority.high`).
+    *   Tích hợp điều hướng thông minh khi chạm vào thông báo (`onDidReceiveNotificationResponse`): Tự động chuyển hướng người dùng vào thẳng tab **Khu vườn** (`MainNavigationScreen(initialIndex: 1)`) để thao tác chăm sóc cây tức thì.
+    *   Nút "Kiểm tra thử thông báo ngay" trong Cài đặt: Phát thông báo thật lên khay hệ thống, đồng thời phản hồi SnackBar nhẹ trong 3 giây báo đã phát thành công.
+*   **Kiểm tra tĩnh**: `dart analyze lib/` trên toàn bộ ứng dụng đạt **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+---
+
+## Ca làm việc ngày 23/11/2026 (Đợt 3): Khắc Phục Triệt Để Lỗi Không Gạch Tác Vụ Khi Hoàn Thành Nhanh / Tích Task Liên Tục
+
+### 1. Nguyên Nhân Gốc Rễ
+*   **Lệch bộ lọc vườn (`_selectedGarden`)**:
+    *   Tại Trang chủ ([home_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/screens/home_screen.dart)), mục "Lịch chăm sóc hôm nay" hiển thị tác vụ từ `gardenProvider.allUserPlants` (toàn bộ cây trong mọi khu vườn: Tất cả, Test, Test 2...).
+    *   Tuy nhiên khi bấm vào cây để mở [plant_detail_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/plant_detail_screen.dart), màn hình lại tìm cây trong `gardenProvider.plants` (chỉ lọc theo `_selectedGarden`).
+    *   Khi người dùng thao tác liên tục đến cây thứ 4, thứ 5 nằm ở một khu vườn khác (không phải khu vườn đang chọn), `plants.firstWhere` không tìm thấy nên rơi vào `orElse: () => gardenPlant!` (dữ liệu cũ tĩnh truyền từ constructor). Dẫn đến dù đã hoàn thành trong CSDL, giao diện vẫn dùng dữ liệu cũ và vĩnh viễn không gạch (`lineThrough`).
+*   **Thiếu Optimistic UI Update trong `GardenProvider`**:
+    *   Các hàm `completeAllToday`, `waterPlant`, `fertilizePlant`, `cleanPlant` trước đây chỉ gọi `await _firestore.update(...)` rồi thụ động chờ snapshot stream Firestore gửi về, không cập nhật bộ nhớ RAM tại chỗ và không gọi `notifyListeners()`.
+    *   Khi thao tác liên tục, độ trễ mạng hoặc cơ chế throttle stream của Firestore khiến màn hình không nhận được sự kiện rebuild kịp thời.
+
+### 2. Giải Pháp Đã Triển Khai
+*   **Đồng bộ dữ liệu thời gian thực toàn vườn ([plant_detail_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/screens/plant_detail_screen.dart))**:
+    *   Chuyển đổi truy vấn đồng bộ: `gardenProvider.allUserPlants.firstWhere(...)` thay cho `gardenProvider.plants`.
+    *   Đảm bảo 100% cây trồng (bất kể thuộc khu vườn nào) đều được kết nối với luồng trạng thái động của Provider.
+*   **Áp dụng mô hình Optimistic UI Update ([garden_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/garden/providers/garden_provider.dart))**:
+    *   Trong cả 4 hàm (`completeAllToday`, `waterPlant`, `fertilizePlant`, `cleanPlant`): Cập nhật ngay lập tức `_plants[plantIndex]` bằng `copyWith(...)` với thời gian mới và tình trạng 'Khỏe mạnh', sau đó gọi `notifyListeners()` ngay lập tức (**0 mili-giây**).
+    *   Sau đó tiến hành cập nhật Firestore ngầm.
+    *   Kết quả: Khi người dùng bấm "Hoàn tất mọi việc hôm nay" hoặc tích từng task, toàn bộ dòng chữ lập tức **gạch ngang (`TextDecoration.lineThrough`)** và hiện tích xanh ngay tức thì, nút hoàn thành đổi sang trạng thái đã hoàn tất xám mờ mượt mà, dù người dùng thao tác liên tục 10 hay 20 cây.
+*   **Kiểm tra tĩnh**: `dart analyze lib/` trên toàn bộ ứng dụng đạt chuẩn **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+---
+
+## Ca làm việc ngày 23/11/2026 - 24/11/2026 (Đợt 4): Nâng Cấp Phân Quyền Web Admin, Chuẩn Hóa Cẩm Nang Mobile & Tích Hợp Hệ Thống Đặt Lại Mật Khẩu Tên Miền Riêng
+
+### 1. Nâng Cấp & Chuẩn Hóa Hệ Thống Phân Quyền (RBAC) Trên Web Admin (`floria_web`)
+*   **Kiểm tra toàn diện 4 tầng bảo vệ**:
+    *   Tầng 1 (Sidebar): Tự động ẩn các mục menu mà vai trò hiện tại không có quyền `view`.
+    *   Tầng 2 (Route Guard): `AdminLayout` chặn truy cập trực tiếp URL trái phép và hiển thị màn hình cảnh báo.
+    *   Tầng 3 (Giao diện trang): Phủ `usePermission` trên toàn bộ 16 trang quản trị.
+    *   Tầng 4 (Backend API): Bảo vệ các endpoint nhạy cảm (ma trận quyền, tài khoản quản trị) yêu cầu quyền `super_admin`.
+*   **Tách quyền chi tiết cho Module Floria Assistant ([assistant/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/admin/assistant/page.tsx))**:
+    *   Tách bạch riêng các quyền: `canCreate` (thêm quy tắc), `canEdit` (chỉnh sửa / bật tắt quy tắc), `canDelete` (xóa quy tắc), `canConfigure` (đổi Model LLM, System Prompt).
+    *   Tài khoản `botanist` (chuyên gia thực vật) giờ đây bị ẩn hoàn toàn nút "Thêm quy tắc" và nút "Xoá" ở từng thẻ Guardrail, chỉ được phép tinh chỉnh nội dung và bật/tắt rule chuyên môn.
+    *   **Bảo vệ tầng Backend ([assistant/config/route.ts](file:///d:/Plan/utrasupervip/floria_web/src/app/api/admin/assistant/config/route.ts))**: Từ chối `403 Forbidden` nếu người dùng không phải Super Admin mà cố tình thêm/xóa ID quy tắc hoặc thay đổi Model/System Prompt gốc.
+    *   **Ẩn trường hiển thị "Model LLM mặc định"**: Giao diện tab "Cài đặt & Kịch bản" được tinh gọn thành 2 cột cân đối ("Tên xưng hô của trợ lý" và "Giọng điệu & phong cách").
+*   **Biên dịch Web**: `next build` hoàn thành toàn bộ 59/59 trang và API routes không có lỗi TypeScript.
+
+### 2. Chuẩn Hóa Nhãn Cẩm Nang Trên Mobile App (`floria_app`)
+*   **Mô hình dữ liệu ([handbook_article.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/models/handbook_article.dart))**: Bổ sung getter `formattedDate` định dạng `dd/MM/yyyy` (ví dụ `23/11/2026`) từ thuộc tính `createdAt`.
+*   **Giao diện Trang chủ ([home_screen.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/home/screens/home_screen.dart))**:
+    *   Xóa bỏ tag thời gian đọc ("4 phút đọc") trên thẻ cẩm nang ngoài trang chủ và thay thế bằng ngày đăng bài viết `article.formattedDate`.
+    *   Đồng bộ hiển thị ngày đăng cạnh chip danh mục trong BottomSheet chi tiết bài viết.
+*   **Kiểm tra tĩnh**: `dart analyze lib/` đạt chuẩn **`No issues found!`** (0 lỗi, 0 cảnh báo).
+
+### 3. Cấu Hình Email Khôi Phục Mật Khẩu & Xác Thực Tên Miền Riêng (`floria.id.vn`)
+*   **Việt hóa email xác thực ([auth_provider.dart](file:///d:/Plan/utrasupervip/floria_app/lib/features/auth/providers/auth_provider.dart))**:
+    *   Bổ sung `await _auth.setLanguageCode('vi');` trong hàm khởi tạo `AuthProvider()`, luồng `register()` (gửi email kích hoạt) và luồng `resetPassword()` (gửi email lấy lại mật khẩu).
+    *   Đảm bảo 100% email gửi từ Firebase Authentication đến hộp thư người dùng đều bằng tiếng Việt.
+*   **Xác thực tên miền riêng trên Cloudflare**:
+    *   Hướng dẫn cấu hình thành công 4 bản ghi DNS (SPF `TXT`, Verification `TXT`, DKIM 1 `CNAME`, DKIM 2 `CNAME` với chế độ DNS Only) cho tên miền `floria.id.vn`.
+    *   Email gửi đi mang tên người gửi chính thức từ **`Floria <noreply@floria.id.vn>`** với tiêu đề và nội dung tiếng Việt chuẩn mực, không bị đánh dấu Spam.
+
+### 4. Thiết Kế Trang Đặt Lại Mật Khẩu Chuẩn Thương Hiệu Floria
+*   **Xây dựng trang giao diện mới ([reset-password/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/reset-password/page.tsx) & [auth/action/page.tsx](file:///d:/Plan/utrasupervip/floria_web/src/app/auth/action/page.tsx))**:
+    *   Giao diện Glassmorphism sang trọng với logo Floria xanh ngọc thiên nhiên.
+    *   Tự động giải mã `oobCode` từ Firebase để hiển thị đúng email người dùng.
+    *   Hai ô nhập mật khẩu mới và xác nhận mật khẩu có nút mắt ẩn/hiện, nút "Cập nhật mật khẩu" kèm loading spinner.
+    *   **Tinh gọn giao diện theo yêu cầu**: Đã xóa bỏ hộp "Quy tắc bảo mật", xóa bỏ dòng chữ footer bản quyền, và xóa bỏ các nút chuyển hướng app ở màn hình thành công để sẵn sàng áp dụng đồng bộ cho cả Web và Mobile sau khi deploy.
+*   **Kiểm tra biên dịch**: `npx tsc --noEmit` và `next build` hoàn thành đạt 0 lỗi.
+

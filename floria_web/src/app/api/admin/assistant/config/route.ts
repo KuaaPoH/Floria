@@ -114,20 +114,49 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const admin = await verifyAdminRequest(req);
+    if (admin.role !== "super_admin" && admin.role !== "botanist") {
+      return NextResponse.json({ error: "Bạn không có quyền chỉnh sửa Trợ lý Floria" }, { status: 403 });
+    }
+
     const body = (await req.json()) as Partial<AssistantConfig>;
 
+    const snap = await getAdminDb().collection("SystemConfig").doc("assistant_config").get();
+    const existing = (snap.data() ?? DEFAULT_ASSISTANT_CONFIG) as AssistantConfig;
+    const existingGuardrails = Array.isArray(existing.guardrails) ? existing.guardrails : DEFAULT_ASSISTANT_CONFIG.guardrails;
+
+    // Nếu không phải Super Admin, không cho phép Thêm hoặc Xóa quy tắc, không cho đổi Model/System Prompt
+    if (admin.role !== "super_admin") {
+      const incomingGuardrails = Array.isArray(body.guardrails) ? body.guardrails : existingGuardrails;
+      const existingIds = new Set(existingGuardrails.map((g) => g.id));
+      const incomingIds = new Set(incomingGuardrails.map((g) => g.id));
+
+      const isAdded = incomingGuardrails.some((g) => !existingIds.has(g.id));
+      const isDeleted = existingGuardrails.some((g) => !incomingIds.has(g.id));
+
+      if (isAdded || isDeleted) {
+        return NextResponse.json(
+          { error: "Chỉ Super Admin mới có quyền Thêm hoặc Xóa quy tắc an toàn (Guardrails)" },
+          { status: 403 },
+        );
+      }
+    }
+
     const nextCfg: AssistantConfig = {
-      name: String(body.name ?? DEFAULT_ASSISTANT_CONFIG.name).trim() || DEFAULT_ASSISTANT_CONFIG.name,
-      tone: String(body.tone ?? DEFAULT_ASSISTANT_CONFIG.tone).trim() || DEFAULT_ASSISTANT_CONFIG.tone,
+      name: String(body.name ?? existing.name ?? DEFAULT_ASSISTANT_CONFIG.name).trim() || DEFAULT_ASSISTANT_CONFIG.name,
+      tone: String(body.tone ?? existing.tone ?? DEFAULT_ASSISTANT_CONFIG.tone).trim() || DEFAULT_ASSISTANT_CONFIG.tone,
       language: String(body.language ?? "vi"),
       defaultModel:
-        String(body.defaultModel ?? DEFAULT_ASSISTANT_CONFIG.defaultModel).trim() ||
-        DEFAULT_ASSISTANT_CONFIG.defaultModel,
-      systemPrompt: String(body.systemPrompt ?? DEFAULT_ASSISTANT_CONFIG.systemPrompt).trim(),
-      guardrails: Array.isArray(body.guardrails) ? body.guardrails : DEFAULT_ASSISTANT_CONFIG.guardrails,
+        admin.role === "super_admin"
+          ? String(body.defaultModel ?? existing.defaultModel ?? DEFAULT_ASSISTANT_CONFIG.defaultModel).trim()
+          : existing.defaultModel ?? DEFAULT_ASSISTANT_CONFIG.defaultModel,
+      systemPrompt:
+        admin.role === "super_admin"
+          ? String(body.systemPrompt ?? existing.systemPrompt ?? DEFAULT_ASSISTANT_CONFIG.systemPrompt).trim()
+          : existing.systemPrompt ?? DEFAULT_ASSISTANT_CONFIG.systemPrompt,
+      guardrails: Array.isArray(body.guardrails) ? body.guardrails : existingGuardrails,
       disabledProductIds: Array.isArray(body.disabledProductIds)
         ? body.disabledProductIds.map((x) => String(x))
-        : [],
+        : (existing.disabledProductIds ?? []),
       updatedAt: new Date().toISOString(),
       updatedBy: admin.name,
     };
