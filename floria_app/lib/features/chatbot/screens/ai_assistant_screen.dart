@@ -111,10 +111,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   void _initWelcomeMessage() {
-    String welcome = "Xin chào! Tôi là Trợ lý Floria 🌿\n\nTôi có thể giúp bạn chẩn đoán sâu bệnh, tư vấn lịch tưới nước, ánh sáng và phân bón chuẩn khoa học. Bạn có thể hỏi tôi bất kỳ thắc mắc nào hoặc đính kèm ảnh cây để tôi hỗ trợ nhé!";
+    String welcome = "Xin chào! Tôi là Trợ lý Floria\n\nTôi có thể giúp bạn chẩn đoán sâu bệnh, tư vấn lịch tưới nước, ánh sáng và phân bón chuẩn khoa học. Bạn có thể hỏi tôi bất kỳ thắc mắc nào hoặc đính kèm ảnh cây để tôi hỗ trợ nhé!";
     if (widget.plantNameVi != null && widget.plantNameVi!.isNotEmpty) {
       final sci = widget.scientificName != null && widget.scientificName!.isNotEmpty ? ' (${widget.scientificName})' : '';
-      welcome = "Chào bạn! Tôi là Trợ lý Floria 🌿\n\nTôi đang theo dõi chuyên sâu cho cây **${widget.plantNameVi}**$sci của bạn.\n${widget.diseaseContext != null ? '📌 *Tình trạng hiện tại: ${widget.diseaseContext}*\n\n' : '\n'}Tôi đã nạp đầy đủ thông tin sinh học của loài cây này. Bạn cần tôi hướng dẫn cách tưới nước, ánh sáng, nhiệt độ hay chẩn đoán triệu chứng bất thường nào trên cây?";
+      welcome = "Chào bạn! Tôi là Trợ lý Floria\n\nTôi đang theo dõi chuyên sâu cho cây **${widget.plantNameVi}**$sci của bạn.\n${widget.diseaseContext != null ? '*Tình trạng hiện tại: ${widget.diseaseContext}*\n\n' : '\n'}Tôi đã nạp đầy đủ thông tin sinh học của loài cây này. Bạn cần tôi hướng dẫn cách tưới nước, ánh sáng, nhiệt độ hay chẩn đoán triệu chứng bất thường nào trên cây?";
     }
     _messages.add(ChatMessageItem(isUser: false, text: welcome));
   }
@@ -671,16 +671,45 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         if (widget.diseaseContext != null) {
           plantCtx += ", tình trạng: ${widget.diseaseContext}";
         }
+      } else {
+        try {
+          final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
+          final gardens = gardenProvider.gardens;
+          final plants = gardenProvider.allUserPlants;
+          if (gardens.isNotEmpty || plants.isNotEmpty) {
+            final buffer = StringBuffer();
+            if (gardens.isNotEmpty) {
+              buffer.writeln("DANH SÁCH CÁC KHU VƯỜN CỦA NGƯỜI DÙNG (${gardens.length} khu vườn):");
+              for (final g in gardens) {
+                buffer.writeln("- Khu vườn \"${g.name}\" (Môi trường: ${g.environment}, ID: ${g.id})");
+              }
+            }
+            if (plants.isNotEmpty) {
+              final Map<String, String> gNameMap = {for (var g in gardens) g.id: g.name};
+              buffer.writeln("DANH SÁCH CÂY TRONG TỪNG KHU VƯỜN CỦA NGƯỜI DÙNG (${plants.length} cây):");
+              for (final p in plants) {
+                final gName = gNameMap[p.gardenId] ?? "Khu vườn chính";
+                final pName = p.nickname.trim().isNotEmpty ? p.nickname : p.nameVi;
+                buffer.writeln("- \"$pName\" (${p.scientificName}) -> Thuộc khu vườn: \"$gName\", Vị trí cụ thể: ${p.zone}, Trạng thái: ${p.healthStatus}");
+              }
+            }
+            plantCtx = buffer.toString().trim();
+          }
+        } catch (_) {}
       }
 
       String accumulated = "";
       final productRegex = RegExp(r'\[RECOMMEND_PRODUCT:\s*([a-zA-Z0-9_\-]+)\]');
+      final webProductRegex = RegExp(r'\[RECOMMEND_PRODUCT\]([\s\S]*?)\[/RECOMMEND_PRODUCT\]');
       final careRegex = RegExp(r'\[CARE_SCHEDULE:\s*water=(\d+),\s*fertilize=(\d+),\s*clean=(\d+)\]');
+      final webCareRegex = RegExp(r'\[CARE_SCHEDULE\]([\s\S]*?)\[/CARE_SCHEDULE\]');
 
       String sanitizeDisplay(String raw) {
         var s = raw
             .replaceAll(productRegex, '')
+            .replaceAll(webProductRegex, '')
             .replaceAll(careRegex, '')
+            .replaceAll(webCareRegex, '')
             .trimRight();
         // Gọt bỏ tiêu đề đề xuất lịch chăm sóc treo cụt ở cuối văn bản nếu có
         s = s.replaceAll(RegExp(r'\n+\s*\*\*Lịch chăm sóc đề xuất[^\*]*\*\*[:\s]*$', caseSensitive: false), '');
@@ -798,8 +827,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
     } catch (e) {
       if (mounted) {
+        final raw = e.toString().replaceFirst('Exception: ', '').trim();
         setState(() {
-          aiPlaceholder.text = "⚠️ Đã có sự cố khi kết nối với Trợ lý Floria: ${e.toString().replaceAll('Exception: ', '')}.\n\nVui lòng kiểm tra lại kết nối mạng.";
+          aiPlaceholder.text = "Chi tiết lỗi kết nối:\n$raw";
           aiPlaceholder.isStreaming = false;
         });
         _scrollToBottom();
@@ -1120,7 +1150,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       )
                     else ...[
                       MarkdownBody(
-                        data: msg.isStreaming ? "${msg.text} ▍" : msg.text,
+                        data: (msg.isStreaming ? "${msg.text} ▍" : msg.text)
+                            .replaceAll(RegExp(r'\[RECOMMEND_PRODUCT\][\s\S]*?\[/RECOMMEND_PRODUCT\]'), '')
+                            .replaceAll(RegExp(r'\[CARE_SCHEDULE\][\s\S]*?\[/CARE_SCHEDULE\]'), '')
+                            .trim(),
                         selectable: true,
                         styleSheet: MarkdownStyleSheet(
                           p: GoogleFonts.inter(

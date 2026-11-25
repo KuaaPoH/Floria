@@ -57,8 +57,10 @@ class OrderModel {
   final String addressLabel;
   final double? latitude;
   final double? longitude;
-  final String paymentMethod; // 'cod' hoặc 'card'
+  final String paymentMethod; // 'cod' hoặc 'zalopay'
   final String paymentLabel;
+  final String paymentStatus; // 'unpaid' | 'awaiting_gateway' | 'paid' | 'refunded'
+  final String? appTransId;
   final String status; // 'pending' | 'shipping' | 'completed' | 'cancelled'
   final bool isReviewed;
   final int? rating;
@@ -82,6 +84,8 @@ class OrderModel {
     this.longitude,
     required this.paymentMethod,
     required this.paymentLabel,
+    this.paymentStatus = 'unpaid',
+    this.appTransId,
     this.status = 'pending',
     this.isReviewed = false,
     this.rating,
@@ -125,6 +129,8 @@ class OrderModel {
       if (longitude != null) 'longitude': longitude,
       'paymentMethod': paymentMethod,
       'paymentLabel': paymentLabel,
+      'paymentStatus': paymentStatus,
+      if (appTransId != null && appTransId!.isNotEmpty) 'appTransId': appTransId,
       'status': status,
       'isReviewed': isReviewed,
       if (rating != null) 'rating': rating,
@@ -138,6 +144,8 @@ class OrderModel {
 
   OrderModel copyWith({
     String? status,
+    String? paymentStatus,
+    String? appTransId,
     bool? isReviewed,
     int? rating,
     String? reviewNote,
@@ -159,6 +167,8 @@ class OrderModel {
       longitude: longitude,
       paymentMethod: paymentMethod,
       paymentLabel: paymentLabel,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      appTransId: appTransId ?? this.appTransId,
       status: status ?? this.status,
       isReviewed: isReviewed ?? this.isReviewed,
       rating: rating ?? this.rating,
@@ -211,6 +221,8 @@ class OrderModel {
       longitude: (data['longitude'] as num?)?.toDouble(),
       paymentMethod: (data['paymentMethod'] ?? 'cod').toString(),
       paymentLabel: (data['paymentLabel'] ?? 'Thanh toán khi nhận hàng (COD)').toString(),
+      paymentStatus: (data['paymentStatus'] ?? (data['paymentMethod'] == 'zalopay' ? 'paid' : 'unpaid')).toString(),
+      appTransId: data['appTransId']?.toString(),
       status: (data['status'] ?? 'pending').toString(),
       isReviewed: data['isReviewed'] == true,
       rating: (data['rating'] as num?)?.toInt(),

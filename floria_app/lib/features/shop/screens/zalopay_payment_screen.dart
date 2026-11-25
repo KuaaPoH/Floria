@@ -139,7 +139,8 @@ class _ZaloPayPaymentScreenState extends State<ZaloPayPaymentScreen> {
   void _notifyAndClose({required bool success, required String message}) {
     if (!mounted) return;
     final rootContext = Navigator.of(context).context;
-    Navigator.of(context).pop(success);
+    final result = success ? (_orderResult?.appTransId ?? 'paid') : null;
+    Navigator.of(context).pop<String?>(result);
     AppToast.show(rootContext, message, isError: !success);
   }
 
@@ -198,7 +199,7 @@ class _ZaloPayPaymentScreenState extends State<ZaloPayPaymentScreen> {
         if (didPop) return;
         final leave = await _onWillPop();
         if (leave && context.mounted) {
-          Navigator.of(context).pop(false);
+          Navigator.of(context).pop<String?>(null);
         }
       },
       child: Scaffold(
@@ -211,7 +212,7 @@ class _ZaloPayPaymentScreenState extends State<ZaloPayPaymentScreen> {
             onPressed: () async {
               final leave = await _onWillPop();
               if (leave && context.mounted) {
-                Navigator.of(context).pop(false);
+                Navigator.of(context).pop<String?>(null);
               }
             },
           ),

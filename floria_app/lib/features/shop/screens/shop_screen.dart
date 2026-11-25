@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,18 @@ class _ShopScreenState extends State<ShopScreen> {
   final Map<String, GlobalKey> _addBtnKeys = {};
   final Set<String> _justAddedIds = {};
   bool _cartBouncing = false;
+  Timer? _hotTimer;
+  int _hotIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _hotTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted) {
+        setState(() => _hotIndex++);
+      }
+    });
+  }
 
   GlobalKey _keyForProduct(String productId) {
     return _addBtnKeys.putIfAbsent(productId, () => GlobalKey());
@@ -88,6 +101,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   void dispose() {
+    _hotTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -312,97 +326,158 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Banner Bác sĩ cây khuyên dùng
-                Container(
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.shadow.withValues(alpha: 0.06),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CustomImage(
-                          imageUrl:
-                              'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80',
-                          fit: BoxFit.cover,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      Positioned.fill(
+                // Banner Sản phẩm HOT (tự chuyển mỗi 10s nếu có nhiều hơn 1 sản phẩm hot)
+                Builder(
+                  builder: (context) {
+                    final hotProducts = shopProvider.products.where((p) {
+                      if (!p.visible) return false;
+                      final t = p.tag.toLowerCase();
+                      return t.contains('hot') || t.contains('nổi bật') || t.contains('featured');
+                    }).toList();
+                    final activeHot = hotProducts.isNotEmpty
+                        ? hotProducts[_hotIndex % hotProducts.length]
+                        : null;
+                    final bannerImage = activeHot != null && activeHot.imageUrl.isNotEmpty
+                        ? activeHot.imageUrl
+                        : 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80';
+                    final badgeLabel = activeHot != null
+                        ? context.tr('Sản phẩm HOT', 'HOT Product')
+                        : context.tr('Dược phẩm sinh học', 'Biological Products');
+                    final titleLabel = activeHot != null
+                        ? activeHot.name
+                        : context.tr('Bộ Đôi Khắc Tinh Bệnh Lá & Sâu Hại', 'Leaf Disease & Pest Control Duo');
+                    final subtitleLabel = activeHot != null
+                        ? (activeHot.shortDesc.isNotEmpty
+                            ? activeHot.shortDesc
+                            : '${activeHot.price.toStringAsFixed(0)}đ')
+                        : context.tr(
+                            'Nano Bạc Đồng & Tinh dầu Neem giúp bảo vệ cây toàn diện không độc hại.',
+                            'Nano Silver Copper & Neem Oil provide non-toxic, total plant protection.',
+                          );
+
+                    return GestureDetector(
+                      onTap: activeHot != null
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProductDetailScreen(product: activeHot),
+                                ),
+                              );
+                            }
+                          : null,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 450),
                         child: Container(
+                          key: ValueKey(activeHot?.id ?? 'default_banner'),
+                          height: 180,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                const Color(0xFF18221B).withValues(alpha: 0.85),
-                              ],
-                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: c.shadow.withValues(alpha: 0.06),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.end,
+                          child: Stack(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4F9D69),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  context.tr(
-                                    '🛡️ Dược phẩm sinh học',
-                                    '🛡️ Biological Products',
-                                  ),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                              Positioned.fill(
+                                child: CustomImage(
+                                  imageUrl: bannerImage,
+                                  fit: BoxFit.cover,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                context.tr(
-                                  'Bộ Đôi Khắc Tinh Bệnh Lá & Sâu Hại',
-                                  'Leaf Disease & Pest Control Duo',
-                                ),
-                                style: GoogleFonts.inter(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                context.tr(
-                                  'Nano Bạc Đồng & Tinh dầu Neem giúp bảo vệ cây toàn diện không độc hại.',
-                                  'Nano Silver Copper & Neem Oil provide non-toxic, total plant protection.',
-                                ),
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.85),
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        const Color(0xFF18221B).withValues(alpha: 0.85),
+                                      ],
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: activeHot != null
+                                                  ? const Color(0xFFD97706)
+                                                  : const Color(0xFF4F9D69),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              badgeLabel,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                          if (hotProducts.length > 1)
+                                            Row(
+                                              children: List.generate(hotProducts.length, (i) {
+                                                final isSelected = i == (_hotIndex % hotProducts.length);
+                                                return Container(
+                                                  margin: const EdgeInsets.only(left: 4),
+                                                  width: isSelected ? 16 : 6,
+                                                  height: 6,
+                                                  decoration: BoxDecoration(
+                                                    color: isSelected
+                                                        ? Colors.white
+                                                        : Colors.white.withValues(alpha: 0.45),
+                                                    borderRadius: BorderRadius.circular(99),
+                                                  ),
+                                                );
+                                              }),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        titleLabel,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        subtitleLabel,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: Colors.white.withValues(alpha: 0.85),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
 

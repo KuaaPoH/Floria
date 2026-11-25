@@ -2187,54 +2187,92 @@ class PlantDetailScreen extends StatelessWidget {
     Color? textColor,
   }) {
     final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: badgeColor ?? c.surfaceMuted,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
-        boxShadow: [
-          BoxShadow(
-            color: c.shadow.withValues(alpha: c.isDark ? 0.2 : 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: textColor ?? c.textSecondary),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: c.textMuted,
-                    letterSpacing: 0.5,
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: c.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(icon, size: 20, color: textColor ?? c.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Text(
+                value,
+                style: GoogleFonts.inter(fontSize: 14, color: c.textSecondary, height: 1.5),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  context.tr("Đóng", "Close"),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: c.primary),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: textColor ?? c.textPrimary,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: badgeColor ?? c.surfaceMuted,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.border),
+          boxShadow: [
+            BoxShadow(
+              color: c.shadow.withValues(alpha: c.isDark ? 0.2 : 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: textColor ?? c.textSecondary),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: c.textMuted,
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: textColor ?? c.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

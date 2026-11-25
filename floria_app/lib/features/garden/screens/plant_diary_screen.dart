@@ -955,7 +955,7 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                 top: 20,
                 left: 20,
                 right: 20,
-                bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
+                bottom: MediaQuery.of(modalCtx).viewInsets.bottom + MediaQuery.of(modalCtx).viewPadding.bottom + 24,
               ),
               decoration: BoxDecoration(
                 color: c.surface,

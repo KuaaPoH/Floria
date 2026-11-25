@@ -561,6 +561,8 @@ class ShopProvider extends ChangeNotifier {
     required ShippingAddress address,
     required String paymentMethod, // 'cod' hoặc 'zalopay'
     required String paymentLabel,
+    String? paymentStatus,
+    String? appTransId,
     List<CartItem>? itemsToOrder,
     int discountAmount = 0,
     String? voucherCode,
@@ -611,6 +613,8 @@ class ShopProvider extends ChangeNotifier {
       longitude: address.longitude,
       paymentMethod: paymentMethod,
       paymentLabel: paymentLabel,
+      paymentStatus: paymentStatus ?? (paymentMethod == 'zalopay' ? 'paid' : 'unpaid'),
+      appTransId: appTransId,
       status: 'pending',
       createdAt: now,
       updatedAt: now,
@@ -752,17 +756,127 @@ class ShopProvider extends ChangeNotifier {
     }
   }
 
-  /// Cập nhật trạng thái đơn hàng (VD: hủy đơn hoặc xác nhận đã nhận hàng)
+  /// Cập nhật trạng thái đơn hàng (VD: hủy đơn hoàn kho hoặc xác nhận đã nhận hàng)
   Future<bool> updateOrderStatus(String orderId, String newStatus) async {
     try {
-      await _firestore.collection('Orders').doc(orderId).update({
+      if (newStatus == 'cancelled') {
+        final nowIso = DateTime.now().toIso8601String();
+        String nextPaymentStatus = 'unpaid';
+        final Map<String, int> restoredStocks = {};
+        final Map<String, int> restoredSoldCounts = {};
+
+        await _firestore.runTransaction((tx) async {
+          final orderRef = _firestore.collection('Orders').doc(orderId);
+          final orderSnap = await tx.get(orderRef);
+          if (!orderSnap.exists || orderSnap.data() == null) {
+            throw Exception('Không tìm thấy đơn hàng.');
+          }
+          final od = orderSnap.data()!;
+          final curStatus = (od['status'] ?? 'pending').toString();
+          if (curStatus != 'pending') {
+            throw Exception('Đơn hàng này không thể hủy.');
+          }
+
+          final curPaymentStatus = (od['paymentStatus'] ?? (od['paymentMethod'] == 'zalopay' ? 'paid' : 'unpaid')).toString();
+          nextPaymentStatus = curPaymentStatus == 'paid' ? 'refunded' : curPaymentStatus;
+          final orderCode = (od['orderCode'] ?? orderId).toString();
+
+          final rawItems = od['items'];
+          final List<Map<String, dynamic>> items = rawItems is List
+              ? rawItems.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+              : [];
+
+          // 1. ALL READS: đọc tồn kho tất cả sản phẩm trước khi ghi
+          final List<DocumentSnapshot<Map<String, dynamic>>> prodSnaps = [];
+          final List<int> qtys = [];
+          for (final item in items) {
+            final pid = (item['productId'] ?? '').toString();
+            final qty = (item['quantity'] as num?)?.toInt() ?? 1;
+            if (pid.isEmpty || qty <= 0) continue;
+            final pSnap = await tx.get(_firestore.collection('ShopProducts').doc(pid));
+            prodSnaps.add(pSnap);
+            qtys.add(qty);
+          }
+
+          // 2. ALL WRITES: hoàn kho + ghi lịch sử nhập kho + cập nhật đơn hàng
+          for (int i = 0; i < prodSnaps.length; i++) {
+            final pSnap = prodSnaps[i];
+            final qty = qtys[i];
+            if (pSnap.exists && pSnap.data() != null) {
+              final pd = pSnap.data()!;
+              final curStock = (pd['stock'] as num?)?.toInt() ?? 0;
+              final nextStock = curStock + qty;
+              final nextSold = max(0, ((pd['soldCount'] as num?)?.toInt() ?? 0) - qty);
+              restoredStocks[pSnap.id] = nextStock;
+              restoredSoldCounts[pSnap.id] = nextSold;
+
+              tx.update(pSnap.reference, {
+                'stock': nextStock,
+                'inStock': nextStock > 0,
+                'soldCount': nextSold,
+                'updatedAt': nowIso,
+              });
+
+              tx.set(_firestore.collection('InventoryTransactions').doc(), {
+                'productId': pSnap.id,
+                'productName': (pd['name'] ?? '').toString(),
+                'type': 'in',
+                'qty': qty,
+                'previousStock': curStock,
+                'newStock': nextStock,
+                'note': 'Hoàn kho hủy đơn #$orderCode',
+                'at': nowIso,
+                'createdAt': nowIso,
+                'orderId': orderId,
+                'orderCode': orderCode,
+              });
+            }
+          }
+
+          tx.update(orderRef, {
+            'status': 'cancelled',
+            'paymentStatus': nextPaymentStatus,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        });
+
+        // Đồng bộ cache local
+        for (final entry in restoredStocks.entries) {
+          final pIdx = _products.indexWhere((p) => p.id == entry.key);
+          if (pIdx != -1) {
+            _products[pIdx] = _products[pIdx].copyWith(
+              stock: entry.value,
+              inStock: entry.value > 0,
+              soldCount: restoredSoldCounts[entry.key] ?? _products[pIdx].soldCount,
+            );
+          }
+        }
+        final idx = _orders.indexWhere((o) => o.id == orderId);
+        if (idx != -1) {
+          _orders[idx] = _orders[idx].copyWith(
+            status: 'cancelled',
+            paymentStatus: nextPaymentStatus,
+            updatedAt: DateTime.now(),
+          );
+        }
+        notifyListeners();
+        return true;
+      }
+
+      final Map<String, dynamic> updatePayload = {
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+      if (newStatus == 'completed') {
+        updatePayload['paymentStatus'] = 'paid';
+      }
+
+      await _firestore.collection('Orders').doc(orderId).update(updatePayload);
       final idx = _orders.indexWhere((o) => o.id == orderId);
       if (idx != -1) {
         _orders[idx] = _orders[idx].copyWith(
           status: newStatus,
+          paymentStatus: newStatus == 'completed' ? 'paid' : null,
           updatedAt: DateTime.now(),
         );
         notifyListeners();

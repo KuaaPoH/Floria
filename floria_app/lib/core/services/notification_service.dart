@@ -18,6 +18,7 @@ class NotificationService {
 
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   static bool _isLocalNotificationsInitialized = false;
+  static bool _isChecking = false;
 
   /// Khởi tạo hệ thống thông báo đẩy cấp hệ điều hành (Android / iOS)
   static Future<void> initSystemNotifications() async {
@@ -203,13 +204,12 @@ class NotificationService {
     await prefs.setBool(_prefKeyEnabled, enabled);
   }
 
-  /// Đánh dấu một tác vụ của cây đã được hoàn thành hôm nay để không nhắc lại
+  /// Đánh dấu một tác vụ (và cả ngày hôm nay của cây) đã được hoàn thành để không nhắc lại
   static Future<void> silenceForToday(String plantId, String taskType) async {
     final prefs = await SharedPreferences.getInstance();
     final today = _getTodayKey();
     await prefs.setString('$_prefKeyPrefixNotified${plantId}_$taskType', today);
-    // Đã làm rồi thì không nhắc lại vào buổi chiều nữa
-    await prefs.setString('$_prefKeyPrefixNotified${plantId}_${taskType}_evening', today);
+    await prefs.setString('$_prefKeyPrefixNotified${plantId}_daily', today);
   }
 
   /// Xóa lịch sử đã thông báo (dùng khi kiểm tra hoặc reset)
@@ -241,78 +241,61 @@ class NotificationService {
   }
 
   /// Động cơ quét và kích hoạt thông báo đẩy hệ điều hành nhắc nhở chăm sóc cây
+  /// Đảm bảo mỗi cây đến hạn chỉ thông báo ĐÚNG 1 LẦN / NGÀY khi đã đến khung giờ đã cài đặt.
   static Future<void> checkAndNotifyPendingTasks(
     BuildContext context,
     List<GardenPlant> plants,
   ) async {
-    if (!context.mounted) return;
-    final enabled = await isEnabled();
-    if (!enabled || plants.isEmpty) return;
+    if (!context.mounted || _isChecking) return;
+    _isChecking = true;
+    try {
+      final enabled = await isEnabled();
+      if (!enabled || plants.isEmpty) return;
 
-    // Tải tùy chọn nhắc nhở & bỏ qua nếu đang trong khung giờ Không làm phiền
-    await loadPreferences();
-    if (isInQuietHours()) return;
+      // Tải tùy chọn nhắc nhở & bỏ qua nếu đang trong khung giờ Không làm phiền
+      await loadPreferences();
+      if (isInQuietHours()) return;
 
-    final now = DateTime.now();
-    final currentMinutes = now.hour * 60 + now.minute;
-    final eveningMinutes = timeToMinutes(cachedEveningTime, fallback: 17 * 60 + 30);
+      final now = DateTime.now();
+      final currentMinutes = now.hour * 60 + now.minute;
 
-    for (final plant in plants) {
-      // 1. Phân tích giờ nhắc nhở của cây (mặc định 07:00 nếu chưa đặt)
-      final reminderMinutes = timeToMinutes(plant.reminderTime);
+      for (final plant in plants) {
+        // 1. Phân tích giờ nhắc nhở của cây (mặc định 07:00 nếu chưa đặt)
+        final reminderMinutes = timeToMinutes(plant.reminderTime);
 
-      // Chỉ nhắc nhở khi thời gian hiện tại đã đến hoặc qua khung giờ hẹn hôm nay
-      if (currentMinutes < reminderMinutes) continue;
+        // Chỉ nhắc nhở khi thời gian hiện tại đã đến đúng khung giờ đã cài đặt
+        if (currentMinutes < reminderMinutes) continue;
 
-      // Sau giờ nhắc buổi chiều: nhắc lại lần 2 cho các việc vẫn chưa làm
-      final isEveningSlot = currentMinutes >= eveningMinutes && reminderMinutes < eveningMinutes;
-      final slot = isEveningSlot ? '_evening' : '';
-      final titlePrefix = isEveningSlot ? 'Nhắc lại: ' : '';
+        // Đảm bảo mỗi cây chỉ thông báo đúng 1 lần trong ngày hôm nay
+        if (await _isAlreadyNotifiedToday(plant.id, 'daily')) continue;
 
-      // 2. Kiểm tra tác vụ Tưới nước
-      if (plant.isNeedsWater) {
-        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'water$slot');
-        if (!alreadyNotified) {
-          await _markNotifiedToday(plant.id, 'water$slot');
-          await showSystemNotification(
-            id: plant.id.hashCode,
-            title: '🌿 Floria: $titlePrefixĐã đến giờ tưới nước!',
-            body: 'Cây ${plant.nickname} cần được cấp ẩm để duy trì độ tươi tốt.',
-            payload: plant.id,
-          );
-          break; // Giới hạn 1 thông báo mỗi lượt quét để không làm phiền người dùng
+        final List<String> dueTasks = [];
+        if (plant.isNeedsWater) dueTasks.add('tưới nước');
+        if (plant.isNeedsFertilizer && plant.fertilizeFrequencyDays > 0) {
+          dueTasks.add('bón phân');
         }
-      }
+        if (plant.isNeedsClean) dueTasks.add('vệ sinh lá & kiểm tra sâu bệnh');
 
-      // 3. Kiểm tra tác vụ Bón phân (nếu cây có chu kỳ bón phân > 0)
-      if (plant.isNeedsFertilizer && plant.fertilizeFrequencyDays > 0) {
-        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'fertilize$slot');
-        if (!alreadyNotified) {
-          await _markNotifiedToday(plant.id, 'fertilize$slot');
-          await showSystemNotification(
-            id: plant.id.hashCode + 1,
-            title: '🌿 Floria: $titlePrefixĐã đến lịch bón phân vi lượng!',
-            body: 'Bổ sung dinh dưỡng định kỳ cho ${plant.nickname}.',
-            payload: plant.id,
-          );
-          break;
-        }
-      }
+        if (dueTasks.isEmpty) continue;
 
-      // 4. Kiểm tra tác vụ Lau lá / kiểm tra sâu bệnh
-      if (plant.isNeedsClean) {
-        final alreadyNotified = await _isAlreadyNotifiedToday(plant.id, 'clean$slot');
-        if (!alreadyNotified) {
-          await _markNotifiedToday(plant.id, 'clean$slot');
-          await showSystemNotification(
-            id: plant.id.hashCode + 2,
-            title: '🌿 Floria: ${titlePrefix}Vệ sinh lá & kiểm tra sâu bệnh!',
-            body: 'Lau bụi phiến lá cho ${plant.nickname} để quang hợp tối ưu.',
-            payload: plant.id,
-          );
-          break;
-        }
+        await _markNotifiedToday(plant.id, 'daily');
+        final String title = dueTasks.length == 1
+            ? 'Floria: Đã đến giờ ${dueTasks.first}!'
+            : 'Floria: Lịch chăm sóc ${plant.nickname} hôm nay!';
+        final String body = dueTasks.length == 1
+            ? 'Cây ${plant.nickname} đã đến hạn ${dueTasks.first} theo lịch đã cài đặt.'
+            : 'Cây ${plant.nickname} hôm nay cần: ${dueTasks.join(', ')}.';
+
+        await showSystemNotification(
+          id: plant.id.hashCode,
+          title: title,
+          body: body,
+          payload: plant.id,
+        );
+        break; // Giới hạn 1 thông báo mỗi lượt quét
       }
+    } finally {
+      _isChecking = false;
     }
   }
 

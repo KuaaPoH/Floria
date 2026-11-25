@@ -17,3 +17,5 @@ export const daysAgo = (n: number, hour = 9) => {
   d.setHours(hour, (n * 37) % 60, 0, 0);
   return d.toISOString();
 };
+
+export const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));

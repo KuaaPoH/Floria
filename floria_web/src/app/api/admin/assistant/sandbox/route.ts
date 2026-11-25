@@ -3,7 +3,14 @@ import { AdminAuthError, verifyAdminRequest } from "@/lib/server/admin-auth";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import type { AssistantGuardrail } from "../config/route";
 
-const GEMINI_MODELS = ["gemini-3-flash-preview", "gemini-flash-lite-latest"];
+const GEMINI_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3-flash-preview",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3.6-flash",
+];
 
 const CATALOG_CACHE_TTL_MS = 2 * 60_000;
 let catalogCache: { text: string; expiresAt: number } | null = null;
@@ -101,7 +108,7 @@ export async function POST(req: Request) {
     const t0 = Date.now();
     let reply = "";
     let usedModel = "";
-    let lastErr = "";
+    const attemptErrors: string[] = [];
 
     const modelsToTry = body.defaultModel?.trim()
       ? [body.defaultModel.trim(), ...GEMINI_MODELS.filter((m) => m !== body.defaultModel?.trim())]
@@ -126,6 +133,7 @@ export async function POST(req: Request) {
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
           {
             method: "POST",
+            signal: AbortSignal.timeout(12_000),
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: fullSystemInstruction }] },
@@ -135,7 +143,8 @@ export async function POST(req: Request) {
           },
         );
         if (!res.ok) {
-          lastErr = `HTTP ${res.status}`;
+          const errBody = await res.text().catch(() => "");
+          attemptErrors.push(`${model}: HTTP ${res.status}${errBody ? ` - ${errBody.slice(0, 120)}` : ""}`);
           continue;
         }
         const json = (await res.json()) as {
@@ -147,14 +156,15 @@ export async function POST(req: Request) {
           usedModel = model;
           break;
         }
+        attemptErrors.push(`${model}: empty response`);
       } catch (e) {
-        lastErr = e instanceof Error ? e.message : "Lỗi gọi LLM";
+        attemptErrors.push(`${model}: ${e instanceof Error ? e.message : "timeout"}`);
       }
     }
 
     if (!reply) {
       return NextResponse.json(
-        { error: `Không thể nhận phản hồi từ LLM (${lastErr || "Timeout"}).` },
+        { error: `Không thể nhận phản hồi từ LLM (${attemptErrors.join(" | ") || "Timeout"}).` },
         { status: 502 },
       );
     }

@@ -325,7 +325,7 @@ function GeneralAndPromptTab({
 }) {
   const [name, setName] = useState("");
   const [tone, setTone] = useState("");
-  const [defaultModel, setDefaultModel] = useState("gemini-3-flash-preview");
+  const [defaultModel, setDefaultModel] = useState("gemini-3.8-flash");
   const [systemPrompt, setSystemPrompt] = useState("");
   const canModify = canConfigure || canEdit;
 
@@ -333,7 +333,7 @@ function GeneralAndPromptTab({
     if (config) {
       setName(config.name);
       setTone(config.tone);
-      setDefaultModel(config.defaultModel || "gemini-3-flash-preview");
+      setDefaultModel(config.defaultModel || "gemini-3.8-flash");
       setSystemPrompt(config.systemPrompt);
     }
   }, [config]);

@@ -51,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
         const acc = DEMO_ACCOUNTS.find((a) => a.email === email.trim().toLowerCase() && a.password === password);
         if (!acc) return null;
         const { password: _p, ...session } = acc;
+        if (typeof window !== "undefined") localStorage.setItem("floria_portal_scope", "admin");
         set({ session });
         return session;
       },
@@ -60,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
         const token = await cred.user.getIdToken(true);
         try {
           const session = await verifyFirebaseSession(token);
+          if (typeof window !== "undefined") localStorage.setItem("floria_portal_scope", "admin");
           set({ session });
           return session;
         } catch (err) {
@@ -73,6 +75,7 @@ export const useAuthStore = create<AuthState>()(
         const token = await cred.user.getIdToken(true);
         try {
           const session = await verifyFirebaseSession(token);
+          if (typeof window !== "undefined") localStorage.setItem("floria_portal_scope", "admin");
           set({ session });
           return session;
         } catch (err) {
@@ -82,6 +85,10 @@ export const useAuthStore = create<AuthState>()(
       },
       refreshSession: async () => {
         if (IS_MOCK || typeof window === "undefined") return get().session;
+        if (localStorage.getItem("floria_portal_scope") !== "admin") {
+          set({ session: null });
+          return null;
+        }
         const auth = getFirebaseClientAuth();
         await auth.authStateReady();
         const user = auth.currentUser;
@@ -106,7 +113,8 @@ export const useAuthStore = create<AuthState>()(
           set({ session: newSession });
           return newSession;
         } catch {
-          return get().session;
+          set({ session: null });
+          return null;
         }
       },
       updateSession: (patch) => {
@@ -116,6 +124,9 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: async () => {
         set({ session: null });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("floria_portal_scope");
+        }
         if (!IS_MOCK && typeof window !== "undefined") {
           try {
             await signOut(getFirebaseClientAuth());

@@ -26,7 +26,7 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   name: "Trợ lý Floria",
   tone: "100% tiếng Việt tự nhiên, ấm áp, chuẩn khoa học thực vật",
   language: "vi",
-  defaultModel: "gemini-3-flash-preview",
+  defaultModel: "gemini-3.8-flash",
   disabledProductIds: [],
   systemPrompt:
     'Bạn là Trợ lý Cây trồng Floria (hoặc Trợ lý Floria) - chuyên gia nông nghiệp và thực vật học giàu kinh nghiệm, khách quan, tận tâm và gần gũi.\nNgôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn khoa học thực vật.\nXƯNG HÔ: Tự xưng là "Trợ lý Floria" (TUYỆT ĐỐI KHÔNG tự xưng là "Floria AI", "Bác sĩ AI" hay dùng từ "AI").',
@@ -69,6 +69,14 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
       category: "toxicity",
       ruleText:
         "Cảnh báo rõ nếu cây có độc tính với thú cưng/trẻ nhỏ, và tuyệt đối không hướng dẫn dùng cây cảnh làm thuốc chữa bệnh cho người.",
+      enabled: true,
+    },
+    {
+      id: "gr_clean_format",
+      name: "Định dạng văn bản sạch (Không emoji, không #)",
+      category: "scope",
+      ruleText:
+        "TUYỆT ĐỐI KHÔNG sử dụng emoji/biểu tượng cảm xúc và KHÔNG dùng ký tự tiêu đề Markdown (#, ##, ###) trong câu trả lời. Trình bày tự nhiên, dùng gạch đầu dòng rõ ràng.",
       enabled: true,
     },
   ],

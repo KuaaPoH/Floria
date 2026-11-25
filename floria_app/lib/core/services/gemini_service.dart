@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -55,59 +56,46 @@ class GeminiDiseaseResult {
 class GeminiService {
   static const String _prefKey = 'floria_gemini_api_key';
   static const String _prefModelKey = 'floria_gemini_model_name';
-  static const String defaultModel = 'gemini-3-flash-preview';
+  static const String defaultModel = 'gemini-3.8-flash';
 
   // Danh sách các mô hình thế hệ 3 mới nhất của Google hoạt động chuẩn xác 100%
   static const List<String> fallbackModels = [
+    'gemini-3.8-flash',
     'gemini-3-flash-preview',
+    'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
     'gemini-3.1-flash-lite-preview',
     'gemini-3.6-flash',
   ];
 
-  // 40 loài cây trong Cơ sở Dữ liệu của ứng dụng Floria
-  static const List<Map<String, String>> database40Plants = [
-    {"sci": "Adenium obesum", "vi": "Cây hoa sứ"},
-    {"sci": "Aglaonema commutatum", "vi": "Cây ngọc ngân"},
-    {"sci": "Alocasia amazonica", "vi": "Môn quan âm"},
-    {"sci": "Alocasia macrorrhizos", "vi": "Cây ráy tai voi"},
-    {"sci": "Aloe vera", "vi": "Nha đam"},
-    {"sci": "Anthurium andraeanum", "vi": "Hồng môn"},
-    {"sci": "Asplenium nidus", "vi": "Ráng ổ phụng"},
-    {"sci": "Begonia maculata", "vi": "Thu hải đường chấm bi"},
-    {"sci": "Bougainvillea glabra", "vi": "Hoa giấy"},
-    {"sci": "Calathea makoyana", "vi": "Cây đuôi công"},
-    {"sci": "Calathea orbifolia", "vi": "Cây đuôi công lá tròn"},
-    {"sci": "Chlorophytum comosum", "vi": "Cỏ lan chi"},
-    {"sci": "Codiaeum variegatum", "vi": "Cây cô tòng"},
-    {"sci": "Crassula ovata", "vi": "Cây ngọc bích"},
-    {"sci": "Cycas revoluta", "vi": "Cây vạn tuế"},
-    {"sci": "Dieffenbachia seguine", "vi": "Môn trường sinh đốm"},
-    {"sci": "Dracaena fragrans", "vi": "Thiết mộc lan"},
-    {"sci": "Dracaena marginata", "vi": "Phất dụ mảnh"},
-    {"sci": "Dracaena reflexa", "vi": "Trúc bách hợp"},
-    {"sci": "Epipremnum aureum", "vi": "Trầu bà vàng"},
-    {"sci": "Euphorbia milii", "vi": "Hoa bát tiên"},
-    {"sci": "Ficus benjamina", "vi": "Cây si"},
-    {"sci": "Ficus elastica", "vi": "Đa búp đỏ"},
-    {"sci": "Ficus lyrata", "vi": "Bàng Singapore"},
-    {"sci": "Hedera helix", "vi": "Thường xuân"},
-    {"sci": "Maranta leuconeura", "vi": "Cây dạ lam"},
-    {"sci": "Monstera deliciosa", "vi": "Trầu bà Nam Mỹ"},
-    {"sci": "Nephrolepis exaltata", "vi": "Dương xỉ Boston"},
-    {"sci": "Pachira aquatica", "vi": "Cây kim ngân"},
-    {"sci": "Peperomia obtusifolia", "vi": "Cây trường sinh"},
-    {"sci": "Philodendron bipinnatifidum", "vi": "Trầu bà thanh xuân"},
-    {"sci": "Philodendron hederaceum", "vi": "Trầu bà lá tim"},
-    {"sci": "Pilea peperomioides", "vi": "Cây cỏ gương"},
-    {"sci": "Sansevieria trifasciata", "vi": "Cây lưỡi hổ"},
-    {"sci": "Schefflera arboricola", "vi": "Ngũ gia bì"},
-    {"sci": "Schlumbergera truncata", "vi": "Lan càng cua"},
-    {"sci": "Spathiphyllum wallisii", "vi": "Lan ý"},
-    {"sci": "Syngonium podophyllum", "vi": "Tróc bạc"},
-    {"sci": "Tradescantia zebrina", "vi": "Thài lài tía"},
-    {"sci": "Zamioculcas zamiifolia", "vi": "Kim tiền"},
-  ];
+  static List<String>? _cachedPlantsPromptLines;
+
+  /// Tải danh sách loài cây trực tiếp từ Firestore `plants_info` (đồng bộ với Web Admin).
+  static Future<String> _getPlantsPromptList() async {
+    if (_cachedPlantsPromptLines != null && _cachedPlantsPromptLines!.isNotEmpty) {
+      return _cachedPlantsPromptLines!.join('\n');
+    }
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('plants_info')
+          .get()
+          .timeout(const Duration(seconds: 4));
+      final lines = snap.docs
+          .map((doc) {
+            final d = doc.data();
+            final sci = (d['scientific_name'] ?? d['scientificName'] ?? doc.id).toString().trim();
+            final vi = (d['name_vi'] ?? d['nameVi'] ?? d['commonName'] ?? '').toString().trim();
+            return vi.isNotEmpty ? '- $sci ($vi)' : '- $sci';
+          })
+          .where((line) => line.length > 2)
+          .toList();
+      if (lines.isNotEmpty) {
+        _cachedPlantsPromptLines = lines;
+        return lines.join('\n');
+      }
+    } catch (_) {}
+    return '';
+  }
 
   static Future<String?> getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
@@ -167,56 +155,28 @@ class GeminiService {
   }
 
   static String _buildChatSystemPrompt(String? currentPlantContext) {
-    final bool hasRemoteConfig = AiConfigService.assistantSystemPrompt.isNotEmpty;
-    final String corePersonaAndRules = hasRemoteConfig
-        ? [
-            AiConfigService.assistantSystemPrompt,
-            if (AiConfigService.assistantName.isNotEmpty)
-              'Tên xưng hô: ${AiConfigService.assistantName}.',
-            if (AiConfigService.assistantTone.isNotEmpty)
-              'Giọng điệu: ${AiConfigService.assistantTone}.',
-            if (AiConfigService.assistantGuardrails.isNotEmpty)
-              'QUY TẮC AN TOÀN (GUARDRAILS BẮT BUỘC):\n${AiConfigService.assistantGuardrails.join('\n')}',
-          ].join('\n')
-        : '''Bạn là Trợ lý Cây trồng Floria (hoặc Trợ lý Floria) - chuyên gia nông nghiệp và thực vật học giàu kinh nghiệm, khách quan, tận tâm và gần gũi.
-Ngôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn khoa học thực vật.
-XƯNG HÔ: Tự xưng là "Trợ lý Floria" (TUYỆT ĐỐI KHÔNG tự xưng là "Floria AI", "Bác sĩ AI" hay dùng từ "AI").
+    final String corePersonaAndRules = [
+      AiConfigService.assistantSystemPrompt.isNotEmpty
+          ? AiConfigService.assistantSystemPrompt
+          : 'Bạn là ${AiConfigService.assistantName}, chuyên gia cây trồng Floria.',
+      if (AiConfigService.assistantName.isNotEmpty)
+        'Tên xưng hô: ${AiConfigService.assistantName}.',
+      if (AiConfigService.assistantTone.isNotEmpty)
+        'Giọng điệu: ${AiConfigService.assistantTone}.',
+      if (AiConfigService.assistantGuardrails.isNotEmpty)
+        'QUY TẮC AN TOÀN (GUARDRAILS BẮT BUỘC):\n${AiConfigService.assistantGuardrails.join('\n')}',
+      'QUY TẮC ĐỊNH DẠNG BẮT BUỘC:\n- TUYỆT ĐỐI KHÔNG sử dụng emoji hay biểu tượng cảm xúc trong câu trả lời.\n- KHÔNG sử dụng ký tự tiêu đề Markdown (#, ##, ###). Trình bày ngắn gọn, rõ ràng bằng đoạn văn và gạch đầu dòng.',
+    ].join('\n');
 
-0. GIỚI HẠN PHẠM VI CHỦ ĐỀ NGHIÊM NGẶT (BẮT BUỘC TUÂN THỦ 100%):
-   - Bạn CHỈ ĐƯỢC PHÉP tư vấn, giải đáp và phân tích các nội dung liên quan đến cây cối, thực vật học, cây cảnh, hoa, nông nghiệp, làm vườn, chăm sóc, sâu bệnh và vật tư Floria.
-   - TUYỆT ĐỐI TỪ CHỐI mọi câu hỏi, yêu cầu hoặc hình ảnh NGOÀI CHỦ ĐỀ cây cối/thực vật/làm vườn (lập trình, toán, lịch sử, y tế con người, nấu ăn, tài chính...). Khi từ chối, KHÔNG đính kèm bất kỳ thẻ [RECOMMEND_PRODUCT] hay [CARE_SCHEDULE] nào.
-
-NGUYÊN TẮC HÀNH NGHỀ & TƯ VẤN QUAN TRỌNG:
-1. ĐẶT LỢI ÍCH CỦA CÂY VÀ NGƯỜI DÙNG LÊN HÀNG ĐẦU:
-   - Luôn ưu tiên giải pháp chăm sóc tự nhiên: điều chỉnh ánh sáng, độ ẩm, kiểm soát lượng nước tưới, độ thông thoáng trước khi nghĩ đến thuốc hay phân bón.
-2. QUY TẮC KÊ ĐƠN THUỐC / VẬT TƯ (RẤT CHẶT CHẼ):
-   - KHÔNG đề xuất sản phẩm nếu chỉ hỏi kiến thức cơ bản hoặc vấn đề sinh lý nhẹ.
-   - CHỈ đề xuất khi cây bị bệnh/sâu hại nặng cần đặc trị HOẶC người dùng chủ động hỏi mua thuốc/phân bón/đất trồng.''';
-
-    final catalogBlock = _dynamicCatalogLines.isNotEmpty
-        ? _dynamicCatalogLines.join('\n')
-        : '''   - id: `nano-bac-tri-nam` ➔ Chế Phẩm Nano Bạc Đồng Sinh Học (Đặc trị thán thư, đốm lá, phấn trắng, cháy lá vi khuẩn).
-   - id: `dau-neem-tri-rep` ➔ Tinh Dầu Neem Hữu Cơ Ép Lạnh (Đặc trị rệp sáp, bọ trĩ, nhện đỏ, rầy mềm).
-   - id: `phan-rong-bien-kich-re` ➔ Phân Bón Hữu Cơ Rong Biển & Vi Lượng (Phục hồi cây vàng lá, suy rễ sau ốm).
-   - id: `phan-trun-que-vien-nen` ➔ Phân Trùn Quế Viên Nén Tan Chậm (Bổ sung dinh dưỡng êm dịu, ngăn thối rễ).
-   - id: `binh-xit-phun-suong-15l` ➔ Bình Xịt Áp Suất Phun Sương Mịn 1.5L (Dụng cụ phun thuốc đẫm đều 2 mặt lá).
-   - id: `keo-cat-tia-canh-nhat` ➔ Kéo Cắt Tỉa Cành Thép SK5 (Khử khuẩn cắt bỏ triệt để cành lá bệnh tránh lây chéo).
-   - id: `dat-trong-indoor-premium` ➔ Giá Thể Đất Trồng Indoor Mix Thoát Nước Tốt (Cấp cứu cây úng rễ, thay chậu mới).''';
+    final String catalogSection = _dynamicCatalogLines.isNotEmpty
+        ? '\nKHO SẢN PHẨM FLORIA HIỆN CÓ:\n${_dynamicCatalogLines.join('\n')}\nCÚ PHÁP ĐÍNH KÈM SẢN PHẨM (chỉ dùng khi thỏa quy tắc từ Admin):\n[RECOMMEND_PRODUCT: id_san_pham]'
+        : '';
 
     return '''$corePersonaAndRules
-${currentPlantContext != null && currentPlantContext.isNotEmpty ? '\nNgữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}
-
-KHO DƯỢC PHẨM & VẬT TƯ FLORIA (CHỈ KÊ ĐƠN KHI THỎA MÃN QUY TẮC):
-$catalogBlock
-
-CÚ PHÁP ĐÍNH KÈM THẺ KÊ ĐƠN VẬT TƯ:
-   Chỉ khi thỏa mãn điều kiện kê đơn, hãy ghi mã ở dòng cuối cùng:
-   [RECOMMEND_PRODUCT: id_san_pham]
-
-CÚ PHÁP ĐỀ XUẤT LỊCH CHĂM SÓC CHUẨN KHOA HỌC:
-   - CHỈ đính kèm khi người dùng hỏi toàn diện về "cách chăm sóc cây" hoặc "lịch chăm sóc". KHÔNG viết tiêu đề cụt lủn ở cuối phản hồi.
-   [CARE_SCHEDULE: water=SO_NGAY_TUOI, fertilize=SO_NGAY_BON_PHAN, clean=SO_NGAY_LAU_LA]
-   Quy ước số ngày: water (1-14), fertilize (7-60), clean (1-14).''';
+${currentPlantContext != null && currentPlantContext.isNotEmpty ? '\nNgữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}$catalogSection
+CÚ PHÁP ĐỀ XUẤT LỊCH CHĂM SÓC:
+[CARE_SCHEDULE: water=SO_NGAY_TUOI, fertilize=SO_NGAY_BON_PHAN, clean=SO_NGAY_LAU_LA]
+Quy ước số ngày: water (1-14), fertilize (7-60), clean (1-14).''';
   }
 
   static Future<void> saveModelName(String model) async {
@@ -369,9 +329,7 @@ Trả về duy nhất một khối JSON hợp lệ:
 
     final modelName = await getModelName();
 
-    final dbListPrompt = database40Plants
-        .map((p) => "- ${p['sci']} (${p['vi']})")
-        .join("\n");
+    final dbListPrompt = await _getPlantsPromptList();
 
     final promptText = '''
 Bạn là chuyên gia thẩm định và phân loại thực vật học của ứng dụng Floria.
@@ -615,30 +573,13 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
     currentParts.add({'text': prompt});
     apiContents.add({'role': 'user', 'parts': currentParts});
 
-    final payload = {
-      'contents': apiContents,
-      'systemInstruction': {
-        'parts': [
-          {'text': systemPrompt}
-        ]
-      },
-      'generationConfig': {
-        'temperature': enableDeepThinking ? 0.2 : 0.35,
-        'topK': 40,
-        'topP': 0.95,
-        'thinkingConfig': {
-          'thinkingBudget': enableDeepThinking ? 1024 : 0, // 0: Siêu tốc phản hồi ~1s; 1024: Suy nghĩ sâu phân tích đa tầng
-        }
-      }
-    };
-
     final modelsToTry = [
       primaryModel,
       ...fallbackModels.where((m) => m != primaryModel),
     ];
 
     bool hasYielded = false;
-    dynamic lastError;
+    final List<String> attemptErrors = [];
     final dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 8),
       receiveTimeout: const Duration(seconds: 25),
@@ -646,6 +587,25 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
 
     for (final mName in modelsToTry) {
       try {
+        final Map<String, dynamic> genConfig = {
+          'temperature': enableDeepThinking ? 0.2 : 0.35,
+          'topK': 40,
+          'topP': 0.95,
+        };
+        if (!mName.startsWith('gemini-2.0') && !mName.contains('flash-lite')) {
+          genConfig['thinkingConfig'] = {
+            'thinkingBudget': enableDeepThinking ? 1024 : 0,
+          };
+        }
+        final payload = {
+          'contents': apiContents,
+          'systemInstruction': {
+            'parts': [
+              {'text': systemPrompt}
+            ]
+          },
+          'generationConfig': genConfig,
+        };
         final streamUrl = 'https://generativelanguage.googleapis.com/v1beta/models/$mName:streamGenerateContent?alt=sse&key=$apiKey';
         final response = await dio.post<ResponseBody>(
           streamUrl,
@@ -685,16 +645,36 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
         }
 
         if (hasYielded) return;
+        attemptErrors.add('$mName: Không có dữ liệu trả về (empty stream)');
       } catch (e) {
-        lastError = e;
         if (hasYielded) return;
-        debugPrint("Thử SSE model $mName thất bại ($e), đang tự động fallback...");
+        String detail = e.toString();
+        if (e is DioException) {
+          final status = e.response?.statusCode;
+          String serverMsg = '';
+          try {
+            final body = e.response?.data;
+            if (body is ResponseBody) {
+              final raw = await utf8.decoder.bind(body.stream).join();
+              serverMsg = raw.length > 180 ? '${raw.substring(0, 180)}...' : raw;
+            } else if (body != null) {
+              serverMsg = body.toString();
+            }
+          } catch (_) {}
+          detail = status != null
+              ? 'HTTP $status${serverMsg.isNotEmpty ? " - $serverMsg" : ""}'
+              : '${e.type.name}: ${e.message ?? ""}';
+        }
+        attemptErrors.add('$mName: $detail');
+        debugPrint("Thử SSE model $mName thất bại ($detail), đang tự động fallback...");
         continue;
       }
     }
 
     if (!hasYielded) {
-      throw lastError ?? Exception("Không thể kết nối đến Bác sĩ Cây trồng AI.");
+      throw Exception(attemptErrors.isNotEmpty
+          ? attemptErrors.join('\n')
+          : "Không thể kết nối đến Trợ lý Floria.");
     }
   }
 
@@ -791,8 +771,16 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
                 ),
                 const SizedBox(height: 8),
                 _buildModelOption(
-                  title: "⚡ Gemini 3 Flash (Khuyên dùng: Phản hồi ~1s)",
-                  subtitle: "Thế hệ Flash 3 mới nhất, zero thinking delay, phản hồi tức thì.",
+                  title: " Gemini 3.8 Flash (Khuyên dùng: Mặc định)",
+                  subtitle: "Thế hệ Flash 3.8 mới nhất, tốc độ cao và độ chính xác tối ưu.",
+                  value: "gemini-3.8-flash",
+                  selectedValue: selectedModel,
+                  onChanged: (val) => setModalState(() => selectedModel = val),
+                ),
+                const SizedBox(height: 6),
+                _buildModelOption(
+                  title: "⚡ Gemini 3 Flash (Phản hồi ~1s)",
+                  subtitle: "Thế hệ Flash 3, zero thinking delay, phản hồi tức thì.",
                   value: "gemini-3-flash-preview",
                   selectedValue: selectedModel,
                   onChanged: (val) => setModalState(() => selectedModel = val),

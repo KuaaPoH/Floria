@@ -23,18 +23,52 @@ export function formatPercent(value: number, digits = 1): string {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** ISO -> "DD/MM/YYYY" */
-export function formatDate(input: string | Date): string {
+/** ISO -> "DD/MM/YYYY" (supports optional lang + Intl opts for user web) */
+export function formatDate(
+  input: string | Date,
+  lang: "vi" | "en" = "vi",
+  opts?: Intl.DateTimeFormatOptions,
+): string {
   const d = typeof input === "string" ? new Date(input) : input;
   if (Number.isNaN(d.getTime())) return "—";
+  if (opts || lang === "en") {
+    return new Intl.DateTimeFormat(lang === "vi" ? "vi-VN" : "en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      ...opts,
+    }).format(d);
+  }
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
 /** ISO -> "DD/MM/YYYY HH:mm" */
-export function formatDateTime(input: string | Date): string {
+export function formatDateTime(input: string | Date, lang: "vi" | "en" = "vi"): string {
   const d = typeof input === "string" ? new Date(input) : input;
   if (Number.isNaN(d.getTime())) return "—";
+  if (lang === "en") {
+    return formatDate(d, lang, { hour: "2-digit", minute: "2-digit" });
+  }
   return `${formatDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function formatTime(iso: string, lang: "vi" | "en" = "vi"): string {
+  return new Intl.DateTimeFormat(lang === "vi" ? "vi-VN" : "en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
+export function formatRelativeDays(iso: string, lang: "vi" | "en" = "vi", now = new Date()): string {
+  const d = new Date(iso);
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((start(d) - start(now)) / 86400000);
+  const rtf = new Intl.RelativeTimeFormat(lang === "vi" ? "vi" : "en", { numeric: "auto" });
+  return rtf.format(diff, "day");
+}
+
+export function percent(n: number): string {
+  return `${Math.round(n * 100)}%`;
 }
 
 export function formatRelative(input: string | Date): string {

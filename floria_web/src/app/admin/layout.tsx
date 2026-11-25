@@ -28,15 +28,29 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+    document.title = "Floria Admin — Botanical Management Platform";
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (icon) {
+      icon.href = "/adminicon.jpg?v=2";
+      icon.type = "image/jpeg";
+    }
+    return () => {
+      document.title = "Floria";
+      if (icon) {
+        icon.href = "/logo.png?v=3";
+        icon.type = "image/png";
+      }
+    };
   }, []);
 
-  // 1. Chuyển hướng sang trang đăng nhập nếu chưa có session
+  // 1. Chuyển hướng sang trang đăng nhập nếu chưa có session hoặc vừa đi từ trang User sang
   useEffect(() => {
     if (!mounted || isLoginRoute) return;
-    if (!session) {
-      router.replace("/admin/login");
+    const scope = typeof window !== "undefined" ? localStorage.getItem("floria_portal_scope") : null;
+    if (!session || scope !== "admin") {
+      void logout().then(() => router.replace("/admin/login"));
     }
-  }, [mounted, session, isLoginRoute, router]);
+  }, [mounted, session, isLoginRoute, logout, router]);
 
   // 2. Xác thực với Firebase đúng 1 lần khi layout được mount (tránh lặp vô tận)
   useEffect(() => {
@@ -45,12 +59,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     const auth = getFirebaseClientAuth();
     void auth.authStateReady().then(async () => {
       if (!active) return;
-      if (!auth.currentUser) {
+      const scope = localStorage.getItem("floria_portal_scope");
+      if (!auth.currentUser || scope !== "admin") {
         await logout();
         if (active) router.replace("/admin/login");
         return;
       }
-      await refreshSession();
+      const verified = await refreshSession();
+      if (!active) return;
+      if (!verified) {
+        await logout();
+        if (active) router.replace("/admin/login");
+        return;
+      }
       await loadMatrix();
     });
     return () => {
@@ -62,7 +83,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  if (!mounted || !session) {
+  const scopeOk = mounted && typeof window !== "undefined" && localStorage.getItem("floria_portal_scope") === "admin";
+  if (!mounted || !session || !scopeOk) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-full max-w-md p-6">

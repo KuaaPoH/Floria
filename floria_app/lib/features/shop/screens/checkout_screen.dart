@@ -137,6 +137,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final isZaloPay = _selectedPaymentOption != 'cod';
     String paymentMethod = 'cod';
     String paymentLabel = context.tr('Thanh toán khi nhận hàng (COD)', 'Cash on Delivery (COD)');
+    String? appTransId;
 
     if (isZaloPay) {
       paymentMethod = 'zalopay';
@@ -146,7 +147,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final tempCode =
           'FLR${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.millisecondsSinceEpoch.toString().substring(8)}';
 
-      final bool? paymentSuccess = await Navigator.push<bool>(
+      final String? paidTransId = await Navigator.push<String?>(
         context,
         MaterialPageRoute(
           builder: (_) => ZaloPayPaymentScreen(
@@ -158,7 +159,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       );
 
-      if (paymentSuccess != true) return;
+      if (paidTransId == null || paidTransId.isEmpty) return;
+      appTransId = paidTransId == 'paid' ? null : paidTransId;
     }
 
     if (!mounted) return;
@@ -168,6 +170,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         address: activeAddress,
         paymentMethod: paymentMethod,
         paymentLabel: paymentLabel,
+        paymentStatus: isZaloPay ? 'paid' : 'unpaid',
+        appTransId: appTransId,
         itemsToOrder: widget.selectedItems,
         discountAmount: _discountAmount,
         voucherCode: _appliedVoucherCode,

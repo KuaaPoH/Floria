@@ -2020,25 +2020,7 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     required bool highlight,
   }) {
     final c = context.colors;
-    final String label = widget.isDiseaseScan
-        ? (highlight
-              ? context.tr(
-                  "Báo cáo / Yêu cầu cập nhật bệnh mới",
-                  "Report / Request new disease update",
-                )
-              : context.tr(
-                  "Báo lỗi chẩn đoán / Đề xuất cập nhật",
-                  "Report diagnosis issue / Suggest update",
-                ))
-        : (highlight
-              ? context.tr(
-                  "Báo cáo / Yêu cầu cập nhật loài cây này",
-                  "Report / Request update for this plant",
-                )
-              : context.tr(
-                  "Báo lỗi nhận diện / Đề xuất cập nhật",
-                  "Report issue / Suggest update",
-                ));
+    final String label = context.tr("Báo cáo", "Report");
 
     return SizedBox(
       width: double.infinity,
@@ -2079,20 +2061,9 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
     String docId,
     Map<String, dynamic>? data,
   ) {
-    final double conf =
-        double.tryParse(
-          scanProvider.scanResult?['confidence']?.toString() ?? '100',
-        ) ??
-        100.0;
-    final bool isMissingOrInvalid = widget.isDiseaseScan
-        ? (conf < AiConfigService.diseaseConfidenceThreshold ||
-              scanProvider.scanResult?['is_in_database'] == false)
-        : (data == null ||
-              docId.isEmpty ||
-              scanProvider.scanResult?['is_valid_plant'] == false);
-    String reportType = isMissingOrInvalid
-        ? (widget.isDiseaseScan ? 'missing_disease' : 'missing_plant')
-        : 'wrong_prediction';
+    final String reportType = widget.isDiseaseScan
+        ? 'missing_disease'
+        : 'missing_plant';
     final suggestedNameCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
     bool isSubmitting = false;
@@ -2116,37 +2087,6 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
               mq.viewInsets.bottom,
               mq.viewPadding.bottom,
             );
-
-            final List<Map<String, String>> types = [
-              {
-                'key': widget.isDiseaseScan
-                    ? 'missing_disease'
-                    : 'missing_plant',
-                'label': widget.isDiseaseScan
-                    ? modalContext.tr(
-                        "Bệnh chưa có trong thư viện",
-                        "Disease missing from library",
-                      )
-                    : modalContext.tr(
-                        "Chưa có trong thư viện",
-                        "Missing from library",
-                      ),
-              },
-              {
-                'key': 'wrong_prediction',
-                'label': modalContext.tr(
-                  "Nhận diện chưa đúng",
-                  "Wrong prediction",
-                ),
-              },
-              {
-                'key': 'info_error',
-                'label': modalContext.tr(
-                  "Lỗi thông tin / khác",
-                  "Info / bug report",
-                ),
-              },
-            ];
 
             return Container(
               constraints: BoxConstraints(maxHeight: mq.size.height * 0.86),
@@ -2204,8 +2144,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                   children: [
                                     Text(
                                       modalContext.tr(
-                                        "Gửi báo cáo & yêu cầu cập nhật",
-                                        "Report & Request Update",
+                                        "Yêu cầu cập nhật",
+                                        "Update Request",
                                       ),
                                       style: GoogleFonts.inter(
                                         fontSize: 17,
@@ -2215,8 +2155,8 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                     ),
                                     Text(
                                       modalContext.tr(
-                                        "Ảnh quét sẽ được gửi để đội ngũ Floria bổ sung dữ liệu.",
-                                        "Your scan photo will help the Floria team improve the library.",
+                                        "Đề xuất bổ sung hoặc cập nhật dữ liệu cho thư viện Floria.",
+                                        "Suggest adding or updating data for the Floria library.",
                                       ),
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
@@ -2227,48 +2167,6 @@ class _DiagnosisReportScreenState extends State<DiagnosisReportScreen> {
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            modalContext.tr("Loại phản hồi", "Report type"),
-                            style: GoogleFonts.inter(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                              color: c.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: types.map((t) {
-                              final isSel = reportType == t['key'];
-                              return ChoiceChip(
-                                label: Text(t['label']!),
-                                selected: isSel,
-                                checkmarkColor: Colors.white,
-                                onSelected: (val) {
-                                  if (val) {
-                                    setModalState(() => reportType = t['key']!);
-                                  }
-                                },
-                                selectedColor: c.primary,
-                                backgroundColor: c.surfaceMuted,
-                                labelStyle: GoogleFonts.inter(
-                                  fontSize: 12.5,
-                                  fontWeight: isSel
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                                  color: isSel ? Colors.white : c.textPrimary,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  side: BorderSide(
-                                    color: isSel ? c.primary : c.border,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
                           ),
                           const SizedBox(height: 16),
                           Text(

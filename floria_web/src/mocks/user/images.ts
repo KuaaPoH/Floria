@@ -1,0 +1,33 @@
+export const IMG = {
+  plants: {
+    monstera: "/user-assets/plants/monstera.jpg",
+    fiddle: "/user-assets/plants/fiddle-leaf-fig.jpg",
+    snake: "/user-assets/plants/snake-plant.jpg",
+    pothos: "/user-assets/plants/pothos.jpg",
+    peaceLily: "/user-assets/plants/peace-lily.jpg",
+    calathea: "/user-assets/plants/calathea.jpg",
+    zz: "/user-assets/plants/zz-plant.jpg",
+    aloe: "/user-assets/plants/aloe-vera.jpg",
+    orchid: "/user-assets/plants/orchid.jpg",
+    rubber: "/user-assets/plants/rubber-plant.jpg",
+    bougainvillea: "/user-assets/plants/bougainvillea.jpg",
+  },
+  gardens: {
+    livingRoom: "/user-assets/hero-garden.jpg",
+    balcony: "/user-assets/gardens/balcony.jpg",
+    rooftop: "/user-assets/gardens/rooftop.jpg",
+  },
+  heroGarden: "/user-assets/hero-garden.jpg",
+  authLeaves: "/user-assets/auth-leaves.jpg",
+  leafSpot: "/user-assets/misc/leaf-spot.jpg",
+  products: {
+    fertilizer: "/user-assets/products/organic-fertilizer.jpg",
+    soil: "/user-assets/products/potting-soil.jpg",
+    pots: "/user-assets/products/ceramic-pots.jpg",
+    neem: "/user-assets/products/neem-oil.jpg",
+    fungicide: "/user-assets/products/fungicide-spray.jpg",
+    pruning: "/user-assets/products/pruning-tools.jpg",
+    wateringCan: "/user-assets/products/watering-can.jpg",
+    moisture: "/user-assets/products/moisture-meter.jpg",
+  },
+};

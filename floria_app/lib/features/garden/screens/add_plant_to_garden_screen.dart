@@ -88,7 +88,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
   }
 
   // Đảm bảo lấy được URL vĩnh viễn trên Cloudinary Cloud
-  Future<String?> _ensurePermanentImageUrl(Map<String, dynamic> wikiData) async {
+  Future<String?> _ensurePermanentImageUrl(
+    Map<String, dynamic> wikiData,
+  ) async {
     if (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty) {
       return _uploadedImageUrl;
     }
@@ -117,7 +119,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         );
         final formData = FormData.fromMap({'file': multipartFile});
         final res = await dio.post(AppConstants.uploadImageUrl, data: formData);
-        if (res.statusCode == 200 && res.data != null && res.data['image_url'] != null) {
+        if (res.statusCode == 200 &&
+            res.data != null &&
+            res.data['image_url'] != null) {
           _uploadedImageUrl = res.data['image_url'].toString();
           return _uploadedImageUrl;
         }
@@ -125,10 +129,12 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         debugPrint("Lỗi upload ảnh lên server: $e");
       }
     }
-    if (wikiData['imageUrl'] != null && wikiData['imageUrl'].toString().isNotEmpty) {
+    if (wikiData['imageUrl'] != null &&
+        wikiData['imageUrl'].toString().isNotEmpty) {
       return wikiData['imageUrl'].toString();
     }
-    if (wikiData['image_url'] != null && wikiData['image_url'].toString().isNotEmpty) {
+    if (wikiData['image_url'] != null &&
+        wikiData['image_url'].toString().isNotEmpty) {
       return wikiData['image_url'].toString();
     }
     return _selectedImage?.path;
@@ -178,7 +184,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
     if (_imageBytes == null || _selectedImage == null) {
       AppToast.show(
         context,
-        context.tr("Vui lòng chụp ảnh hoặc chọn ảnh lá cây trước nhé!", "Please take or choose a plant leaf photo first!"),
+        context.tr(
+          "Vui lòng chụp ảnh hoặc chọn ảnh lá cây trước nhé!",
+          "Please take or choose a plant leaf photo first!",
+        ),
         isError: true,
       );
       return;
@@ -226,12 +235,17 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
               'plant_type': 'Đang cập nhật...',
               'family': 'Đang cập nhật...',
               'origin': 'Đang cập nhật...',
-              'short_desc': geminiRes.shortDesc.isNotEmpty ? geminiRes.shortDesc : 'Đang cập nhật...',
+              'short_desc': geminiRes.shortDesc.isNotEmpty
+                  ? geminiRes.shortDesc
+                  : 'Đang cập nhật...',
             };
           }
 
-          final int freqDays = _extractWaterFrequencyDays(plantWikiData['water_frequency']);
-          final String plantType = plantWikiData['plant_type'] ?? 'Đang cập nhật...';
+          final int freqDays = _extractWaterFrequencyDays(
+            plantWikiData['water_frequency'],
+          );
+          final String plantType =
+              plantWikiData['plant_type'] ?? 'Đang cập nhật...';
 
           if (!mounted) return;
           setState(() {
@@ -290,7 +304,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         throw Exception("Server phản hồi mã: ${response.statusCode}");
       }
 
-      final Map<String, dynamic> result = Map<String, dynamic>.from(response.data);
+      final Map<String, dynamic> result = Map<String, dynamic>.from(
+        response.data,
+      );
       if (result['image_url'] != null) {
         _uploadedImageUrl = result['image_url'].toString();
       }
@@ -309,13 +325,18 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
       final double aiConf = (result['confidence'] as num?)?.toDouble() ?? 88.0;
 
       Map<String, dynamic> plantWikiData = {};
-      if (result['plants_map'] is Map && result['plants_map'][prediction] != null) {
-        plantWikiData = Map<String, dynamic>.from(result['plants_map'][prediction]);
+      if (result['plants_map'] is Map &&
+          result['plants_map'][prediction] != null) {
+        plantWikiData = Map<String, dynamic>.from(
+          result['plants_map'][prediction],
+        );
       } else if (result['plant_details'] is Map) {
         plantWikiData = Map<String, dynamic>.from(result['plant_details']);
       }
 
-      final String nameVi = (plantWikiData['name_vi'] ?? result['name_vi'] ?? prediction).toString();
+      final String nameVi =
+          (plantWikiData['name_vi'] ?? result['name_vi'] ?? prediction)
+              .toString();
       if (plantWikiData.isEmpty) {
         plantWikiData = {
           'name_vi': nameVi,
@@ -329,8 +350,11 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         };
       }
 
-      final int freqDays = _extractWaterFrequencyDays(plantWikiData['water_frequency']);
-      final String plantType = plantWikiData['plant_type'] ?? 'Đang cập nhật...';
+      final int freqDays = _extractWaterFrequencyDays(
+        plantWikiData['water_frequency'],
+      );
+      final String plantType =
+          plantWikiData['plant_type'] ?? 'Đang cập nhật...';
 
       if (!mounted) return;
       setState(() {
@@ -338,12 +362,15 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         _statusText = null;
       });
 
-      if (_imageBytes != null && (_uploadedImageUrl == null || _uploadedImageUrl!.isEmpty)) {
-        StorageService.uploadPlantPhoto(bytes: _imageBytes!, plantName: nameVi).then((url) {
-          if (url != null && url.isNotEmpty && mounted) {
-            _uploadedImageUrl = url;
-          }
-        }).catchError((_) {});
+      if (_imageBytes != null &&
+          (_uploadedImageUrl == null || _uploadedImageUrl!.isEmpty)) {
+        StorageService.uploadPlantPhoto(bytes: _imageBytes!, plantName: nameVi)
+            .then((url) {
+              if (url != null && url.isNotEmpty && mounted) {
+                _uploadedImageUrl = url;
+              }
+            })
+            .catchError((_) {});
       }
 
       _showSaveToGardenBottomSheet(
@@ -380,9 +407,13 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
   }) {
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
     final UserGarden? currentGarden = gardenProvider.selectedGarden;
-    final suggestedZones = _getSuggestedZonesForEnvironment(currentGarden?.environment);
+    final suggestedZones = _getSuggestedZonesForEnvironment(
+      currentGarden?.environment,
+    );
 
-    final TextEditingController nicknameCtrl = TextEditingController(text: nameVi);
+    final TextEditingController nicknameCtrl = TextEditingController(
+      text: nameVi,
+    );
     final TextEditingController customZoneCtrl = TextEditingController();
 
     String selectedZone = suggestedZones.first;
@@ -443,9 +474,12 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
     String reminderTime = morningTime;
     final List<Map<String, String>> presetTimes = [
       {"label": "$morningTime (Sáng)", "time": morningTime},
-      if (morningTime != "09:30" && eveningTime != "09:30") {"label": "09:30", "time": "09:30"},
-      if (eveningTime != morningTime) {"label": "$eveningTime (Chiều)", "time": eveningTime},
-      if (morningTime != "20:00" && eveningTime != "20:00") {"label": "20:00 (Tối)", "time": "20:00"},
+      if (morningTime != "09:30" && eveningTime != "09:30")
+        {"label": "09:30", "time": "09:30"},
+      if (eveningTime != morningTime)
+        {"label": "$eveningTime (Chiều)", "time": eveningTime},
+      if (morningTime != "20:00" && eveningTime != "20:00")
+        {"label": "20:00 (Tối)", "time": "20:00"},
     ];
 
     showModalBottomSheet(
@@ -464,11 +498,16 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                 left: 20,
                 right: 20,
                 top: 16,
-                bottom: MediaQuery.of(modalContext).viewInsets.bottom + MediaQuery.paddingOf(modalContext).bottom + 24,
+                bottom:
+                    MediaQuery.of(modalContext).viewInsets.bottom +
+                    MediaQuery.paddingOf(modalContext).bottom +
+                    24,
               ),
               decoration: BoxDecoration(
                 color: c.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -495,12 +534,21 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(16),
                           child: _imageBytes != null
-                              ? Image.memory(_imageBytes!, width: 72, height: 72, fit: BoxFit.cover)
+                              ? Image.memory(
+                                  _imageBytes!,
+                                  width: 72,
+                                  height: 72,
+                                  fit: BoxFit.cover,
+                                )
                               : Container(
                                   width: 72,
                                   height: 72,
                                   color: c.surfaceTint,
-                                  child: Icon(Icons.local_florist, color: c.textSecondary, size: 32),
+                                  child: Icon(
+                                    Icons.local_florist,
+                                    color: c.textSecondary,
+                                    size: 32,
+                                  ),
                                 ),
                         ),
                         const SizedBox(width: 14),
@@ -511,7 +559,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: c.surfaceTint,
                                       borderRadius: BorderRadius.circular(8),
@@ -519,7 +570,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                     child: Text(
                                       confidence > 0
                                           ? "${context.tr("ĐỘ CHÍNH XÁC:", "ACCURACY:")} ${confidence.toStringAsFixed(1)}%"
-                                          : context.tr("KHỚP TỐT NHẤT", "BEST MATCH"),
+                                          : context.tr(
+                                              "KHỚP TỐT NHẤT",
+                                              "BEST MATCH",
+                                            ),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700,
@@ -634,7 +688,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
 
                     // 1. Biệt danh cây
                     Text(
-                      context.tr("Tên hoặc biệt danh trong vườn", "Name or nickname in garden"),
+                      context.tr(
+                        "Tên hoặc biệt danh trong vườn",
+                        "Name or nickname in garden",
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -644,12 +701,22 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     const SizedBox(height: 6),
                     TextField(
                       controller: nicknameCtrl,
-                      style: GoogleFonts.inter(fontSize: 14, color: c.textPrimary),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: c.textPrimary,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: c.surfaceMuted,
-                        prefixIcon: Icon(Icons.loyalty_outlined, size: 18, color: c.textSecondary),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        prefixIcon: Icon(
+                          Icons.loyalty_outlined,
+                          size: 18,
+                          color: c.textSecondary,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(color: c.border),
@@ -668,7 +735,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
 
                     // 2. Tình trạng sức khỏe ban đầu
                     Text(
-                      context.tr("Tình trạng sức khỏe ban đầu", "Initial health status"),
+                      context.tr(
+                        "Tình trạng sức khỏe ban đầu",
+                        "Initial health status",
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -679,49 +749,50 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [
-                        'Khỏe mạnh',
-                        'Cần chú ý',
-                        'Đang phục hồi',
-                      ].map((h) {
-                        final isSelected = selectedHealth == h;
-                        Color chipColor;
-                        if (h == 'Khỏe mạnh') {
-                          chipColor = const Color(0xFF15803D);
-                        } else if (h == 'Cần chú ý') {
-                          chipColor = const Color(0xFFD97706);
-                        } else {
-                          chipColor = const Color(0xFF2563EB);
-                        }
+                      children: ['Khỏe mạnh', 'Cần chú ý', 'Đang phục hồi'].map(
+                        (h) {
+                          final isSelected = selectedHealth == h;
+                          Color chipColor;
+                          if (h == 'Khỏe mạnh') {
+                            chipColor = const Color(0xFF15803D);
+                          } else if (h == 'Cần chú ý') {
+                            chipColor = const Color(0xFFD97706);
+                          } else {
+                            chipColor = const Color(0xFF2563EB);
+                          }
 
-                        final trH = context.isEnglish
-                            ? (const {
-                                'Khỏe mạnh': 'Healthy',
-                                'Cần chú ý': 'Needs attention',
-                                'Đang phục hồi': 'Recovering',
-                              }[h] ?? h)
-                            : h;
+                          final trH = context.isEnglish
+                              ? (const {
+                                      'Khỏe mạnh': 'Healthy',
+                                      'Cần chú ý': 'Needs attention',
+                                      'Đang phục hồi': 'Recovering',
+                                    }[h] ??
+                                    h)
+                              : h;
 
-                        return ChoiceChip(
-                          label: Text(trH),
-                          selected: isSelected,
-                          checkmarkColor: Colors.white,
-                          onSelected: (val) {
-                            if (val) setModalState(() => selectedHealth = h);
-                          },
-                          selectedColor: chipColor,
-                          backgroundColor: c.surfaceMuted,
-                          labelStyle: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : c.textPrimary,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(color: isSelected ? chipColor : c.border),
-                          ),
-                        );
-                      }).toList(),
+                          return ChoiceChip(
+                            label: Text(trH),
+                            selected: isSelected,
+                            checkmarkColor: Colors.white,
+                            onSelected: (val) {
+                              if (val) setModalState(() => selectedHealth = h);
+                            },
+                            selectedColor: chipColor,
+                            backgroundColor: c.surfaceMuted,
+                            labelStyle: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.white : c.textPrimary,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: BorderSide(
+                                color: isSelected ? chipColor : c.border,
+                              ),
+                            ),
+                          );
+                        },
+                      ).toList(),
                     ),
                     const SizedBox(height: 18),
 
@@ -757,14 +828,15 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           final isSel = !isCustomZone && selectedZone == zone;
                           final trZone = context.isEnglish
                               ? (const {
-                                  'Phòng khách': 'Living room',
-                                  'Phòng ngủ': 'Bedroom',
-                                  'Cửa sổ': 'Window',
-                                  'Ban công': 'Balcony',
-                                  'Sân thượng': 'Rooftop',
-                                  'Sân trước': 'Front yard',
-                                  'Bàn làm việc': 'Desk',
-                                }[zone] ?? zone)
+                                      'Phòng khách': 'Living room',
+                                      'Phòng ngủ': 'Bedroom',
+                                      'Cửa sổ': 'Window',
+                                      'Ban công': 'Balcony',
+                                      'Sân thượng': 'Rooftop',
+                                      'Sân trước': 'Front yard',
+                                      'Bàn làm việc': 'Desk',
+                                    }[zone] ??
+                                    zone)
                               : zone;
                           return ChoiceChip(
                             label: Text(trZone),
@@ -782,7 +854,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             backgroundColor: c.surfaceMuted,
                             labelStyle: GoogleFonts.inter(
                               fontSize: 13,
-                              fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight: isSel
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                               color: isSel ? Colors.white : c.textSecondary,
                             ),
                             shape: RoundedRectangleBorder(
@@ -797,7 +871,13 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           label: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.edit_note_outlined, size: 16, color: isCustomZone ? Colors.white : c.textSecondary),
+                              Icon(
+                                Icons.edit_note_outlined,
+                                size: 16,
+                                color: isCustomZone
+                                    ? Colors.white
+                                    : c.textSecondary,
+                              ),
                               const SizedBox(width: 4),
                               Text(context.tr("Khác...", "Other...")),
                             ],
@@ -813,8 +893,12 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           backgroundColor: c.surfaceMuted,
                           labelStyle: GoogleFonts.inter(
                             fontSize: 13,
-                            fontWeight: isCustomZone ? FontWeight.w600 : FontWeight.w500,
-                            color: isCustomZone ? Colors.white : c.textSecondary,
+                            fontWeight: isCustomZone
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: isCustomZone
+                                ? Colors.white
+                                : c.textSecondary,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -831,20 +915,35 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                       const SizedBox(height: 10),
                       TextField(
                         controller: customZoneCtrl,
-                        style: GoogleFonts.inter(fontSize: 14, color: c.textPrimary),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: c.textPrimary,
+                        ),
                         decoration: InputDecoration(
-                          hintText: context.tr('Nhập vị trí đặt cây (VD: Góc làm việc, Bàn ăn, Cạnh TV...)', 'Enter location (e.g., Desk, Dining table, Beside TV...)'),
-                          hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
+                          hintText: context.tr(
+                            'Nhập vị trí đặt cây (VD: Góc làm việc, Bàn ăn, Cạnh TV...)',
+                            'Enter location (e.g., Desk, Dining table, Beside TV...)',
+                          ),
+                          hintStyle: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: c.textMuted,
+                          ),
                           filled: true,
                           fillColor: c.surfaceMuted,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(color: c.border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: c.primary, width: 1.5),
+                            borderSide: BorderSide(
+                              color: c.primary,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -865,7 +964,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: c.surfaceTint,
                             borderRadius: BorderRadius.circular(8),
@@ -907,7 +1009,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         ),
                         _buildFrequencyChip(
                           context,
-                          label: context.tr("Hàng ngày (7 lần)", "Daily (7 times)"),
+                          label: context.tr(
+                            "Hàng ngày (7 lần)",
+                            "Daily (7 times)",
+                          ),
                           isSelected: timesPerWeek == 7,
                           onTap: () => setModalState(() => timesPerWeek = 7),
                         ),
@@ -916,7 +1021,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     const SizedBox(height: 8),
                     // Bộ tinh chỉnh tăng giảm số lần
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: c.surfaceMuted,
                         borderRadius: BorderRadius.circular(14),
@@ -928,26 +1036,46 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           Expanded(
                             child: Text(
                               "${context.tr("Tùy chỉnh:", "Custom:")} $timesPerWeek ${context.tr("lần/tuần (~mỗi", "times/week (~every")} ${(7 / timesPerWeek).round().clamp(1, 14)} ${context.tr("ngày)", "days)")}",
-                              style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary, fontWeight: FontWeight.w500),
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: c.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                           Row(
                             children: [
                               IconButton(
-                                icon: Icon(Icons.remove_circle_outline, size: 22, color: c.textSecondary),
-                                onPressed: timesPerWeek > 1 ? () => setModalState(() => timesPerWeek--) : null,
+                                icon: Icon(
+                                  Icons.remove_circle_outline,
+                                  size: 22,
+                                  color: c.textSecondary,
+                                ),
+                                onPressed: timesPerWeek > 1
+                                    ? () => setModalState(() => timesPerWeek--)
+                                    : null,
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
                               ),
                               const SizedBox(width: 12),
                               Text(
                                 "$timesPerWeek",
-                                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: c.textPrimary),
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.textPrimary,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               IconButton(
-                                icon: Icon(Icons.add_circle_outline, size: 22, color: c.textSecondary),
-                                onPressed: timesPerWeek < 14 ? () => setModalState(() => timesPerWeek++) : null,
+                                icon: Icon(
+                                  Icons.add_circle_outline,
+                                  size: 22,
+                                  color: c.textSecondary,
+                                ),
+                                onPressed: timesPerWeek < 14
+                                    ? () => setModalState(() => timesPerWeek++)
+                                    : null,
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
                               ),
@@ -963,7 +1091,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          context.tr("Yêu cầu bón phân dinh dưỡng:", "Fertilization requirement:"),
+                          context.tr(
+                            "Yêu cầu bón phân dinh dưỡng:",
+                            "Fertilization requirement:",
+                          ),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -971,12 +1102,23 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: enableFertilizer ? (c.isDark ? const Color(0xFF3E3218) : const Color(0xFFFEF3C7)) : c.surfaceMuted,
+                            color: enableFertilizer
+                                ? (c.isDark
+                                      ? const Color(0xFF3E3218)
+                                      : const Color(0xFFFEF3C7))
+                                : c.surfaceMuted,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: enableFertilizer ? (c.isDark ? const Color(0xFF5A4820) : const Color(0xFFFDE68A)) : c.border,
+                              color: enableFertilizer
+                                  ? (c.isDark
+                                        ? const Color(0xFF5A4820)
+                                        : const Color(0xFFFDE68A))
+                                  : c.border,
                             ),
                           ),
                           child: Text(
@@ -986,7 +1128,11 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: enableFertilizer ? (c.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309)) : c.textMuted,
+                              color: enableFertilizer
+                                  ? (c.isDark
+                                        ? const Color(0xFFFBBF24)
+                                        : const Color(0xFFB45309))
+                                  : c.textMuted,
                             ),
                           ),
                         ),
@@ -1007,12 +1153,21 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 10,
+                              ),
                               decoration: BoxDecoration(
-                                color: enableFertilizer ? (c.isDark ? const Color(0xFF3E3218) : const Color(0xFFFEF3C7)) : c.surfaceMuted,
+                                color: enableFertilizer
+                                    ? (c.isDark
+                                          ? const Color(0xFF3E3218)
+                                          : const Color(0xFFFEF3C7))
+                                    : c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: enableFertilizer ? const Color(0xFFF59E0B) : c.border,
+                                  color: enableFertilizer
+                                      ? const Color(0xFFF59E0B)
+                                      : c.border,
                                   width: enableFertilizer ? 1.5 : 1,
                                 ),
                               ),
@@ -1033,18 +1188,26 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                     child: Radio<bool>(
                                       value: true,
                                       activeColor: const Color(0xFFD97706),
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
                                       visualDensity: VisualDensity.compact,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      context.tr("Cần bón phân", "Needs fertilizer"),
+                                      context.tr(
+                                        "Cần bón phân",
+                                        "Needs fertilizer",
+                                      ),
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: enableFertilizer ? (c.isDark ? const Color(0xFFFBBF24) : const Color(0xFF92400E)) : c.textSecondary,
+                                        color: enableFertilizer
+                                            ? (c.isDark
+                                                  ? const Color(0xFFFBBF24)
+                                                  : const Color(0xFF92400E))
+                                            : c.textSecondary,
                                       ),
                                     ),
                                   ),
@@ -1063,12 +1226,23 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 10,
+                              ),
                               decoration: BoxDecoration(
-                                color: !enableFertilizer ? (c.isDark ? const Color(0xFF2E332F) : const Color(0xFFF3F4F6)) : c.surfaceMuted,
+                                color: !enableFertilizer
+                                    ? (c.isDark
+                                          ? const Color(0xFF2E332F)
+                                          : const Color(0xFFF3F4F6))
+                                    : c.surfaceMuted,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: !enableFertilizer ? (c.isDark ? c.primaryText : const Color(0xFF9CA3AF)) : c.border,
+                                  color: !enableFertilizer
+                                      ? (c.isDark
+                                            ? c.primaryText
+                                            : const Color(0xFF9CA3AF))
+                                      : c.border,
                                   width: !enableFertilizer ? 1.5 : 1,
                                 ),
                               ),
@@ -1086,18 +1260,24 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                     child: Radio<bool>(
                                       value: false,
                                       activeColor: c.textSecondary,
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
                                       visualDensity: VisualDensity.compact,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      context.tr("Không cần bón", "No fertilizer"),
+                                      context.tr(
+                                        "Không cần bón",
+                                        "No fertilizer",
+                                      ),
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: !enableFertilizer ? c.textPrimary : c.textMuted,
+                                        color: !enableFertilizer
+                                            ? c.textPrimary
+                                            : c.textMuted,
                                       ),
                                     ),
                                   ),
@@ -1116,7 +1296,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           activeTrackColor: const Color(0xFFF59E0B),
                           inactiveTrackColor: c.surfaceMuted,
                           thumbColor: const Color(0xFFF59E0B),
-                          overlayColor: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          overlayColor: const Color(
+                            0xFFF59E0B,
+                          ).withValues(alpha: 0.15),
                           valueIndicatorColor: const Color(0xFF78350F),
                           valueIndicatorTextStyle: GoogleFonts.inter(
                             color: Colors.white,
@@ -1130,7 +1312,8 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           min: 7,
                           max: 60,
                           divisions: 53,
-                          label: "$fertilizeDays ${context.tr("ngày/lần", "days")}",
+                          label:
+                              "$fertilizeDays ${context.tr("ngày/lần", "days")}",
                           onChanged: (val) {
                             setModalState(() => fertilizeDays = val.round());
                           },
@@ -1144,7 +1327,11 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             "💡 Loài cây này không yêu cầu phân bón (ví dụ: cây không khí, sen đá giai đoạn nghỉ...). Tác vụ bón phân sẽ được tắt khỏi lịch nhắc việc.",
                             "💡 This plant doesn't require fertilizer (e.g., air plants, dormant succulents). Fertilizing tasks will be disabled.",
                           ),
-                          style: GoogleFonts.inter(fontSize: 11.5, color: c.textMuted, fontStyle: FontStyle.italic),
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            color: c.textMuted,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     ],
@@ -1155,7 +1342,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          context.tr("Chu kỳ kiểm tra sâu bệnh & lau lá:", "Pest check & clean frequency:"),
+                          context.tr(
+                            "Chu kỳ kiểm tra sâu bệnh & lau lá:",
+                            "Pest check & clean frequency:",
+                          ),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -1163,18 +1353,29 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: c.isDark ? const Color(0xFF1E2D40) : const Color(0xFFE0F2FE),
+                            color: c.isDark
+                                ? const Color(0xFF1E2D40)
+                                : const Color(0xFFE0F2FE),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: c.isDark ? const Color(0xFF2A4260) : const Color(0xFFBAE6FD)),
+                            border: Border.all(
+                              color: c.isDark
+                                  ? const Color(0xFF2A4260)
+                                  : const Color(0xFFBAE6FD),
+                            ),
                           ),
                           child: Text(
                             "${context.tr("Mỗi", "Every")} $checkPestDays ${context.tr("ngày / lần", "days")}",
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: c.isDark ? const Color(0xFF60A5FA) : const Color(0xFF0369A1),
+                              color: c.isDark
+                                  ? const Color(0xFF60A5FA)
+                                  : const Color(0xFF0369A1),
                             ),
                           ),
                         ),
@@ -1186,7 +1387,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         activeTrackColor: const Color(0xFF0284C7),
                         inactiveTrackColor: c.surfaceMuted,
                         thumbColor: const Color(0xFF0284C7),
-                        overlayColor: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                        overlayColor: const Color(
+                          0xFF0284C7,
+                        ).withValues(alpha: 0.15),
                         valueIndicatorColor: const Color(0xFF0C4A6E),
                         valueIndicatorTextStyle: GoogleFonts.inter(
                           color: Colors.white,
@@ -1200,7 +1403,8 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         min: 1,
                         max: 14,
                         divisions: 13,
-                        label: "$checkPestDays ${context.tr("ngày/lần", "days")}",
+                        label:
+                            "$checkPestDays ${context.tr("ngày/lần", "days")}",
                         onChanged: (val) {
                           setModalState(() => checkPestDays = val.round());
                         },
@@ -1229,13 +1433,18 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             selected: isSel,
                             checkmarkColor: Colors.white,
                             onSelected: (val) {
-                              if (val) setModalState(() => reminderTime = item['time']!);
+                              if (val)
+                                setModalState(
+                                  () => reminderTime = item['time']!,
+                                );
                             },
                             selectedColor: c.primary,
                             backgroundColor: c.surfaceMuted,
                             labelStyle: GoogleFonts.inter(
                               fontSize: 12,
-                              fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight: isSel
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                               color: isSel ? Colors.white : c.textSecondary,
                             ),
                             shape: RoundedRectangleBorder(
@@ -1252,7 +1461,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                 ? reminderTime
                                 : context.tr("Giờ khác...", "Custom time..."),
                           ),
-                          selected: !presetTimes.any((t) => t['time'] == reminderTime),
+                          selected: !presetTimes.any(
+                            (t) => t['time'] == reminderTime,
+                          ),
                           checkmarkColor: Colors.white,
                           onSelected: (val) async {
                             final pickedTime = await showTimePicker(
@@ -1270,8 +1481,14 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                               },
                             );
                             if (pickedTime != null) {
-                              final h = pickedTime.hour.toString().padLeft(2, '0');
-                              final m = pickedTime.minute.toString().padLeft(2, '0');
+                              final h = pickedTime.hour.toString().padLeft(
+                                2,
+                                '0',
+                              );
+                              final m = pickedTime.minute.toString().padLeft(
+                                2,
+                                '0',
+                              );
                               setModalState(() => reminderTime = "$h:$m");
                             }
                           },
@@ -1280,12 +1497,20 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                           labelStyle: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: !presetTimes.any((t) => t['time'] == reminderTime) ? Colors.white : c.textSecondary,
+                            color:
+                                !presetTimes.any(
+                                  (t) => t['time'] == reminderTime,
+                                )
+                                ? Colors.white
+                                : c.textSecondary,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                             side: BorderSide(
-                              color: !presetTimes.any((t) => t['time'] == reminderTime)
+                              color:
+                                  !presetTimes.any(
+                                    (t) => t['time'] == reminderTime,
+                                  )
                                   ? c.primary
                                   : c.border,
                             ),
@@ -1308,16 +1533,37 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     TextField(
                       controller: noteCtrl,
                       maxLines: 2,
-                      style: GoogleFonts.inter(fontSize: 13, color: c.textPrimary),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: c.textPrimary,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: c.surfaceMuted,
-                        hintText: context.tr("Ví dụ: Đặt cạnh cửa sổ hướng đông, tưới buổi sáng...", "e.g., Near east window, water in morning..."),
-                        hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.border)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.primary, width: 1.5)),
+                        hintText: context.tr(
+                          "Ví dụ: Đặt cạnh cửa sổ hướng đông, tưới buổi sáng...",
+                          "e.g., Near east window, water in morning...",
+                        ),
+                        hintStyle: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: c.textMuted,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: c.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: c.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: c.primary, width: 1.5),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -1328,18 +1574,25 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                       height: 52,
                       child: ElevatedButton(
                         onPressed: () async {
-                          final finalZone = isCustomZone && customZoneCtrl.text.trim().isNotEmpty
+                          final finalZone =
+                              isCustomZone &&
+                                  customZoneCtrl.text.trim().isNotEmpty
                               ? customZoneCtrl.text.trim()
                               : selectedZone;
 
-                          final finalNickname = nicknameCtrl.text.trim().isNotEmpty
+                          final finalNickname =
+                              nicknameCtrl.text.trim().isNotEmpty
                               ? nicknameCtrl.text.trim()
                               : nameVi;
 
-                          final finalCalculatedDays = (7 / timesPerWeek).round().clamp(1, 14);
+                          final finalCalculatedDays = (7 / timesPerWeek)
+                              .round()
+                              .clamp(1, 14);
 
                           Navigator.pop(ctx); // Đóng modal
-                          final permanentUrl = await _ensurePermanentImageUrl(wikiData);
+                          final permanentUrl = await _ensurePermanentImageUrl(
+                            wikiData,
+                          );
 
                           final success = await gardenProvider.addPlant(
                             gardenId: currentGarden?.id,
@@ -1350,7 +1603,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             imageUrl: permanentUrl,
                             plantType: plantType,
                             waterFrequencyDays: finalCalculatedDays,
-                            fertilizeFrequencyDays: enableFertilizer ? fertilizeDays : 0,
+                            fertilizeFrequencyDays: enableFertilizer
+                                ? fertilizeDays
+                                : 0,
                             checkPestFrequencyDays: checkPestDays,
                             healthStatus: selectedHealth,
                             reminderTime: reminderTime,
@@ -1365,11 +1620,18 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                                 "${context.tr("Đã thêm", "Added")} '$finalNickname' ${context.tr("vào", "to")} '$finalZone' ${context.tr("thành công!", "successfully!")}",
                                 duration: const Duration(seconds: 4),
                               );
-                              Navigator.pop(context, true); // Trở về màn hình Vườn
+                              Navigator.pop(
+                                context,
+                                true,
+                              ); // Trở về màn hình Vườn
                             } else {
                               AppToast.show(
                                 context,
-                                gardenProvider.errorMessage ?? context.tr("Có lỗi khi lưu cây.", "Error saving plant."),
+                                gardenProvider.errorMessage ??
+                                    context.tr(
+                                      "Có lỗi khi lưu cây.",
+                                      "Error saving plant.",
+                                    ),
                                 isError: true,
                               );
                             }
@@ -1378,12 +1640,20 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: c.primary,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                           elevation: 2,
                         ),
                         child: Text(
-                          context.tr('Xác nhận lưu vào khu vườn', 'Confirm & save to garden'),
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                          context.tr(
+                            'Xác nhận lưu vào khu vườn',
+                            'Confirm & save to garden',
+                          ),
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -1443,7 +1713,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
             children: [
               // 1. Khung Chụp / Chọn ảnh
               Text(
-                context.tr('1. Hình ảnh cây cần nhận diện', '1. Plant photo for identification'),
+                context.tr(
+                  '1. Hình ảnh cây cần nhận diện',
+                  '1. Plant photo for identification',
+                ),
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -1458,7 +1731,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
               Row(
                 children: [
                   Text(
-                    context.tr('2. Miêu tả đặc điểm hỗ trợ AI', '2. Plant traits to assist AI'),
+                    context.tr(
+                      '2. Miêu tả đặc điểm',
+                      '2. Plant traits to assist AI',
+                    ),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -1467,7 +1743,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: c.surfaceTint,
                       borderRadius: BorderRadius.circular(6),
@@ -1486,10 +1765,14 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
               const SizedBox(height: 6),
               Text(
                 context.tr(
-                  'Ghi lại các đặc điểm hình thái nổi bật (màu hoa, gân lá, dạng thân leo hay thân gỗ, đốm vân bạc...) để AI nhận diện rõ ràng và chuẩn xác hơn.',
+                  'Ghi lại các đặc điểm hình thái nổi bật (màu hoa, gân lá, dạng thân leo hay thân gỗ, đốm vân bạc...) để hệ thống nhận diện rõ ràng và chuẩn xác hơn.',
                   'Note distinctive features (flower color, leaf veins, climbing or woody stem, silver patterns...) for more accurate AI identification.',
                 ),
-                style: GoogleFonts.inter(fontSize: 12, color: c.textMuted, height: 1.4),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: c.textMuted,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -1501,7 +1784,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     'VD: Lá hình trái tim, viền có vân bạc, cành mọng nước, hoa nhỏ màu trắng, cuống lá dài...',
                     'e.g., Heart-shaped leaves, silver variegated edges, succulent stems, small white flowers...',
                   ),
-                  hintStyle: GoogleFonts.inter(fontSize: 13, color: c.textMuted),
+                  hintStyle: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: c.textMuted,
+                  ),
                   filled: true,
                   fillColor: c.surfaceMuted,
                   contentPadding: const EdgeInsets.all(16),
@@ -1532,7 +1818,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: c.primary.withValues(alpha: 0.7),
                     disabledForegroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     elevation: 3,
                   ),
                   child: _isLoading
@@ -1542,12 +1830,19 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                             const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _statusText ?? context.tr("Đang nhận diện & phân tích cây...", "Identifying & analyzing plant..."),
+                                _statusText ??
+                                    context.tr(
+                                      "Đang nhận diện & phân tích cây...",
+                                      "Identifying & analyzing plant...",
+                                    ),
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -1561,10 +1856,17 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.document_scanner_outlined, size: 22, color: Colors.white),
+                            const Icon(
+                              Icons.document_scanner_outlined,
+                              size: 22,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 10),
                             Text(
-                              context.tr('Nhận diện & Thêm vào vườn', 'Identify & Add to garden'),
+                              context.tr(
+                                'Nhận diện & Thêm vào vườn',
+                                'Identify & Add to garden',
+                              ),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -1598,7 +1900,9 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         child: Column(
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(19),
+              ),
               child: Image.memory(
                 _imageBytes!,
                 height: 220,
@@ -1613,14 +1917,34 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                 children: [
                   TextButton.icon(
                     onPressed: () => _pickImage(ImageSource.camera),
-                    icon: Icon(Icons.camera_alt_outlined, size: 18, color: c.primaryText),
-                    label: Text(context.tr("Chụp lại", "Retake"), style: GoogleFonts.inter(color: c.primaryText, fontWeight: FontWeight.w600)),
+                    icon: Icon(
+                      Icons.camera_alt_outlined,
+                      size: 18,
+                      color: c.primaryText,
+                    ),
+                    label: Text(
+                      context.tr("Chụp lại", "Retake"),
+                      style: GoogleFonts.inter(
+                        color: c.primaryText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                   Container(height: 20, width: 1, color: c.border),
                   TextButton.icon(
                     onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: Icon(Icons.photo_library_outlined, size: 18, color: c.primaryText),
-                    label: Text(context.tr("Chọn ảnh khác", "Change photo"), style: GoogleFonts.inter(color: c.primaryText, fontWeight: FontWeight.w600)),
+                    icon: Icon(
+                      Icons.photo_library_outlined,
+                      size: 18,
+                      color: c.primaryText,
+                    ),
+                    label: Text(
+                      context.tr("Chọn ảnh khác", "Change photo"),
+                      style: GoogleFonts.inter(
+                        color: c.primaryText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1642,7 +1966,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
             color: c.shadow.withValues(alpha: c.isDark ? 0.2 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -1654,11 +1978,18 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
               color: c.surfaceTint,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.add_a_photo_outlined, size: 30, color: c.textSecondary),
+            child: Icon(
+              Icons.add_a_photo_outlined,
+              size: 30,
+              color: c.textSecondary,
+            ),
           ),
           const SizedBox(height: 14),
           Text(
-            context.tr("Chụp hoặc chọn ảnh lá cây", "Take or select plant photo"),
+            context.tr(
+              "Chụp hoặc chọn ảnh lá cây",
+              "Take or select plant photo",
+            ),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -1667,7 +1998,10 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            context.tr("AI sẽ nhận diện loài cây và tự động gợi ý lịch chăm sóc", "AI will identify the plant and suggest care routines"),
+            context.tr(
+              "Hệ thống sẽ nhận diện loài cây và tự động gợi ý lịch chăm sóc",
+              "AI will identify the plant and suggest care routines",
+            ),
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(fontSize: 12, color: c.textMuted),
           ),
@@ -1678,12 +2012,17 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _pickImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                  label: Text(context.tr("Chụp ảnh", "Camera"), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text(
+                    context.tr("Chụp ảnh", "Camera"),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: c.textPrimary,
                     side: BorderSide(color: c.border),
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
@@ -1692,12 +2031,17 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => _pickImage(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library_outlined, size: 18),
-                  label: Text(context.tr("Thư viện", "Gallery"), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text(
+                    context.tr("Thư viện", "Gallery"),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 0,
                   ),
                 ),
@@ -1774,9 +2118,7 @@ class _AddPlantToGardenScreenState extends State<AddPlantToGardenScreen> {
         decoration: BoxDecoration(
           color: isSelected ? c.primary : c.surfaceMuted,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? c.primary : c.border,
-          ),
+          border: Border.all(color: isSelected ? c.primary : c.border),
         ),
         child: Text(
           label,

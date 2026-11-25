@@ -22,6 +22,10 @@ const buttonVariants = cva(
         soft: "bg-accent text-accent-foreground hover:bg-mint/60",
         success: "bg-success text-primary-foreground shadow-sm hover:bg-success/90",
         "danger-soft": "bg-danger-soft text-danger hover:bg-danger/15",
+        forest: "bg-forest text-forest-foreground shadow-soft hover:bg-leaf",
+        glass:
+          "border border-forest-foreground/30 bg-forest-foreground/15 text-forest-foreground backdrop-blur-md hover:bg-forest-foreground/25",
+        cream: "bg-cream text-forest shadow-soft hover:bg-card",
       },
       size: {
         default: "h-10 px-4 py-2",
