@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { computeEffectiveStatus, todaysTasks } from "@/features/garden/logic";
 import { useCatalog, useHandbook, useOrders, usePlants, useProducts, useSchedules } from "@/hooks/queries";
-import { useT } from "@/i18n";
+import { useLang, useT } from "@/i18n";
 import { common } from "@/i18n/common";
 import { ORDER_STATUS_LABEL } from "@/i18n/labels";
 import { cn } from "@/lib/utils";
@@ -21,16 +21,17 @@ import { useAuth } from "@/stores/auth";
 import { cartCount, useCart } from "@/stores/cart";
 import { DemoBadge } from "./DemoBadge";
 
-type NavItem = { to: string; key: keyof typeof common.vi; exact?: boolean };
+type StaticNavItem = { to: string; key: keyof typeof common.vi; exact?: boolean };
+type ResolvedNavItem = { to: string; label: string; exact?: boolean };
 
-const PUBLIC_NAV: NavItem[] = [
+const PUBLIC_NAV: StaticNavItem[] = [
   { to: "/", key: "navHome", exact: true },
   { to: "/discovery", key: "navDiscovery" },
   { to: "/handbook", key: "navHandbook" },
   { to: "/shop", key: "navShop" },
   { to: "/assistant", key: "navAssistant" },
 ];
-const USER_NAV: NavItem[] = [
+const USER_NAV: StaticNavItem[] = [
   { to: "/dashboard", key: "navDashboard" },
   { to: "/garden", key: "navGarden" },
   { to: "/discovery", key: "navDiscovery" },
@@ -39,8 +40,7 @@ const USER_NAV: NavItem[] = [
   { to: "/assistant", key: "navAssistant" },
 ];
 
-function NavLinks({ items, onNavigate, vertical = false }: { items: NavItem[]; onNavigate?: () => void; vertical?: boolean }) {
-  const t = useT(common);
+function NavLinks({ items, onNavigate, vertical = false }: { items: ResolvedNavItem[]; onNavigate?: () => void; vertical?: boolean }) {
   const pathname = usePathname() ?? "/";
   return (
     <nav className={cn(vertical ? "flex flex-col gap-1" : "hidden items-center gap-1 lg:flex")}>
@@ -57,7 +57,7 @@ function NavLinks({ items, onNavigate, vertical = false }: { items: NavItem[]; o
               active ? "bg-mint text-forest dark:text-foreground" : "text-muted-foreground hover:bg-mint/60 hover:text-forest dark:hover:text-foreground",
             )}
           >
-            {t(item.key)}
+            {item.label}
           </Link>
         );
       })}
@@ -255,8 +255,10 @@ function UserMenu() {
 /** PublicHeader and UserHeader share this shell; the variant follows the auth state. */
 export function SiteHeader() {
   const t = useT(common);
+  const lang = useLang();
   const status = useAuth((s) => s.status);
   const authed = status === "authenticated";
+  const { data: catalog } = useCatalog();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
@@ -265,7 +267,28 @@ export function SiteHeader() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const nav = authed ? USER_NAV : PUBLIC_NAV;
+
+  const nav = useMemo<ResolvedNavItem[]>(() => {
+    const remote = catalog?.webMenus;
+    if (remote && remote.length > 0) {
+      return remote
+        .filter((item) => {
+          if (item.module === "public_only") return !authed;
+          if (item.module === "auth_only") return authed;
+          return true;
+        })
+        .map((item) => ({
+          to: item.route,
+          label: lang === "en" && item.titleEn ? item.titleEn : item.title,
+          exact: item.route === "/",
+        }));
+    }
+    return (authed ? USER_NAV : PUBLIC_NAV).map((item) => ({
+      to: item.to,
+      label: t(item.key),
+      exact: item.exact,
+    }));
+  }, [authed, catalog?.webMenus, lang, t]);
 
   return (
     <header className={cn("sticky top-0 z-40 transition-all duration-300", scrolled ? "border-b bg-background/85 backdrop-blur-xl" : "bg-background/60 backdrop-blur-sm")}>

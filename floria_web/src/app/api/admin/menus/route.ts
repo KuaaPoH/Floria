@@ -5,6 +5,7 @@ import { toIsoString } from "@/lib/server/firestore-utils";
 import {
   DEFAULT_ADMIN_MENU_SEED,
   DEFAULT_MOBILE_MENU_SEED,
+  DEFAULT_WEB_USER_MENU_SEED,
   type MenuItemDoc,
   type MenuTarget,
 } from "@/lib/server/menu-seed";
@@ -19,7 +20,7 @@ function mapMenuDoc(id: string, d: Record<string, unknown>): MenuItemDoc {
     title: String(d.title ?? ""),
     titleEn: String(d.titleEn ?? d.title ?? ""),
     route: String(d.route ?? ""),
-    icon: String(d.icon ?? "Menu"),
+    icon: typeof d.icon === "string" ? d.icon : "Menu",
     module: typeof d.module === "string" ? d.module : "",
     badgeKey: typeof d.badgeKey === "string" ? d.badgeKey : "",
     order: Number(d.order ?? 0),
@@ -36,8 +37,9 @@ async function ensureSeedIfEmpty() {
   const existingIds = new Set(snap.docs.map((d) => d.id));
   const hasAdmin = snap.docs.some((d) => d.data().target === "admin_sidebar");
   const hasMobile = snap.docs.some((d) => d.data().target === "mobile_app");
+  const hasWebUser = snap.docs.some((d) => d.data().target === "web_user");
 
-  if (!hasAdmin || !hasMobile) {
+  if (!hasAdmin || !hasMobile || !hasWebUser) {
     const now = new Date().toISOString();
     const batch = db.batch();
     if (!hasAdmin) {
@@ -49,6 +51,13 @@ async function ensureSeedIfEmpty() {
     }
     if (!hasMobile) {
       for (const item of DEFAULT_MOBILE_MENU_SEED) {
+        if (!existingIds.has(item.id)) {
+          batch.set(col.doc(item.id), { ...item, updatedAt: now });
+        }
+      }
+    }
+    if (!hasWebUser) {
+      for (const item of DEFAULT_WEB_USER_MENU_SEED) {
         if (!existingIds.has(item.id)) {
           batch.set(col.doc(item.id), { ...item, updatedAt: now });
         }
@@ -101,7 +110,7 @@ export async function POST(req: Request) {
       title: body.title.trim(),
       titleEn: body.titleEn?.trim() || body.title.trim(),
       route: body.route?.trim() || "",
-      icon: body.icon?.trim() || "Menu",
+      icon: typeof body.icon === "string" ? body.icon.trim() : "Menu",
       module: body.module?.trim() || "",
       badgeKey: body.badgeKey?.trim() || "",
       order: Number(body.order ?? 1),

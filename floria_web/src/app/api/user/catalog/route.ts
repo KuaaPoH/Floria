@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, isFirebaseAdminConfigured } from "@/lib/server/firebase-admin";
 import { toIsoString } from "@/lib/server/firestore-utils";
+import { DEFAULT_WEB_USER_MENU_SEED } from "@/lib/server/menu-seed";
 import { DISEASES_INFO } from "@/mocks/user/diseases";
 import { HOME_WEATHER_WIDGETS, PLANT_HANDBOOK } from "@/mocks/user/handbook";
 import { IMG } from "@/mocks/user/images";
@@ -274,6 +275,7 @@ export async function GET() {
       rulesSnap,
       supportSnap,
       campaignSnap,
+      webMenuSnap,
     ] = await Promise.all([
       db.collection("ShopProducts").get().catch(() => null),
       db.collection("PlantHandbook").get().catch(() => null),
@@ -285,6 +287,7 @@ export async function GET() {
       db.collection("WeatherAdviceRules").get().catch(() => null),
       db.collection("SupportArticles").get().catch(() => null),
       db.collection("NotificationCampaigns").get().catch(() => null),
+      db.collection("MenuItems").where("target", "==", "web_user").get().catch(() => null),
     ]);
 
     const products = (prodSnap?.docs ?? [])
@@ -431,6 +434,35 @@ export async function GET() {
       .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
       .slice(0, 8);
 
+    let webMenusSource = (webMenuSnap?.docs ?? []).map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Array<Record<string, unknown> & { id: string }>;
+
+    if (webMenuSnap && webMenuSnap.empty) {
+      const now = new Date().toISOString();
+      const batch = db.batch();
+      const col = db.collection("MenuItems");
+      for (const item of DEFAULT_WEB_USER_MENU_SEED) {
+        batch.set(col.doc(item.id), { ...item, updatedAt: now }, { merge: true });
+      }
+      await batch.commit().catch(() => {});
+      webMenusSource = DEFAULT_WEB_USER_MENU_SEED.map((item) => ({ ...item }));
+    }
+
+    const webMenus = webMenusSource
+      .filter((d) => d.visible !== false && String(d.route ?? "").trim().length > 0)
+      .map((d) => ({
+        id: d.id,
+        title: String(d.title ?? ""),
+        titleEn: String(d.titleEn ?? d.title ?? ""),
+        route: String(d.route ?? ""),
+        icon: String(d.icon ?? "Menu"),
+        module: typeof d.module === "string" ? d.module : "",
+        order: Number(d.order ?? 0),
+      }))
+      .sort((a, b) => a.order - b.order);
+
     return NextResponse.json({
       source: "firestore",
       products,
@@ -443,6 +475,7 @@ export async function GET() {
       weatherRules,
       supportArticles,
       notifications,
+      webMenus,
     });
   } catch (err) {
     return NextResponse.json(

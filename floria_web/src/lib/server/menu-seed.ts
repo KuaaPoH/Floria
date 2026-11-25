@@ -67,3 +67,13 @@ export const DEFAULT_MOBILE_MENU_SEED: Omit<MenuItemDoc, "updatedAt">[] = [
   { id: "mob_shop", target: "mobile_app", parentId: null, title: "Cửa hàng", titleEn: "Shop", route: "shop", icon: "ShoppingBag", order: 4, visible: true },
   { id: "mob_profile", target: "mobile_app", parentId: null, title: "Cá nhân", titleEn: "Profile", route: "profile", icon: "Person", order: 5, visible: true },
 ];
+
+export const DEFAULT_WEB_USER_MENU_SEED: Omit<MenuItemDoc, "updatedAt">[] = [
+  { id: "web_home", target: "web_user", parentId: null, title: "Trang chủ", titleEn: "Home", route: "/", icon: "Home", module: "public_only", order: 1, visible: true },
+  { id: "web_dashboard", target: "web_user", parentId: null, title: "Tổng quan", titleEn: "Overview", route: "/dashboard", icon: "LayoutDashboard", module: "auth_only", order: 2, visible: true },
+  { id: "web_garden", target: "web_user", parentId: null, title: "Khu vườn", titleEn: "Gardens", route: "/garden", icon: "Sprout", module: "auth_only", order: 3, visible: true },
+  { id: "web_discovery", target: "web_user", parentId: null, title: "Khám phá cây", titleEn: "Discover", route: "/discovery", icon: "ScanLine", module: "", order: 4, visible: true },
+  { id: "web_handbook", target: "web_user", parentId: null, title: "Cẩm nang", titleEn: "Handbook", route: "/handbook", icon: "BookOpen", module: "", order: 5, visible: true },
+  { id: "web_shop", target: "web_user", parentId: null, title: "Cửa hàng", titleEn: "Shop", route: "/shop", icon: "ShoppingBag", module: "", order: 6, visible: true },
+  { id: "web_assistant", target: "web_user", parentId: null, title: "Trợ lý Floria", titleEn: "Floria Assistant", route: "/assistant", icon: "Bot", module: "", order: 7, visible: true },
+];

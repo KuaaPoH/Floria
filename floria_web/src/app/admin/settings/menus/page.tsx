@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Eye, EyeOff, FolderPlus, Globe, Menu as MenuIcon, Pencil, Plus, Smartphone, Trash2 } from "lucide-react";
+import { Ban, ChevronRight, Eye, EyeOff, FolderPlus, Globe, Menu as MenuIcon, Pencil, Plus, Smartphone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +93,7 @@ export default function MenusManagementPage() {
         title: data.title.trim(),
         titleEn: data.titleEn.trim() || data.title.trim(),
         route: data.route.trim(),
-        icon: data.icon || "Menu",
+        icon: data.icon ?? "",
         module: data.module.trim(),
         badgeKey: data.badgeKey.trim(),
         order: Number(data.order) || 1,
@@ -289,7 +289,7 @@ export default function MenusManagementPage() {
                   {treeRows.map(({ item, depth, childCount }) => {
                     const Icon = resolveIcon(item.icon);
                     const isGroupRoot = depth === 0 && target === "admin_sidebar";
-                    const showIcon = target !== "admin_sidebar" || depth === 1;
+                    const showIcon = Boolean(item.icon) && (target !== "admin_sidebar" || depth === 1);
                     const canAddChild = target !== "mobile_app" && depth < 2;
                     return (
                       <div
@@ -505,6 +505,18 @@ export default function MenusManagementPage() {
 
           <Field label="Chọn biểu tượng (Icon)" className="sm:col-span-2">
             <div className="grid max-h-48 grid-cols-4 gap-2 overflow-y-auto rounded-xl border p-2.5 sm:grid-cols-6">
+              <button
+                type="button"
+                title="Không chọn icon"
+                onClick={() => setForm((prev) => ({ ...prev, icon: "" }))}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 rounded-lg border p-2 text-[11px] transition",
+                  !form.icon ? "border-forest bg-forest/10 font-semibold text-forest" : "border-transparent hover:bg-muted",
+                )}
+              >
+                <Ban className="size-4" />
+                <span className="w-full truncate text-center">Không chọn</span>
+              </button>
               {ICON_OPTIONS.map((iconName) => {
                 const IconComp = resolveIcon(iconName);
                 const selected = form.icon === iconName;

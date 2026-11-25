@@ -25,6 +25,16 @@ import { session } from "./session";
 export interface Province { id: string; code: string; name: string }
 export interface Ward { id: string; code: string; name: string }
 
+export interface WebUserMenuItem {
+  id: string;
+  title: string;
+  titleEn: string;
+  route: string;
+  icon: string;
+  module?: string;
+  order: number;
+}
+
 export interface CatalogPayload {
   source?: "firestore" | "mock";
   products: ShopProduct[];
@@ -37,6 +47,7 @@ export interface CatalogPayload {
   weatherRules?: WeatherAdviceRuleItem[];
   supportArticles?: SupportFaqItem[];
   notifications?: SystemNotificationItem[];
+  webMenus?: WebUserMenuItem[];
 }
 
 let catalogCache: { data: CatalogPayload; expiresAt: number } | null = null;
