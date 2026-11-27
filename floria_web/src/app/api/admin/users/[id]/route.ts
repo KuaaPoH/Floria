@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { AdminAuthError, verifyAdminRequest } from "@/lib/server/admin-auth";
 import { getAdminAuth, getAdminDb } from "@/lib/server/firebase-admin";
-import { extractCity, extractUserAvatar, toIsoString } from "@/lib/server/firestore-utils";
-import type { AccountStatus } from "@/types";
+import { extractCity, extractUserAvatar, extractUserPhone, toIsoString } from "@/lib/server/firestore-utils";
+import { invalidateUsersCache } from "@/lib/server/users-cache";
+import type { AccountStatus, AuthProvider } from "@/types";
+
+function mapProvider(providerIds: string[]): AuthProvider {
+  if (providerIds.includes("google.com")) return "google";
+  if (providerIds.includes("apple.com")) return "apple";
+  if (providerIds.includes("facebook.com")) return "facebook";
+  return "email";
+}
 
 function cleanPredictionText(raw: unknown): string {
   let s = String(raw ?? "").trim();
@@ -329,13 +337,26 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const ref = db.collection("Users").doc(id);
-    await ref.set(
-      {
-        status: nextStatus,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true },
-    );
+    const nowIso = new Date().toISOString();
+    const statusPatch = {
+      status: nextStatus,
+      isActive: nextStatus !== "locked",
+      updatedAt: nowIso,
+    };
+
+    const existingSnap = await ref.get();
+    if (existingSnap.exists) {
+      await ref.set(statusPatch, { merge: true });
+    } else {
+      const byUidSnap = await db.collection("Users").where("uid", "==", id).get();
+      if (!byUidSnap.empty) {
+        await Promise.all(byUidSnap.docs.map((doc) => doc.ref.set(statusPatch, { merge: true })));
+      } else {
+        await ref.set({ uid: id, ...statusPatch }, { merge: true });
+      }
+    }
+
+    invalidateUsersCache();
 
     const [updated, gardenSnap, ordersSnap, scanSnap] = await Promise.all([
       ref.get(),
@@ -355,24 +376,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const providerIds = authUser?.providerData.map((p) => p.providerId) ?? [];
-    const provider = providerIds.includes("google.com") ? "google" : "email";
+    const provider = mapProvider(providerIds);
 
-    return NextResponse.json({
-      id,
-      fullName: String(d.displayName ?? authUser?.displayName ?? "Người dùng Floria"),
-      email: String(d.email ?? authUser?.email ?? ""),
-      phone: String(d.phone ?? authUser?.phoneNumber ?? ""),
-      avatar: extractUserAvatar(d, authUser?.photoURL),
-      city: extractCity(d),
-      provider,
-      registeredAt: toIsoString(d.createdAt, authUser?.metadata.creationTime),
-      lastActiveAt: toIsoString(d.updatedAt, authUser?.metadata.lastSignInTime),
-      plants: gardenSnap.size,
-      scans: scanSnap.size,
-      diseaseScans,
-      orders: ordersSnap.size,
-      status: nextStatus,
-    });
+    return NextResponse.json(
+      {
+        id,
+        fullName: String(d.displayName ?? authUser?.displayName ?? "Người dùng Floria"),
+        email: String(d.email ?? authUser?.email ?? ""),
+        phone: extractUserPhone(d, authUser?.phoneNumber),
+        avatar: extractUserAvatar(d, authUser?.photoURL),
+        city: extractCity(d),
+        provider,
+        registeredAt: toIsoString(d.createdAt, authUser?.metadata.creationTime),
+        lastActiveAt: toIsoString(d.updatedAt, authUser?.metadata.lastSignInTime),
+        plants: gardenSnap.size,
+        scans: scanSnap.size,
+        diseaseScans,
+        orders: ordersSnap.size,
+        status: nextStatus,
+      },
+      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    );
   } catch (err) {
     if (err instanceof AdminAuthError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

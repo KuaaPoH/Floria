@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Loader2, MessageSquare, Pencil, Plus, Save, Send, ShieldAlert, Tag, Trash2 } from "lucide-react";
+import { Bot, ImagePlus, Loader2, MessageSquare, Pencil, Plus, Save, Send, ShieldAlert, Tag, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/shared/states";
 import { apiRequest } from "@/lib/api-client";
 import { useResourceList } from "@/hooks/use-resource";
 import { logAudit, productsService } from "@/services";
+import { fileToDataUrl, validateImageFile } from "@/services/upload.service";
 import { usePermission } from "@/stores/rbac-store";
 import { formatDateTime, formatVND } from "@/lib/format";
 import { uid } from "@/lib/id";
@@ -36,6 +37,7 @@ interface SandboxMessage {
   id: string;
   role: "user" | "model";
   text: string;
+  images?: string[];
   model?: string;
   latencyMs?: number;
   createdAt: string;
@@ -62,10 +64,33 @@ function loadSandboxSessions(): SandboxSession[] {
 
 function saveSandboxSessions(items: SandboxSession[]) {
   if (typeof window === "undefined") return;
+  const trimmed = items.slice(0, 30);
   try {
-    localStorage.setItem(SANDBOX_SESSIONS_KEY, JSON.stringify(items.slice(0, 30)));
+    localStorage.setItem(SANDBOX_SESSIONS_KEY, JSON.stringify(trimmed));
   } catch {
-    // Bỏ qua lỗi quota localStorage
+    // Fallback khi vượt quota localStorage: giữ ảnh ở 3 hộp thoại mới nhất
+    try {
+      const compactWithRecentImages = trimmed.map((s, idx) =>
+        idx < 3
+          ? s
+          : {
+              ...s,
+              messages: s.messages.map((m) => (m.images ? { ...m, images: undefined } : m)),
+            },
+      );
+      localStorage.setItem(SANDBOX_SESSIONS_KEY, JSON.stringify(compactWithRecentImages));
+    } catch {
+      // Fallback cuối: chỉ lưu phần văn bản để không mất lịch sử hội thoại
+      try {
+        const textOnly = trimmed.map((s) => ({
+          ...s,
+          messages: s.messages.map((m) => (m.images ? { ...m, images: undefined } : m)),
+        }));
+        localStorage.setItem(SANDBOX_SESSIONS_KEY, JSON.stringify(textOnly));
+      } catch {
+        // Bỏ qua nếu trình duyệt chặn localStorage
+      }
+    }
   }
 }
 
@@ -692,11 +717,18 @@ function TestingSandboxTab({
   onUpdateSessions: (updater: (prev: SandboxSession[]) => SandboxSession[]) => void;
 }) {
   const [input, setInput] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const products = useResourceList(productsService);
   const productMap = new Map((products.data ?? []).map((p) => [p.id, p]));
 
   const currentSession = sessions.find((s) => s.id === activeSessionId) ?? null;
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentSession?.messages.length, loading]);
 
   const presets = [
     "Cây trầu bà nhà mình bị đốm vàng lá, cần tưới hay xịt thuốc gì?",
@@ -704,9 +736,47 @@ function TestingSandboxTab({
     "Cây kim tiền có độc với mèo không?",
   ];
 
-  const send = async (text: string) => {
+  const handleAddFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
+
+    const remaining = 3 - images.length;
+    if (remaining <= 0) {
+      toast.info("Tối đa 3 ảnh cho mỗi tin nhắn kiểm thử.");
+      return;
+    }
+
+    const candidates = files.slice(0, remaining);
+    if (files.length > remaining) {
+      toast.info(`Chỉ có thể đính kèm tối đa 3 ảnh/lượt (đã chọn ${remaining} ảnh).`);
+    }
+
+    const encoded: string[] = [];
+    for (const file of candidates) {
+      const err = validateImageFile(file);
+      if (err === "type") {
+        toast.error(`"${file.name}" không đúng định dạng ảnh (hỗ trợ JPG, PNG, WebP, HEIC).`);
+        continue;
+      }
+      if (err === "size") {
+        toast.error(`"${file.name}" vượt quá giới hạn 10MB.`);
+        continue;
+      }
+      try {
+        encoded.push(await fileToDataUrl(file, 720, 0.78));
+      } catch {
+        toast.error(`Không thể đọc ảnh "${file.name}".`);
+      }
+    }
+
+    if (encoded.length > 0) {
+      setImages((prev) => [...prev, ...encoded].slice(0, 3));
+    }
+  };
+
+  const send = async (text = input, imgs = images) => {
     const q = text.trim();
-    if (!q || loading) return;
+    if ((!q && imgs.length === 0) || loading) return;
 
     let targetId = activeSessionId;
     if (!targetId || !sessions.some((s) => s.id === targetId)) {
@@ -716,21 +786,29 @@ function TestingSandboxTab({
     const priorMessages = (sessions.find((s) => s.id === targetId)?.messages ?? []).map((m) => ({
       role: m.role,
       text: m.text,
+      images: m.images,
     }));
 
     const userMsg: SandboxMessage = {
       id: uid("msg"),
       role: "user",
       text: q,
+      images: imgs.length > 0 ? imgs : undefined,
       createdAt: new Date().toISOString(),
     };
+
+    const nextTitle = q
+      ? q.length > 42
+        ? `${q.slice(0, 42)}...`
+        : q
+      : "Kiểm thử hình ảnh cây trồng";
 
     onUpdateSessions((prev) =>
       prev.map((s) =>
         s.id === targetId
           ? {
               ...s,
-              title: s.messages.length === 0 ? (q.length > 42 ? `${q.slice(0, 42)}...` : q) : s.title,
+              title: s.messages.length === 0 ? nextTitle : s.title,
               messages: [...s.messages, userMsg],
               updatedAt: new Date().toISOString(),
             }
@@ -738,6 +816,7 @@ function TestingSandboxTab({
       ),
     );
     setInput("");
+    setImages([]);
     setLoading(true);
 
     try {
@@ -749,6 +828,7 @@ function TestingSandboxTab({
         method: "POST",
         body: JSON.stringify({
           message: q,
+          images: imgs,
           history: priorMessages,
           name: config?.name,
           tone: config?.tone,
@@ -840,7 +920,7 @@ function TestingSandboxTab({
             <button
               key={p}
               type="button"
-              onClick={() => send(p)}
+              onClick={() => send(p, [])}
               disabled={loading}
               className="w-full rounded-xl border bg-surface-2/50 p-2.5 text-left text-xs transition hover:bg-accent"
             >
@@ -873,15 +953,27 @@ function TestingSandboxTab({
           {!currentSession || currentSession.messages.length === 0 ? (
             <EmptyState
               title="Bắt đầu cuộc trò chuyện kiểm thử"
-              description="Nhập câu hỏi bên dưới hoặc chọn câu hỏi mẫu ở cột trái. Các câu hỏi tiếp theo trong cùng hộp thoại sẽ giữ nguyên ngữ cảnh."
+              description="Nhập câu hỏi, đính kèm ảnh cây trồng hoặc chọn câu hỏi mẫu ở cột trái. Các câu hỏi tiếp theo trong cùng hộp thoại sẽ giữ nguyên ngữ cảnh."
             />
           ) : (
             currentSession.messages.map((m) => {
               if (m.role === "user") {
                 return (
                   <div key={m.id} className="flex justify-end">
-                    <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-forest px-4 py-2.5 text-sm text-primary-foreground shadow-xs">
-                      <p className="whitespace-pre-wrap">{m.text}</p>
+                    <div className="max-w-[80%] space-y-2 rounded-2xl rounded-br-sm bg-forest px-4 py-2.5 text-sm text-primary-foreground shadow-xs">
+                      {m.images && m.images.length > 0 && (
+                        <div className={m.images.length === 1 ? "flex flex-wrap gap-2" : "grid grid-cols-2 gap-1.5"}>
+                          {m.images.map((src, idx) => (
+                            <img
+                              key={idx}
+                              src={src}
+                              alt={`Ảnh kiểm thử ${idx + 1}`}
+                              className="max-h-48 w-full rounded-xl object-cover"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {m.text && <p className="whitespace-pre-wrap">{m.text}</p>}
                     </div>
                   </div>
                 );
@@ -964,25 +1056,85 @@ function TestingSandboxTab({
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex gap-2 border-t bg-card p-3">
-          <Textarea
-            rows={2}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(input);
-              }
-            }}
-            placeholder="Nhập tin nhắn kiểm thử (Enter để gửi, Shift+Enter xuống dòng)..."
-            className="min-h-0 resize-none"
-          />
-          <Button className="h-auto px-4" disabled={!input.trim() || loading} onClick={() => send(input)}>
-            {loading ? <Loader2 className="animate-spin" /> : <Send />}
-          </Button>
+        <div className="border-t bg-card p-3">
+          {images.length > 0 && (
+            <div className="mb-2.5 flex flex-wrap gap-2">
+              {images.map((src, idx) => (
+                <div key={idx} className="relative">
+                  <img
+                    src={src}
+                    alt={`Ảnh đính kèm ${idx + 1}`}
+                    className="size-16 rounded-xl border object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, j) => j !== idx))}
+                    className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-forest text-primary-foreground shadow-xs hover:opacity-90"
+                    aria-label="Bỏ ảnh"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files) void handleAddFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0 rounded-xl"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || images.length >= 3}
+              title="Đính kèm ảnh (tối đa 3 ảnh)"
+              aria-label="Đính kèm ảnh"
+            >
+              <ImagePlus className="size-4" />
+            </Button>
+            <Textarea
+              rows={2}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onPaste={(e) => {
+                const pastedFiles = Array.from(e.clipboardData?.files ?? []).filter((f) =>
+                  f.type.startsWith("image/"),
+                );
+                if (pastedFiles.length > 0) {
+                  e.preventDefault();
+                  void handleAddFiles(pastedFiles);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send(input, images);
+                }
+              }}
+              placeholder="Nhập tin nhắn hoặc dán ảnh kiểm thử (Enter để gửi, Shift+Enter xuống dòng)..."
+              className="min-h-0 flex-1 resize-none"
+            />
+            <Button
+              className="h-11 px-4"
+              disabled={(!input.trim() && images.length === 0) || loading}
+              onClick={() => send(input, images)}
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <Send />}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -1035,7 +1187,10 @@ function SandboxHistoryTab({
                     </Badge>
                   </div>
                   <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                    {lastMsg ? parseAssistantReply(lastMsg.text).cleanText : "Hộp thoại trống"}
+                    {lastMsg
+                      ? parseAssistantReply(lastMsg.text).cleanText ||
+                        (lastMsg.images?.length ? `[Đã đính kèm ${lastMsg.images.length} ảnh]` : "Tin nhắn trống")
+                      : "Hộp thoại trống"}
                   </p>
                 </div>
                 <div className="flex items-center justify-between border-t pt-2.5 text-xs">

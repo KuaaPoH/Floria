@@ -613,7 +613,8 @@ class ShopProvider extends ChangeNotifier {
       longitude: address.longitude,
       paymentMethod: paymentMethod,
       paymentLabel: paymentLabel,
-      paymentStatus: paymentStatus ?? (paymentMethod == 'zalopay' ? 'paid' : 'unpaid'),
+      paymentStatus:
+          paymentStatus ?? (paymentMethod == 'zalopay' ? 'paid' : 'unpaid'),
       appTransId: appTransId,
       status: 'pending',
       createdAt: now,
@@ -777,13 +778,21 @@ class ShopProvider extends ChangeNotifier {
             throw Exception('Đơn hàng này không thể hủy.');
           }
 
-          final curPaymentStatus = (od['paymentStatus'] ?? (od['paymentMethod'] == 'zalopay' ? 'paid' : 'unpaid')).toString();
-          nextPaymentStatus = curPaymentStatus == 'paid' ? 'refunded' : curPaymentStatus;
+          final curPaymentStatus =
+              (od['paymentStatus'] ??
+                      (od['paymentMethod'] == 'zalopay' ? 'paid' : 'unpaid'))
+                  .toString();
+          nextPaymentStatus = curPaymentStatus == 'paid'
+              ? 'refunded'
+              : curPaymentStatus;
           final orderCode = (od['orderCode'] ?? orderId).toString();
 
           final rawItems = od['items'];
           final List<Map<String, dynamic>> items = rawItems is List
-              ? rawItems.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+              ? rawItems
+                    .whereType<Map>()
+                    .map((e) => Map<String, dynamic>.from(e))
+                    .toList()
               : [];
 
           // 1. ALL READS: đọc tồn kho tất cả sản phẩm trước khi ghi
@@ -793,7 +802,9 @@ class ShopProvider extends ChangeNotifier {
             final pid = (item['productId'] ?? '').toString();
             final qty = (item['quantity'] as num?)?.toInt() ?? 1;
             if (pid.isEmpty || qty <= 0) continue;
-            final pSnap = await tx.get(_firestore.collection('ShopProducts').doc(pid));
+            final pSnap = await tx.get(
+              _firestore.collection('ShopProducts').doc(pid),
+            );
             prodSnaps.add(pSnap);
             qtys.add(qty);
           }
@@ -806,7 +817,10 @@ class ShopProvider extends ChangeNotifier {
               final pd = pSnap.data()!;
               final curStock = (pd['stock'] as num?)?.toInt() ?? 0;
               final nextStock = curStock + qty;
-              final nextSold = max(0, ((pd['soldCount'] as num?)?.toInt() ?? 0) - qty);
+              final nextSold = max(
+                0,
+                ((pd['soldCount'] as num?)?.toInt() ?? 0) - qty,
+              );
               restoredStocks[pSnap.id] = nextStock;
               restoredSoldCounts[pSnap.id] = nextSold;
 
@@ -847,7 +861,8 @@ class ShopProvider extends ChangeNotifier {
             _products[pIdx] = _products[pIdx].copyWith(
               stock: entry.value,
               inStock: entry.value > 0,
-              soldCount: restoredSoldCounts[entry.key] ?? _products[pIdx].soldCount,
+              soldCount:
+                  restoredSoldCounts[entry.key] ?? _products[pIdx].soldCount,
             );
           }
         }

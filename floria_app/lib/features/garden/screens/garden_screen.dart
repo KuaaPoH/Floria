@@ -556,33 +556,67 @@ class _GardenScreenState extends State<GardenScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : (c.isDark ? c.surfaceMuted : const Color(0xFF364534).withValues(alpha: 0.08)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      envIcon,
-                      size: 13,
-                      color: isActive ? Colors.white : c.primaryText,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      garden.environment,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : (c.isDark ? c.surfaceMuted : const Color(0xFF364534).withValues(alpha: 0.08)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        envIcon,
+                        size: 13,
                         color: isActive ? Colors.white : c.primaryText,
                       ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          garden.environment,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isActive ? Colors.white : c.primaryText,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateGardenScreen(initialGarden: garden),
                     ),
-                  ],
+                  );
+                },
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Colors.white.withValues(alpha: 0.16)
+                        : (c.isDark ? c.surfaceMuted : const Color(0xFF364534).withValues(alpha: 0.08)),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 14,
+                    color: isActive ? Colors.white : c.primaryText,
+                  ),
                 ),
               ),
             ],

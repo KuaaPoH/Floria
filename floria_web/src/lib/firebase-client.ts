@@ -1,9 +1,23 @@
 import { getApp, getApps, initializeApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
+function resolveAuthDomain(): string {
+  if (process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN) {
+    return process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "floria-71734.firebaseapp.com";
+    }
+    return host;
+  }
+  return "floria.id.vn";
+}
+
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "AIzaSyCglRzctd1gZ_XixaWzBJWiUrZ8y-C6lzY",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "floria-71734.firebaseapp.com",
+  authDomain: resolveAuthDomain(),
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "floria-71734",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "floria-71734.firebasestorage.app",
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "896398806405",

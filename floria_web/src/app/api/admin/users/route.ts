@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { AdminAuthError, verifyAdminRequest } from "@/lib/server/admin-auth";
 import { getAdminAuth, getAdminDb } from "@/lib/server/firebase-admin";
 import { extractCity, extractUserAvatar, extractUserPhone, toIsoString } from "@/lib/server/firestore-utils";
+import { getUsersCache, setUsersCache } from "@/lib/server/users-cache";
 import type { AccountStatus, AppUser, AuthProvider } from "@/types";
+
+export const dynamic = "force-dynamic";
 
 function mapProvider(providerIds: string[]): AuthProvider {
   if (providerIds.includes("google.com")) return "google";
@@ -11,14 +14,14 @@ function mapProvider(providerIds: string[]): AuthProvider {
   return "email";
 }
 
-const USERS_CACHE_TTL_MS = 60_000;
-let usersCache: { data: AppUser[]; expiresAt: number } | null = null;
+const NO_STORE_HEADERS = { "Cache-Control": "no-store, max-age=0" };
 
 export async function GET(req: Request) {
   try {
     await verifyAdminRequest(req);
-    if (usersCache && usersCache.expiresAt > Date.now()) {
-      return NextResponse.json(usersCache.data);
+    const cached = getUsersCache();
+    if (cached) {
+      return NextResponse.json(cached, { headers: NO_STORE_HEADERS });
     }
     const db = getAdminDb();
     const auth = getAdminAuth();
@@ -62,9 +65,9 @@ export async function GET(req: Request) {
 
     for (const doc of usersSnap.docs) {
       const d = doc.data();
-      const uid = String(d.uid ?? doc.id);
-      const authUser = authByUid.get(uid);
-      const isDisabled = authUser?.disabled === true || d.status === "locked";
+      const uid = typeof d.uid === "string" && d.uid.trim() ? d.uid.trim() : doc.id;
+      const authUser = authByUid.get(uid) ?? authByUid.get(doc.id);
+      const isDisabled = authUser?.disabled === true || d.status === "locked" || d.isActive === false;
       const status: AccountStatus = isDisabled ? "locked" : d.status === "pending" ? "pending" : "active";
 
       const providerIds = authUser?.providerData.map((p) => p.providerId) ?? [];
@@ -100,8 +103,8 @@ export async function GET(req: Request) {
     }
 
     users.sort((a, b) => Date.parse(b.registeredAt) - Date.parse(a.registeredAt));
-    usersCache = { data: users, expiresAt: Date.now() + USERS_CACHE_TTL_MS };
-    return NextResponse.json(users);
+    setUsersCache(users);
+    return NextResponse.json(users, { headers: NO_STORE_HEADERS });
   } catch (err) {
     if (err instanceof AdminAuthError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

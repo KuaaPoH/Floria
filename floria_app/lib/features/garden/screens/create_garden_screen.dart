@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_tr.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../models/user_garden.dart';
 import '../providers/garden_provider.dart';
 
 class CreateGardenScreen extends StatefulWidget {
-  const CreateGardenScreen({super.key});
+  final UserGarden? initialGarden;
+
+  const CreateGardenScreen({super.key, this.initialGarden});
 
   @override
   State<CreateGardenScreen> createState() => _CreateGardenScreenState();
@@ -67,13 +70,30 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
     },
   ];
 
+  bool get _isEditing => widget.initialGarden != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final g = widget.initialGarden;
+    if (g != null) {
+      _nameController.text = g.name;
+      _selectedEnvironment = _environments.any((e) => e['name'] == g.environment)
+          ? g.environment
+          : 'Trong nhà';
+      _selectedLightCondition = _lightConditions.any((l) => l['name'] == g.lightCondition)
+          ? g.lightCondition
+          : 'Sáng gián tiếp';
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleCreateGarden() async {
+  Future<void> _handleSubmitGarden() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -81,11 +101,23 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
     });
 
     final gardenProvider = Provider.of<GardenProvider>(context, listen: false);
-    final success = await gardenProvider.createGarden(
-      name: _nameController.text.trim(),
-      environment: _selectedEnvironment,
-      lightCondition: _selectedLightCondition,
-    );
+    final trimmedName = _nameController.text.trim();
+    final bool success;
+
+    if (_isEditing) {
+      success = await gardenProvider.updateGarden(
+        gardenId: widget.initialGarden!.id,
+        name: trimmedName,
+        environment: _selectedEnvironment,
+        lightCondition: _selectedLightCondition,
+      );
+    } else {
+      success = await gardenProvider.createGarden(
+        name: trimmedName,
+        environment: _selectedEnvironment,
+        lightCondition: _selectedLightCondition,
+      );
+    }
 
     if (!mounted) return;
 
@@ -96,13 +128,18 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
     if (success) {
       AppToast.show(
         context,
-        "${context.tr("Đã tạo khu vườn", "Created garden")} '${_nameController.text.trim()}' ${context.tr("thành công!", "successfully!")}",
+        _isEditing
+            ? "${context.tr("Đã cập nhật khu vườn", "Updated garden")} '$trimmedName'"
+            : "${context.tr("Đã tạo khu vườn", "Created garden")} '$trimmedName' ${context.tr("thành công!", "successfully!")}",
       );
       Navigator.pop(context, true);
     } else {
       AppToast.show(
         context,
-        gardenProvider.errorMessage ?? context.tr("Có lỗi khi tạo khu vườn.", "Error creating garden."),
+        gardenProvider.errorMessage ??
+            (_isEditing
+                ? context.tr("Có lỗi khi cập nhật khu vườn.", "Error updating garden.")
+                : context.tr("Có lỗi khi tạo khu vườn.", "Error creating garden.")),
         isError: true,
       );
     }
@@ -122,7 +159,9 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          context.tr('Tạo khu vườn mới', 'Create new garden'),
+          _isEditing
+              ? context.tr('Chỉnh sửa khu vườn', 'Edit garden')
+              : context.tr('Tạo khu vườn mới', 'Create new garden'),
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -445,12 +484,12 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Nút tạo khu vườn
+                // Nút tạo / lưu khu vườn
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _handleCreateGarden,
+                    onPressed: _isSubmitting ? null : _handleSubmitGarden,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.primary,
                       foregroundColor: Colors.white,
@@ -468,10 +507,15 @@ class _CreateGardenScreenState extends State<CreateGardenScreen> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.add_circle_outline, size: 20),
+                              Icon(
+                                _isEditing ? Icons.check_circle_outline : Icons.add_circle_outline,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text(
-                                context.tr('Tạo khu vườn', 'Create garden'),
+                                _isEditing
+                                    ? context.tr('Lưu thay đổi', 'Save changes')
+                                    : context.tr('Tạo khu vườn', 'Create garden'),
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,

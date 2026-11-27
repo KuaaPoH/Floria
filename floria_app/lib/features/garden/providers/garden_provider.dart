@@ -154,6 +154,57 @@ class GardenProvider extends ChangeNotifier {
     }
   }
 
+  // Cập nhật thông tin khu vườn
+  Future<bool> updateGarden({
+    required String gardenId,
+    required String name,
+    required String environment,
+    required String lightCondition,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      _errorMessage = "Vui lòng đăng nhập để chỉnh sửa khu vườn.";
+      notifyListeners();
+      return false;
+    }
+
+    final trimmedName = name.trim();
+    final prevGardens = List<UserGarden>.from(_gardens);
+    final prevSelected = _selectedGarden;
+
+    try {
+      final idx = _gardens.indexWhere((g) => g.id == gardenId);
+      if (idx != -1) {
+        final updated = _gardens[idx].copyWith(
+          name: trimmedName,
+          environment: environment,
+          lightCondition: lightCondition,
+        );
+        _gardens[idx] = updated;
+        if (_selectedGarden?.id == gardenId) {
+          _selectedGarden = updated;
+        }
+        notifyListeners();
+      }
+
+      await _firestore.collection(gardensCollection).doc(gardenId).update({
+        'name': trimmedName,
+        'environment': environment,
+        'lightCondition': lightCondition,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      return true;
+    } catch (e) {
+      _gardens = prevGardens;
+      _selectedGarden = prevSelected;
+      debugPrint("Lỗi cập nhật khu vườn: $e");
+      _errorMessage = "Không thể cập nhật khu vườn: $e";
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Xóa khu vườn
   Future<bool> deleteGarden(String gardenId) async {
     final user = _auth.currentUser;

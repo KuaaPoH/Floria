@@ -41,6 +41,9 @@ export function useResourceMutations<T extends { id: string }>(
     mutationFn: ({ id, patch, before }: { id: string; patch: Partial<T>; before?: string; label?: string }) =>
       service.update(id, patch),
     onSuccess: (item, vars) => {
+      qc.setQueryData<T[]>([service.key], (old) =>
+        Array.isArray(old) ? old.map((x) => (x.id === item.id ? { ...x, ...item } : x)) : old,
+      );
       invalidate();
       logAudit({
         action: "Cập nhật",

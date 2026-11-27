@@ -10,7 +10,7 @@
 **ĐỒ ÁN TỐT NGHIỆP ĐẠI HỌC**  
 **NGÀNH CÔNG NGHỆ THÔNG TIN**
 
-# NGHIÊN CỨU VÀ XÂY DỰNG HỆ THỐNG NHẬN DIỆN, CHẨN ĐOÁN BỆNH VÀ HỖ TRỢ CHĂM SÓC CÂY CẢNH ỨNG DỤNG HỌC SÂU
+# XÂY DỰNG ỨNG DỤNG TRÍ TUỆ NHÂN TẠO NHẬN DIỆN VÀ CHĂM SÓC CÂY CẢNH
 
 **Nghệ An, [Tháng/2026]**
 
@@ -27,11 +27,11 @@
 **ĐỒ ÁN TỐT NGHIỆP ĐẠI HỌC**  
 **NGÀNH CÔNG NGHỆ THÔNG TIN**
 
-# NGHIÊN CỨU VÀ XÂY DỰNG HỆ THỐNG NHẬN DIỆN, CHẨN ĐOÁN BỆNH VÀ HỖ TRỢ CHĂM SÓC CÂY CẢNH ỨNG DỤNG HỌC SÂU
+# XÂY DỰNG ỨNG DỤNG TRÍ TUỆ NHÂN TẠO NHẬN DIỆN VÀ CHĂM SÓC CÂY CẢNH
 
 | | |
 | :--- | :--- |
-| **Giảng viên hướng dẫn:** | `[Học hàm, Học vị – Họ và tên GVHD]` |
+| **Giảng viên hướng dẫn:** | TS. Cao Thanh Sơn |
 | **Sinh viên thực hiện:** | Trần Ngọc Hải |
 | **Mã sinh viên:** | 225748020110069 |
 | **Lớp:** | `[Lớp – Khóa]` |
@@ -42,9 +42,11 @@
 
 # LỜI CAM ĐOAN
 
-Tôi xin cam đoan rằng tất cả các nội dung, số liệu thực nghiệm và kết quả trình bày trong đồ án tốt nghiệp với đề tài *“Nghiên cứu và xây dựng hệ thống nhận diện, chẩn đoán bệnh và hỗ trợ chăm sóc cây cảnh ứng dụng Học sâu”* là sản phẩm nghiên cứu và quá trình làm việc nghiêm túc của bản thân tôi dưới sự hướng dẫn tận tình của `[Học hàm, Học vị – Họ và tên GVHD]`.
+Em xin cam đoan đồ án tốt nghiệp với đề tài *“Xây dựng ứng dụng trí tuệ nhân tạo nhận diện và chăm sóc cây cảnh”* là công trình nghiên cứu và phát triển do chính bản thân em trực tiếp thực hiện tại Khoa Công nghệ Thông tin, Trường Kỹ thuật và Công nghệ – Trường Đại học Vinh, dưới sự hướng dẫn khoa học của **TS. Cao Thanh Sơn**.
 
-Mọi tài liệu tham khảo, bộ dữ liệu công khai, thư viện mã nguồn mở và các ý kiến trích dẫn trong báo cáo đều được ghi rõ nguồn gốc, minh bạch theo đúng quy định của Trường Đại học Vinh. Tôi cam kết không sao chép trái phép công trình của bất kỳ cá nhân hay tổ chức nào và hoàn toàn chịu trách nhiệm trước Hội đồng về tính chính xác, trung thực của những nội dung đã trình bày trong đồ án này.
+Toàn bộ quá trình chuẩn hóa dữ liệu thực vật, thiết lập kịch bản huấn luyện – đánh giá đối chứng các mô hình học sâu, thiết kế hệ thống cùng mã nguồn ứng dụng di động, nền tảng web và các dịch vụ máy chủ trình bày trong báo cáo đều là kết quả làm việc độc lập, trung thực của cá nhân em, không sao chép từ bất kỳ đồ án hay sản phẩm có sẵn nào khác.
+
+Các công trình khoa học, tập dữ liệu công khai và tài liệu kỹ thuật được kế thừa, tham khảo trong quá trình thực hiện đều được ghi nhận và trích dẫn đầy đủ theo đúng quy định của Nhà trường. Em xin chịu hoàn toàn trách nhiệm trước Hội đồng chấm đồ án và Nhà trường nếu có bất kỳ sự thiếu trung thực nào trong nội dung báo cáo này.
 
 *Nghệ An, ngày ... tháng ... năm 2026*  
 **Sinh viên thực hiện**  
@@ -54,11 +56,11 @@ Trần Ngọc Hải
 
 # LỜI CẢM ƠN
 
-Lời đầu tiên, em xin bày tỏ lòng biết ơn sâu sắc tới Ban Giám hiệu Trường Đại học Vinh, Trường Kỹ thuật và Công nghệ cùng toàn thể quý Thầy, Cô Khoa Công nghệ Thông tin đã tận tâm giảng dạy, trang bị cho em nền tảng kiến thức vững chắc về Trí tuệ nhân tạo và Công nghệ phần mềm trong suốt thời gian học tập tại trường.
+Để hoàn thành đồ án tốt nghiệp với đề tài *“Xây dựng ứng dụng trí tuệ nhân tạo nhận diện và chăm sóc cây cảnh”*, em xin gửi lời cảm ơn chân thành đến quý Thầy, Cô Khoa Công nghệ Thông tin, Trường Kỹ thuật và Công nghệ – Trường Đại học Vinh đã tận tâm giảng dạy và truyền đạt nhiều kiến thức bổ ích trong suốt thời gian em học tập tại trường.
 
-Đặc biệt, em xin gửi lời cảm ơn chân thành và sâu sắc nhất tới `[Học hàm, Học vị – Họ và tên GVHD]`, người đã trực tiếp hướng dẫn, định hướng hướng nghiên cứu, góp ý chi tiết về mặt kiến trúc hệ thống cũng như động viên, tạo điều kiện giúp em vượt qua những khó khăn kỹ thuật để hoàn thành đồ án tốt nghiệp này.
+Em xin đặc biệt gửi lời cảm ơn sâu sắc tới thầy **TS. Cao Thanh Sơn** – giảng viên trực tiếp hướng dẫn đề tài. Trong suốt quá trình thực hiện đồ án, từ lúc lên ý tưởng, thực nghiệm mô hình đến lúc hoàn thiện hệ thống và viết báo cáo, thầy luôn nhiệt tình góp ý, định hướng và động viên để em hoàn thành đúng tiến độ.
 
-Cuối cùng, em xin gửi lời cảm ơn tới gia đình và bạn bè đã luôn đồng hành, cổ vũ tinh thần và hỗ trợ thử nghiệm ứng dụng trong thực tế. Do giới hạn về thời gian và kinh nghiệm thực tiễn, báo cáo khó tránh khỏi những thiếu sót; em rất mong nhận được những ý kiến nhận xét, đóng góp quý báu từ quý Thầy, Cô để đề tài được hoàn thiện hơn.
+Cuối cùng, em cảm ơn gia đình và bạn bè đã luôn ở bên hỗ trợ, góp ý trong quá trình thử nghiệm ứng dụng. Vì thời gian và kinh nghiệm thực tế còn hạn chế, đồ án khó tránh khỏi những thiếu sót; em rất mong nhận được những ý kiến đóng góp từ quý Thầy, Cô để đề tài hoàn thiện hơn.
 
 Em xin chân thành cảm ơn!
 
@@ -215,6 +217,8 @@ Trần Ngọc Hải
 
 # MỞ ĐẦU
 
+Phần Mở đầu trình bày tính cấp thiết của đề tài xuất phát từ nhu cầu nhận diện, phòng trị bệnh và chăm sóc cây cảnh trong thực tế, đồng thời khảo sát các giải pháp hiện có trên thị trường. Từ đó, báo cáo xác định mục tiêu nghiên cứu, hình thành ý tưởng hệ thống, các yêu cầu phi chức năng và bố cục tổng thể của đồ án.
+
 ## 1. Lý do chọn đề tài và bài toán đặt ra
 
 Trong đời sống hiện đại, đặc biệt tại các khu vực đô thị, nhu cầu trồng và chăm sóc cây cảnh nội thất, cây ban công ngày càng gia tăng mạnh mẽ. Cây xanh không chỉ giúp cải thiện thẩm mỹ không gian sống, thanh lọc không khí mà còn góp phần cân bằng tinh thần và giảm căng thẳng cho con người. Tuy nhiên, phần lớn người yêu thích cây cảnh không được đào tạo chuyên sâu về sinh học thực vật hay nông học, dẫn đến nhiều khó khăn thực tế trong quá trình nuôi dưỡng và bảo vệ cây:
@@ -225,9 +229,11 @@ Trong đời sống hiện đại, đặc biệt tại các khu vực đô thị
 
 Trong khi đó, sự bùng nổ của Trí tuệ nhân tạo (AI), đặc biệt là các mạng Học sâu (Deep Learning) trong Thị giác máy tính cùng các Mô hình Ngôn ngữ lớn (LLM), cho phép tự động trích xuất đặc trưng thị giác từ ảnh chụp điện thoại để nhận diện loài cây và chẩn đoán bệnh lá chỉ trong vài trăm mili-giây. Kết hợp sức mạnh AI đó với kiến trúc dịch vụ web hiện đại, ứng dụng di động và cổng quản trị web sẽ tạo ra một hệ sinh thái chăm sóc cây trồng thông minh, khép kín và dễ tiếp cận đối với mọi người dùng.
 
-Xuất phát từ nhu cầu thực tiễn và giá trị công nghệ đó, đề tài **“Nghiên cứu và xây dựng hệ thống nhận diện, chẩn đoán bệnh và hỗ trợ chăm sóc cây cảnh ứng dụng Học sâu”** đã được lựa chọn thực hiện. Đề tài không chỉ giải quyết bài toán nghiên cứu, tối ưu mô hình học sâu nhận diện hình ảnh mà còn hiện thực hóa thành một hệ thống phần mềm hoàn chỉnh vận hành trên cả thiết bị di động lẫn nền tảng web.
+Xuất phát từ nhu cầu thực tiễn và giá trị công nghệ đó, đề tài **“Xây dựng ứng dụng trí tuệ nhân tạo nhận diện và chăm sóc cây cảnh”** đã được lựa chọn thực hiện. Đề tài không chỉ giải quyết bài toán nghiên cứu, tối ưu mô hình học sâu nhận diện hình ảnh mà còn hiện thực hóa thành một hệ thống phần mềm hoàn chỉnh vận hành trên cả thiết bị di động lẫn nền tảng web.
 
 ## 2. Khảo sát nghiệp vụ và các hệ thống liên quan
+
+Để xây dựng giải pháp sát với nhu cầu thực tiễn, quá trình nghiên cứu tiến hành khảo sát quy trình chăm sóc cây cảnh hiện hành cùng các ứng dụng phổ biến trên thị trường. Kết quả khảo sát là cơ sở để kế thừa ưu điểm và khắc phục những hạn chế còn tồn tại.
 
 ### 2.1. Khảo sát mô hình hoạt động và quy trình nghiệp vụ trên thị trường
 
@@ -278,6 +284,8 @@ Qua khảo sát cho thấy, người dùng tại Việt Nam rất cần một h�
 
 ## 3. Mục đích thực hiện và hình thành ý tưởng hệ thống
 
+Từ những vấn đề rút ra qua khảo sát thực tế, đề tài xác lập các mục tiêu cụ thể về cả khía cạnh nghiên cứu học sâu lẫn kỹ nghệ phần mềm, qua đó định hình kiến trúc các khối chức năng cốt lõi của hệ thống.
+
 ### 3.1. Mục đích thực hiện
 
 * **Nghiên cứu và làm chủ mô hình Học sâu:** Thu thập, chuẩn hóa dữ liệu và thực nghiệm so sánh các kiến trúc mạng nhẹ (EfficientNetV2, GhostNetV2, MobileNetV3) cho hai bài toán nhận diện loài cây và chẩn đoán bệnh lá, từ đó chọn mô hình tối ưu nhất xuất sang ONNX.
@@ -290,7 +298,7 @@ Hệ thống được tổ chức thành 4 khối chức năng liên kết chặ
 
 1. **Khối Trí tuệ nhân tạo đa tầng:** Kết hợp bộ lọc tiền kiểm duyệt bằng **mô hình CLIP** (loại bỏ ảnh tối hoặc ảnh không phải thực vật), hai mô hình học sâu chuyên biệt (nhận diện 40 loài cây và chẩn đoán 5 nhóm bệnh) cùng **mô hình LLM** hỗ trợ mở rộng nhận diện các loài cây nằm ngoài danh mục.
 2. **Khối Quản lý khu vườn & Chăm sóc thông minh:** Quản lý hồ sơ cây theo từng không gian vườn, tự động nhắc lịch tưới nước – bón phân – lau lá theo thời tiết thực tế và lưu nhật ký sinh trưởng.
-3. **Khối Trợ lý AI & Thương mại vật tư:** Trợ lý ảo tư vấn theo ngữ cảnh từng chậu cây, đề xuất áp dụng lịch chăm sóc 1 chạm và gợi ý sản phẩm đặc trị gắn với giỏ hàng, thanh toán trực tuyến hoặc tiền mặt khi nhận hàng (COD).
+3. **Khối Trợ lý AI & Thương mại vật tư:** Trợ lý ảo tư vấn theo ngữ cảnh từng chậu cây, đề xuất áp dụng lịch chăm sóc 1 chạm và gợi ý sản phẩm đặc trị gắn với giỏ hàng, hỗ trợ thanh toán trực tuyến hoặc tiền mặt khi nhận hàng (COD).
 4. **Khối Cổng Web User & Admin:** Dùng chung dữ liệu Cloud Firestore và dịch vụ máy chủ trung tâm, hỗ trợ người dùng thao tác trên trình duyệt và giúp đội ngũ quản trị cập nhật từ điển cây, bệnh lý, sản phẩm, đơn hàng, cẩm nang theo thời gian thực.
 
 ## 4. Các yêu cầu phi chức năng
@@ -477,7 +485,7 @@ Trong đề tài, biến thể **MobileNetV3 Large 100** (~5,5 triệu tham số
 ### 1.3.5. Mô hình CLIP và định dạng chuẩn ONNX
 
 * **Mô hình CLIP:** Mô hình thị giác – ngôn ngữ đa phương thức của OpenAI [4], đóng vai trò bộ lọc Zero-shot để nhận biết và loại bỏ sớm các ảnh không phải thực vật (động vật, đồ vật, con người) trước khi đưa vào mô hình chính.
-* **Định dạng chuẩn ONNX:** Định dạng mở (*Open Neural Network Exchange*) cùng bộ máy ONNX Runtime cho phép tối ưu hóa đồ thị tính toán của mô hình nơ-ron, giảm tải bộ nhớ và tăng tốc độ suy luận vượt trội trên CPU máy chủ.
+* **Định dạng chuẩn ONNX:** Định dạng mở (*Open Neural Network Exchange*) cùng bộ máy ONNX Runtime [14] cho phép tối ưu hóa đồ thị tính toán của mô hình nơ-ron, giảm tải bộ nhớ và tăng tốc độ suy luận vượt trội trên CPU máy chủ.
 
 ## 1.4. Cài đặt và quy trình huấn luyện mô hình
 
@@ -646,7 +654,7 @@ Kết quả so sánh hiệu năng tổng hợp giữa ba kiến trúc được m
 
 **Lựa chọn mô hình học sâu chuyên biệt chính thức:**
 
-Dựa trên các bằng chứng thực nghiệm đối chứng định lượng ở cả hai bài toán, kiến trúc **EfficientNetV2 B0** thể hiện sự vượt trội toàn diện về cả chất lượng phân loại lẫn độ trễ xử lý. Do đó, nghiên cứu lựa chọn kiến trúc này làm mô hình học sâu chuyên biệt chính thức của hệ thống hệ thống. Hai mô hình tốt nhất được tối ưu hóa đồ thị và xuất xưởng sang định dạng chuẩn mở **ONNX** (`opset_version = 18`):
+Dựa trên các bằng chứng thực nghiệm đối chứng định lượng ở cả hai bài toán, kiến trúc **EfficientNetV2 B0** thể hiện sự vượt trội toàn diện về cả chất lượng phân loại lẫn độ trễ xử lý. Do đó, nghiên cứu lựa chọn kiến trúc này làm mô hình học sâu chuyên biệt chính thức của hệ thống. Hai mô hình tốt nhất được tối ưu hóa đồ thị và xuất xưởng sang định dạng chuẩn mở **ONNX** (`opset_version = 18`):
 * **Mô hình nhận diện loài cây (`tf_efficientnetv2_b0.onnx`):** Kích thước tệp ~28.5 MB, quản lý 40 lớp loài cây cảnh, đạt độ chính xác **90.00%**, F1-Score **90.00%** và tốc độ xử lý **438 FPS** (độ trễ xấp xỉ 2.28 ms/ảnh).
 * **Mô hình chẩn đoán bệnh lá (`tf_efficientnetv2_b0_disease.onnx`):** Kích thước tệp ~23.8 MB, quản lý 5 nhóm bệnh lý, đạt độ chính xác **92.48%**, F1-Score **90.80%** và tốc độ xử lý **106 FPS** (độ trễ xấp xỉ 9.43 ms/ảnh).
 
@@ -675,414 +683,613 @@ Quy trình xử lý ảnh được vận hành tuần tự qua 4 tầng kiểm s
 
 1. **Tầng 1 – Kiểm định chất lượng ảnh cơ bản:** Chuyển đổi ảnh sang thang xám và tính độ lệch chuẩn độ sáng $\sigma = \sqrt{\frac{1}{HW}\sum_{x,y}(I_{x,y} - \mu)^2}$. Nếu $\sigma < 15.0$, ảnh bị đánh giá là quá tối, thiếu tương phản hoặc đơn sắc; hệ thống lập tức từ chối và yêu cầu người dùng chụp lại, giúp tiết kiệm 100% tài nguyên tính toán của các tầng sâu hơn.
 2. **Tầng 2 – Tiền kiểm duyệt ngữ cảnh bằng CLIP (Zero-shot Gatekeeper):** Sử dụng mô hình **OpenAI CLIP (ViT-B/32)** so khớp vector tương đồng Cosine giữa ảnh đầu vào với hai nhóm văn bản mô tả định sẵn: nhóm thực vật (*"a photo of a plant"*, *"a photo of plant leaves"*) và nhóm phi thực vật (*"a photo of a person"*, *"a photo of an animal"*, *"a photo of furniture"*). Các ảnh không chứa thực vật bị ngăn chặn ngay lập tức, bảo vệ mô hình khỏi các cuộc tấn công ảnh rác.
-3. **Tầng 3 – Suy luận kết hợp (Hybrid Inference):** Kích hoạt Multimodal LLM cho bài toán định danh thế giới mở, song song với việc nạp ảnh vào mô hình chuyên biệt **EfficientNetV2 B0 (ONNX)** để chẩn đoán chính xác 5 nhóm bệnh lý trên lá và liên kết trực tiếp với phác đồ điều trị 4 bước đã được lưu trữ trong cơ sở dữ liệu.
-4. **Tầng 4 – Vòng lặp học chủ động (Active Learning):** Hệ thống ghi nhận các trường hợp quét bệnh và nhận diện cây mới vào bộ sưu tập `ScanHistory` và `MyGarden` trên Cloud Firestore. Người dùng có thể gửi phản hồi báo cáo sai sót, tạo nguồn dữ liệu thực tế quý báu để định kỳ tái huấn luyện và mở rộng danh mục cho mô hình trong tương lai.
+3. **Tầng 3 – Suy luận kết hợp (Hybrid Inference):** Kích hoạt Multimodal LLM cho bài toán định danh thế giới mở, song song với việc nạp ảnh vào mô hình chuyên biệt **EfficientNetV2 B0 (ONNX)** để chẩn đoán chính xác 5 nhóm bệnh lý trên lá và liên kết trực tiếp với hồ sơ bệnh học lưu trữ trong cơ sở dữ liệu kết hợp Trợ lý ảo AI tư vấn phác đồ điều trị cá nhân hóa.
+4. **Tầng 4 – Vòng lặp học chủ động (Active Learning):** Hệ thống ghi nhận toàn bộ lịch sử quét cây và chẩn đoán bệnh vào bộ sưu tập `ScanHistory` trên Cloud Firestore, đồng thời cho phép người dùng gửi phản hồi báo cáo các loài cây hoặc dấu hiệu bệnh mới vào `PlantRequests` để chuyên gia thực vật kiểm duyệt tại phân hệ AI Lab, tạo nguồn dữ liệu chuẩn hóa phục vụ tái huấn luyện và mở rộng mô hình.
 
 ---
 
 # CHƯƠNG 2. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
 
-Chương này tập trung phân tích và thiết kế hệ thống nhận diện và chăm sóc cây cảnh ứng dụng trí tuệ nhân tạo, nhằm xây dựng giải pháp hỗ trợ người dùng nhận diện loài cây, chẩn đoán bệnh lá và quản lý quá trình chăm sóc cây hiệu quả. Nội dung được tổ chức thành các phần chính: phân tích yêu cầu hệ thống, xác định tác nhân và chức năng, xây dựng các mô hình phân tích, thiết kế cơ sở dữ liệu và giao diện. Hệ thống được định hướng phát triển theo quy trình phù hợp, chú trọng độ chính xác, tính toàn vẹn dữ liệu, khả năng sử dụng và đáp ứng nhu cầu thực tế. Nội dung chương là cơ sở cho việc triển khai các chức năng hệ thống trong chương tiếp theo.
+Chương này tập trung phân tích và thiết kế hệ thống nhận diện và chăm sóc cây cảnh ứng dụng trí tuệ nhân tạo, nhằm xây dựng giải pháp hỗ trợ người dùng nhận diện loài cây, chẩn đoán bệnh lá và quản lý quá trình chăm sóc cây hiệu quả. Nội dung được tổ chức thành các phần chính theo quy trình kỹ nghệ phần mềm [8]: phân tích yêu cầu hệ thống, xác định tác nhân và chức năng, xây dựng các mô hình phân tích, thiết kế cơ sở dữ liệu và giao diện. Hệ thống được định hướng phát triển theo quy trình phù hợp, chú trọng độ chính xác, tính toàn vẹn dữ liệu, khả năng sử dụng và đáp ứng nhu cầu thực tế. Nội dung chương là cơ sở cho việc triển khai các chức năng hệ thống trong chương tiếp theo.
 
-2.1. Phân tích hệ thống nhận diện và chăm sóc cây cảnh
+## 2.1. Phân tích hệ thống nhận diện và chăm sóc cây cảnh
 
 Hệ thống nhận diện và chăm sóc cây cảnh được thiết kế với cơ chế phân quyền chặt chẽ, phục vụ 4 tác nhân chính:
 
-- Khách hàng: Là người tải ảnh để nhận diện các loài cây cảnh, chẩn đoán tình trạng bệnh lý trên lá, tra cứu thông tin bách khoa thực vật và hướng dẫn chăm sóc. Khách hàng có thể tạo và quản lý khu vườn cá nhân, theo dõi chu kỳ tưới nước, bón phân thích ứng theo thời tiết, tương tác với trợ lý ảo AI để nhận tư vấn và đặt mua các sản phẩm vật tư chăm sóc cây trực tuyến.
+* **Khách hàng:** Là người chụp hoặc tải ảnh lên để nhận diện các loài cây cảnh, chẩn đoán tình trạng bệnh lý trên lá, tra cứu thông tin bách khoa thực vật và hướng dẫn chăm sóc. Khách hàng có thể tạo và quản lý nhiều khu vườn cá nhân theo không gian ánh sáng, theo dõi chu kỳ tưới nước – bón phân – kiểm tra sâu bệnh thích ứng theo thời tiết, ghi nhật ký sinh trưởng, tương tác với trợ lý ảo AI để nhận tư vấn và đặt mua các sản phẩm vật tư chăm sóc cây trực tuyến.
 
-Hình 2.1. Biểu đồ ca sử dụng của khách hàng
+  `[Chèn ảnh Biểu đồ ca sử dụng của khách hàng]`  
+  *Hình 2.1. Biểu đồ ca sử dụng của khách hàng*
 
-- Nhân viên vận hành: Là tác nhân truy cập cổng quản trị để quản lý đơn hàng, kho sản phẩm vật tư, kiểm duyệt đánh giá, tiếp nhận và xử lý các yêu cầu hỗ trợ khách hàng, cũng như quản lý thông tin cơ bản của người dùng.
+* **Nhân viên vận hành:** Là tác nhân truy cập cổng quản trị để quản lý đơn hàng và giao vận, quản lý danh mục sản phẩm và tồn kho vật tư, kiểm duyệt đánh giá khách hàng, tiếp nhận xử lý phản hồi hỗ trợ và quản lý thông tin tài khoản người dùng ở mức cơ bản.
 
-Hình 2.2. Biểu đồ ca sử dụng của nhân viên vận hành
+  `[Chèn ảnh Biểu đồ ca sử dụng của nhân viên vận hành]`  
+  *Hình 2.2. Biểu đồ ca sử dụng của nhân viên vận hành*
 
-- Chuyên gia thực vật: Là tác nhân chịu trách nhiệm về chuyên môn thực vật trên cổng quản trị bao gồm: quản lý và điều chỉnh từ điển thực vật, thông tin bệnh học.
+* **Chuyên gia thực vật:** Là tác nhân chịu trách nhiệm về chuyên môn nông học trên cổng quản trị bao gồm: quản lý và hiệu chỉnh từ điển thực vật, hồ sơ bệnh học, biên soạn bài viết cẩm nang chăm sóc, tinh chỉnh quy tắc chuyên môn cho trợ lý ảo AI và kiểm duyệt nhãn dữ liệu hình ảnh thực vật mới tại phân hệ AI Lab.
 
-Hình 2.3. Biểu đồ ca sử dụng của chuyên gia thực vật
+  `[Chèn ảnh Biểu đồ ca sử dụng của chuyên gia thực vật]`  
+  *Hình 2.3. Biểu đồ ca sử dụng của chuyên gia thực vật*
 
-- Quản trị viên hệ thống: Là tác nhân nắm toàn quyền kiểm soát hệ thống, chịu trách nhiệm quản lý danh sách tài khoản, cấu hình tham số hoạt động của hệ thống và dịch vụ AI, giám sát bảo mật, nhật ký vận hành và theo dõi các báo cáo thống kê tổng thể về người dùng, đơn hàng và doanh thu.
+* **Quản trị viên hệ thống:** Là tác nhân nắm toàn quyền kiểm soát hệ thống, chịu trách nhiệm quản lý danh sách tài khoản quản trị và ma trận phân quyền RBAC, cấu hình tham số hoạt động của hệ thống và dịch vụ AI, quản lý điều hướng và chiến dịch thông báo đẩy, giám sát sức khỏe dịch vụ, nhật ký vận hành và theo dõi các báo cáo thống kê tổng thể.
 
-Hình 2.4. Biểu đồ ca sử dụng của quản trị viên hệ thống
+  `[Chèn ảnh Biểu đồ ca sử dụng của quản trị viên hệ thống]`  
+  *Hình 2.4. Biểu đồ ca sử dụng của quản trị viên hệ thống*
 
-2.2. Tổng quan các chức năng của hệ thống
+## 2.2. Tổng quan các chức năng của hệ thống
 
-2.2.1. Chức năng đăng ký, đăng nhập, đăng xuất hệ thống
+Dựa trên bốn nhóm tác nhân đã xác định, các chức năng của hệ thống được phân chia theo từng phân hệ nghiệp vụ rõ ràng và đặc tả chi tiết thông qua bảng kịch bản kết hợp các biểu đồ UML [9] tương ứng.
 
-2.2.1.1. Đăng ký
+### 2.2.1. Chức năng đăng ký, đăng nhập, đăng xuất hệ thống
+
+Nhóm chức năng xác thực đóng vai trò kiểm soát định danh và bảo mật phiên làm việc cho mọi tác nhân trước khi truy cập vào các phân hệ nghiệp vụ của hệ thống.
+
+#### 2.2.1.1. Đăng ký
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Đăng ký tài khoản khách hàng |
 | **Điều kiện trước** | Không |
-| **Các bước thực hiện** | 1. Chọn nút đăng ký.<br>2. Nhập thông tin đăng ký vào biểu mẫu và bấm đăng ký.<br>3. Hệ thống kiểm tra, ghi thông tin vào cơ sở dữ liệu và tự động đăng nhập. |
-| **Các bước bổ sung** | Trong bước 2, nếu thông tin bị trống thì hệ thống yêu cầu nhập lại. |
-| **Các ngoại lệ** | Email đã được sử dụng từ trước. |
+| **Các bước thực hiện** | 1. Chọn nút Đăng ký trên ứng dụng di động hoặc cổng Web.<br>2. Nhập họ tên, địa chỉ email, mật khẩu, xác nhận mật khẩu vào biểu mẫu và nhấn Đăng ký.<br>3. Hệ thống kiểm tra tính hợp lệ, khởi tạo tài khoản trên Firebase Authentication, lưu hồ sơ vào cơ sở dữ liệu và tự động đăng nhập. |
+| **Các bước bổ sung** | Trong bước 2, nếu thông tin bị bỏ trống, mật khẩu không khớp hoặc chưa đúng định dạng thì hệ thống hiển thị thông báo yêu cầu nhập lại. |
+| **Các ngoại lệ** | Địa chỉ email đã tồn tại trong hệ thống từ trước. |
 | **Tham chiếu** | Không |
 
-Bảng 2.1. Mô tả chi tiết chức năng đăng ký
+*Bảng 2.1. Mô tả chi tiết chức năng đăng ký*
 
-Hình 2.5. Biểu đồ tuần tự chức năng đăng ký
+`[Chèn ảnh Biểu đồ tuần tự chức năng đăng ký]`  
+*Hình 2.5. Biểu đồ tuần tự chức năng đăng ký*
 
-2.2.1.2. Đăng nhập
+#### 2.2.1.2. Đăng nhập
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Đăng nhập hệ thống |
-| **Điều kiện trước** | Đã có tài khoản từ trước |
-| **Các bước thực hiện** | 1. Chọn nút đăng nhập.<br>2. Nhập email và mật khẩu vào biểu mẫu và bấm đăng nhập.<br>3. Hệ thống kiểm tra thông tin hợp lệ và chuyển vào màn hình chính. |
-| **Các bước bổ sung** | Trong bước 2, nếu tài khoản hoặc mật khẩu bị trống thì hệ thống yêu cầu nhập dữ liệu. |
-| **Các ngoại lệ** | Thông tin đăng nhập không chính xác hoặc tài khoản bị khóa. |
+| **Điều kiện trước** | Đã có tài khoản đăng ký hoặc tài khoản liên kết hợp lệ |
+| **Các bước thực hiện** | 1. Chọn chức năng Đăng nhập.<br>2. Nhập email và mật khẩu vào biểu mẫu và nhấn Đăng nhập.<br>3. Hệ thống xác thực thông tin, kiểm tra trạng thái hoạt động và chuyển hướng vào màn hình chính theo đúng vai trò. |
+| **Các bước bổ sung** | Hỗ trợ đăng nhập nhanh một chạm qua tài khoản liên kết và chức năng Quên mật khẩu gửi liên kết đặt lại về email. |
+| **Các ngoại lệ** | Thông tin đăng nhập không chính xác, mật khẩu sai hoặc tài khoản đang bị quản trị viên khóa. |
 | **Tham chiếu** | Bảng 2.1 |
 
-Bảng 2.2. Mô tả chi tiết chức năng đăng nhập
+*Bảng 2.2. Mô tả chi tiết chức năng đăng nhập*
 
-Hình 2.6. Biểu đồ tuần tự chức năng đăng nhập
+`[Chèn ảnh Biểu đồ tuần tự chức năng đăng nhập]`  
+*Hình 2.6. Biểu đồ tuần tự chức năng đăng nhập*
 
-2.2.1.3. Đăng xuất
+#### 2.2.1.3. Đăng xuất
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Đăng xuất khỏi hệ thống |
 | **Điều kiện trước** | Đã đăng nhập vào hệ thống |
-| **Các bước thực hiện** | 1. Chọn nút đăng xuất.<br>2. Hệ thống hủy phiên làm việc và chuyển về màn hình đăng nhập. |
+| **Các bước thực hiện** | 1. Chọn nút Đăng xuất tại trang Hồ sơ cá nhân hoặc thanh điều hướng.<br>2. Hệ thống hủy phiên làm việc, xóa bộ đệm phiên cục bộ và chuyển người dùng về màn hình đăng nhập. |
 | **Các bước bổ sung** | Không |
 | **Các ngoại lệ** | Không |
 | **Tham chiếu** | Bảng 2.2 |
 
-Bảng 2.3. Mô tả chi tiết chức năng đăng xuất
+*Bảng 2.3. Mô tả chi tiết chức năng đăng xuất*
 
-Hình 2.7. Biểu đồ tuần tự chức năng đăng xuất
+`[Chèn ảnh Biểu đồ tuần tự chức năng đăng xuất]`  
+*Hình 2.7. Biểu đồ tuần tự chức năng đăng xuất*
 
-2.2.2. Chức năng dành cho khách hàng
+### 2.2.2. Chức năng dành cho khách hàng
 
-Trong phạm vi của báo cáo, nội dung dưới đây sẽ tập trung đặc tả chi tiết các ca sử dụng (Use Case) cốt lõi, có độ phức tạp cao và đóng vai trò quyết định trong luồng nghiệp vụ của khách hàng. Các chức năng quản lý cơ bản khác sẽ được lược bớt để đảm bảo tính súc tích cho báo cáo, đồng thời vẫn đảm bảo tính đầy đủ của hệ thống.
+Trong phạm vi của báo cáo, nội dung dưới đây sẽ tập trung đặc tả chi tiết các ca sử dụng (Use Case) cốt lõi, có độ phức tạp cao và đóng vai trò quyết định trong luồng nghiệp vụ của khách hàng. Các chức năng quản lý cơ bản khác như cập nhật hồ sơ cá nhân, sổ địa chỉ hay xem bài viết cẩm nang sẽ được lược bớt để đảm bảo tính súc tích cho báo cáo, đồng thời vẫn đảm bảo tính đầy đủ của hệ thống.
 
-2.2.2.1. Nhận diện loài cây cảnh và chẩn đoán bệnh lá
+#### 2.2.2.1. Nhận diện loài cây cảnh và chẩn đoán bệnh lá
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Nhận diện loài cây và chẩn đoán bệnh lá |
-| **Điều kiện trước** | Đã mở ứng dụng và cấp quyền máy ảnh |
-| **Các bước thực hiện** | 1. Chọn nút quét cây hoặc chẩn đoán bệnh.<br>2. Chụp ảnh lá cây hoặc chọn ảnh từ thư viện.<br>3. Hệ thống phân tích ảnh qua mô hình AI và hiển thị tên loài cây, tình trạng bệnh lý cùng cách điều trị.<br>4. Hệ thống lưu kết quả vào lịch sử quét. |
-| **Các bước bổ sung** | Khách hàng có thể nhấn lưu cây vào khu vườn cá nhân. |
-| **Các ngoại lệ** | Ảnh quá mờ hoặc không phải thực vật, hệ thống yêu cầu chụp lại. |
+| **Điều kiện trước** | Đã mở ứng dụng và cấp quyền truy cập máy ảnh hoặc thư viện ảnh |
+| **Các bước thực hiện** | 1. Chọn chế độ Quét nhận diện loài cây hoặc Chẩn đoán bệnh lá trên cây đang chăm sóc.<br>2. Chụp ảnh trực tiếp từ camera hoặc chọn ảnh có sẵn.<br>3. Hệ thống kiểm duyệt độ sáng và lọc ảnh thực vật bằng mô hình CLIP, sau đó phân tích qua Multimodal LLM và mô hình EfficientNetV2 B0 (ONNX) để hiển thị kết quả loài cây hoặc nhóm bệnh cùng cơ chế bệnh học và hướng dẫn xử lý.<br>4. Hệ thống tự động lưu bản ghi vào lịch sử quét. |
+| **Các bước bổ sung** | Khách hàng có thể lưu loài cây mới nhận diện vào khu vườn cá nhân, cập nhật bệnh án lên hồ sơ cây hoặc gửi báo cáo yêu cầu bổ sung loài/bệnh mới cho đội ngũ chuyên gia. |
+| **Các ngoại lệ** | Ảnh quá tối, bị mờ hoặc không phải thực vật thì bộ lọc tiền kiểm duyệt từ chối và yêu cầu chụp lại ảnh rõ nét hơn. |
 | **Tham chiếu** | Không |
 
-Bảng 2.4. Mô tả chi tiết chức năng nhận diện cây và chẩn đoán bệnh
+*Bảng 2.4. Mô tả chi tiết chức năng nhận diện cây và chẩn đoán bệnh*
 
-Hình 2.8. Biểu đồ tuần tự chức năng nhận diện loài cây và chẩn đoán bệnh
+`[Chèn ảnh Biểu đồ tuần tự chức năng nhận diện loài cây và chẩn đoán bệnh]`  
+*Hình 2.8. Biểu đồ tuần tự chức năng nhận diện loài cây và chẩn đoán bệnh*
 
-2.2.2.2. Quản lý khu vườn cá nhân và lịch chăm sóc
+#### 2.2.2.2. Quản lý khu vườn cá nhân và lịch chăm sóc
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
-| **Tên chức năng** | Quản lý khu vườn cá nhân |
+| **Tên chức năng** | Quản lý khu vườn cá nhân và lịch chăm sóc |
 | **Điều kiện trước** | Đã đăng nhập vào hệ thống |
-| **Các bước thực hiện** | 1. Chọn mục Vườn của tôi.<br>2. Hệ thống hiển thị danh sách cây đang chăm sóc và lịch tưới.<br>3. Khách hàng xem chi tiết cây và bấm xác nhận Đã tưới nước.<br>4. Hệ thống cập nhật thời gian chăm sóc và tính chu kỳ tưới tiếp theo. |
-| **Các bước bổ sung** | Hệ thống tự động cập nhật thời tiết địa phương để điều chỉnh lịch tưới. |
-| **Các ngoại lệ** | Không tải được dữ liệu thời tiết, hệ thống dùng lịch tưới mặc định. |
+| **Các bước thực hiện** | 1. Chọn mục Khu vườn của tôi và lựa chọn không gian vườn (trong nhà, ngoài trời, văn phòng, nhà kính).<br>2. Hệ thống hiển thị danh sách cây, trạng thái sức khỏe thực tế và các tác vụ đến hạn (tưới nước, bón phân, kiểm tra sâu bệnh & lau lá).<br>3. Khách hàng mở chi tiết cây và nhấn xác nhận hoàn thành tác vụ hoặc Hoàn tất mọi việc hôm nay.<br>4. Hệ thống cập nhật mốc thời gian tiếp theo, đồng bộ nhật ký hệ thống và tính toán lại độ ẩm đất ước lượng. |
+| **Các bước bổ sung** | Hệ thống lấy dữ liệu thời tiết địa phương theo thời gian thực qua API thời tiết để hiển thị mẹo vi khí hậu thích ứng và hỗ trợ viết nhật ký sinh trưởng kèm hình ảnh. |
+| **Các ngoại lệ** | Khi mất kết nối dịch vụ thời tiết, hệ thống tự động sử dụng quy tắc chăm sóc dự phòng theo khung giờ và chu kỳ mặc định của từng loài cây. |
 | **Tham chiếu** | Bảng 2.4 |
 
-Bảng 2.5. Mô tả chi tiết chức năng quản lý vườn và lịch chăm sóc
+*Bảng 2.5. Mô tả chi tiết chức năng quản lý vườn và lịch chăm sóc*
 
-Hình 2.9. Biểu đồ tuần tự chức năng quản lý khu vườn cá nhân
+`[Chèn ảnh Biểu đồ tuần tự chức năng quản lý khu vườn cá nhân]`  
+*Hình 2.9. Biểu đồ tuần tự chức năng quản lý khu vườn cá nhân*
 
-2.2.2.3. Tương tác với trợ lý ảo AI
+#### 2.2.2.3. Tương tác với trợ lý ảo AI
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Tương tác với trợ lý ảo AI |
 | **Điều kiện trước** | Đã đăng nhập vào hệ thống |
-| **Các bước thực hiện** | 1. Mở màn hình Trợ lý ảo AI.<br>2. Nhập câu hỏi thắc mắc về chăm sóc cây.<br>3. Hệ thống phân tích câu hỏi và phản hồi hướng dẫn chi tiết. |
-| **Các bước bổ sung** | Khách hàng có thể gửi ảnh cây kèm theo để được tư vấn chính xác. |
-| **Các ngoại lệ** | Câu hỏi không hợp lệ, hệ thống yêu cầu nhập lại câu hỏi khác. |
+| **Các bước thực hiện** | 1. Mở màn hình Trợ lý ảo AI từ thanh điều hướng hoặc trực tiếp từ hồ sơ một chậu cây cụ thể.<br>2. Nhập câu hỏi thắc mắc về kỹ thuật chăm sóc hoặc dấu hiệu sâu bệnh.<br>3. Hệ thống nạp ngữ cảnh loài cây, tuân thủ quy tắc kiểm duyệt phạm vi thực vật học và phản hồi tư vấn theo thời gian thực. |
+| **Các bước bổ sung** | Hỗ trợ đính kèm ảnh chụp thực vật; trợ lý có thể đề xuất thẻ áp dụng lịch chăm sóc 1 chạm vào vườn hoặc gợi ý vật tư đặc trị phù hợp từ cửa hàng. |
+| **Các ngoại lệ** | Câu hỏi nằm ngoài chủ đề thực vật hoặc ảnh đính kèm không phải cây trồng sẽ được trợ lý từ chối lịch sự và điều hướng về chủ đề chăm sóc cây. |
 | **Tham chiếu** | Bảng 2.4, Bảng 2.5 |
 
-Bảng 2.6. Mô tả chi tiết chức năng tương tác trợ lý ảo AI
+*Bảng 2.6. Mô tả chi tiết chức năng tương tác trợ lý ảo AI*
 
-Hình 2.10. Biểu đồ tuần tự chức năng tương tác trợ lý ảo AI
+`[Chèn ảnh Biểu đồ tuần tự chức năng tương tác trợ lý ảo AI]`  
+*Hình 2.10. Biểu đồ tuần tự chức năng tương tác trợ lý ảo AI*
 
-2.2.2.4. Đặt hàng vật tư và thanh toán trực tuyến
+#### 2.2.2.4. Đặt hàng vật tư và thanh toán trực tuyến
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Đặt hàng và thanh toán vật tư |
-| **Điều kiện trước** | Đã đăng nhập và đã chọn sản phẩm vào giỏ hàng |
-| **Các bước thực hiện** | 1. Mở giỏ hàng và chọn Đặt hàng.<br>2. Nhập địa chỉ nhận hàng và chọn phương thức thanh toán.<br>3. Xác nhận đặt hàng và thực hiện thanh toán.<br>4. Hệ thống tạo đơn hàng thành công và cập nhật trừ kho. |
-| **Các bước bổ sung** | Áp dụng mã giảm giá khi thanh toán. |
-| **Các ngoại lệ** | Sản phẩm trong kho không đủ hoặc thanh toán trực tuyến thất bại. |
+| **Điều kiện trước** | Đã đăng nhập và đã chọn sản phẩm hợp lệ vào giỏ hàng |
+| **Các bước thực hiện** | 1. Mở Giỏ hàng, chọn sản phẩm cần mua và nhấn Đặt hàng.<br>2. Chọn địa chỉ nhận hàng (hỗ trợ ghim vị trí bản đồ), áp dụng mã giảm giá và chọn phương thức thanh toán (**Thanh toán trực tuyến** hoặc **COD**).<br>3. Xác nhận đặt hàng và hoàn tất giao dịch trên cổng thanh toán điện tử (nếu chọn thanh toán trực tuyến).<br>4. Hệ thống ghi nhận đơn hàng, tự động trừ tồn kho, tăng lượt bán và làm sạch giỏ hàng. |
+| **Các bước bổ sung** | Theo dõi trạng thái giao hàng theo thời gian thực, mua lại đơn cũ hoặc gửi đánh giá kèm ảnh sau khi nhận hàng. |
+| **Các ngoại lệ** | Số lượng tồn kho không đủ, mã giảm giá hết hạn hoặc giao dịch thanh toán trực tuyến thất bại. |
 | **Tham chiếu** | Không |
 
-Bảng 2.7. Mô tả chi tiết chức năng đặt hàng và thanh toán
+*Bảng 2.7. Mô tả chi tiết chức năng đặt hàng và thanh toán*
 
-Hình 2.11. Biểu đồ tuần tự chức năng đặt hàng và thanh toán
+`[Chèn ảnh Biểu đồ tuần tự chức năng đặt hàng và thanh toán]`  
+*Hình 2.11. Biểu đồ tuần tự chức năng đặt hàng và thanh toán*
 
-2.2.3. Chức năng dành cho nhân viên vận hành & CSKH
+### 2.2.3. Chức năng dành cho nhân viên vận hành & CSKH
 
-2.2.3.1. Quản lý đơn hàng và giao vận
+Nhóm chức năng dành cho nhân viên vận hành tập trung vào việc điều phối luồng thương mại vật tư, xử lý đơn đặt hàng, kiểm soát số lượng tồn kho và hỗ trợ khách hàng trên cổng quản trị.
+
+#### 2.2.3.1. Quản lý đơn hàng và giao vận
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
-| **Tên chức năng** | Quản lý đơn hàng |
-| **Điều kiện trước** | Đã đăng nhập với quyền Nhân viên vận hành |
-| **Các bước thực hiện** | 1. Chọn chức năng Quản lý đơn hàng.<br>2. Hệ thống hiển thị danh sách đơn hàng.<br>3. Nhân viên chọn đơn hàng cần duyệt và cập nhật trạng thái giao hàng.<br>4. Hệ thống lưu thay đổi và gửi thông báo cho khách hàng. |
-| **Các bước bổ sung** | In hóa đơn và phiếu vận chuyển hàng. |
-| **Các ngoại lệ** | Đơn hàng đã bị khách hàng hủy từ trước. |
+| **Tên chức năng** | Quản lý đơn hàng và giao vận |
+| **Điều kiện trước** | Đã đăng nhập cổng Web Admin với vai trò Nhân viên vận hành hoặc Quản trị viên |
+| **Các bước thực hiện** | 1. Chọn phân hệ Quản lý đơn hàng.<br>2. Hệ thống hiển thị danh sách đơn hàng kèm bộ lọc trạng thái và thông tin thanh toán.<br>3. Nhân viên kiểm tra chi tiết đơn hàng, duyệt đơn và cập nhật trạng thái giao vận (*Chờ xác nhận $\rightarrow$ Đang giao $\rightarrow$ Đã giao*).<br>4. Hệ thống lưu lịch sử thay đổi trạng thái và đồng bộ tức thì lên ứng dụng của khách hàng. |
+| **Các bước bổ sung** | Hỗ trợ tìm kiếm theo mã đơn hàng, tên hoặc số điện thoại người nhận. |
+| **Các ngoại lệ** | Đơn hàng đã bị khách hàng hủy từ trước thì không thể chuyển sang trạng thái đang giao. |
 | **Tham chiếu** | Bảng 2.7 |
 
-Bảng 2.8. Mô tả chi tiết chức năng quản lý đơn hàng
+*Bảng 2.8. Mô tả chi tiết chức năng quản lý đơn hàng*
 
-Hình 2.12. Biểu đồ tuần tự chức năng quản lý đơn hàng
+`[Chèn ảnh Biểu đồ tuần tự chức năng quản lý đơn hàng]`  
+*Hình 2.12. Biểu đồ tuần tự chức năng quản lý đơn hàng*
 
-2.2.3.2. Quản lý sản phẩm và kho hàng
+#### 2.2.3.2. Quản lý sản phẩm và kho hàng
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Quản lý sản phẩm và kho hàng |
-| **Điều kiện trước** | Đã đăng nhập với quyền Nhân viên vận hành |
-| **Các bước thực hiện** | 1. Chọn chức năng Quản lý sản phẩm.<br>2. Chọn thêm mới hoặc sửa thông tin sản phẩm, số lượng kho.<br>3. Nhập dữ liệu và nhấn Lưu.<br>4. Hệ thống kiểm tra và cập nhật vào cơ sở dữ liệu. |
-| **Các bước bổ sung** | Hệ thống cảnh báo khi số lượng tồn kho sắp hết. |
-| **Các ngoại lệ** | Dữ liệu nhập thiếu hoặc giá bán/số lượng không hợp lệ. |
+| **Điều kiện trước** | Đã đăng nhập cổng Web Admin với quyền Nhân viên vận hành hoặc Quản trị viên |
+| **Các bước thực hiện** | 1. Chọn phân hệ Sản phẩm hoặc Kho hàng.<br>2. Thêm mới, chỉnh sửa thông tin vật tư (tải ảnh lên đám mây, thiết lập chỉ định bệnh lý) hoặc tạo phiếu điều chỉnh tồn kho.<br>3. Nhấn Lưu để xác nhận thay đổi.<br>4. Hệ thống cập nhật dữ liệu sản phẩm, ghi nhận biến động kho và đồng bộ ngay với Cửa hàng. |
+| **Các bước bổ sung** | Hệ thống tự động cảnh báo các mặt hàng có số lượng tồn kho thấp hơn ngưỡng an toàn và cho phép ẩn/hiện sản phẩm trên cửa hàng. |
+| **Các ngoại lệ** | Dữ liệu bắt buộc bị bỏ trống, giá bán hoặc số lượng tồn kho nhập âm. |
 | **Tham chiếu** | Bảng 2.7 |
 
-Bảng 2.9. Mô tả chi tiết chức năng quản lý sản phẩm và kho hàng
+*Bảng 2.9. Mô tả chi tiết chức năng quản lý sản phẩm và kho hàng*
 
-Hình 2.13. Biểu đồ tuần tự chức năng quản lý sản phẩm và kho hàng
+`[Chèn ảnh Biểu đồ tuần tự chức năng quản lý sản phẩm và kho hàng]`  
+*Hình 2.13. Biểu đồ tuần tự chức năng quản lý sản phẩm và kho hàng*
 
-2.2.4. Chức năng dành cho chuyên gia thực vật
+### 2.2.4. Chức năng dành cho chuyên gia thực vật
 
-2.2.4.1. Quản lý từ điển thực vật và hồ sơ bệnh học
+Nhóm chức năng dành cho chuyên gia thực vật đảm nhiệm việc chuẩn hóa tri thức nông học trong cơ sở dữ liệu và kiểm duyệt chất lượng nhãn ảnh đầu vào phục vụ cải tiến mô hình học sâu.
+
+#### 2.2.4.1. Quản lý từ điển thực vật và hồ sơ bệnh học
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Quản lý từ điển thực vật và bệnh học |
-| **Điều kiện trước** | Đã đăng nhập với quyền Chuyên gia thực vật |
-| **Các bước thực hiện** | 1. Chọn chức năng Từ điển thực vật hoặc Bệnh học.<br>2. Chọn loài cây hoặc nhóm bệnh cần cập nhật.<br>3. Chỉnh sửa thông tin sinh học, triệu chứng hoặc phác đồ điều trị.<br>4. Nhấn Lưu, hệ thống cập nhật vào cơ sở tri thức. |
-| **Các bước bổ sung** | Thêm mới loài cây hoặc bệnh học mới vào hệ thống. |
-| **Các ngoại lệ** | Tên cây hoặc mã định danh bệnh bị trùng lặp. |
+| **Điều kiện trước** | Đã đăng nhập cổng Web Admin với vai trò Chuyên gia thực vật hoặc Quản trị viên |
+| **Các bước thực hiện** | 1. Chọn phân hệ Từ điển thực vật hoặc Bệnh học.<br>2. Chọn loài cây hoặc nhóm bệnh cần cập nhật, hoặc nhấn Thêm mới.<br>3. Chỉnh sửa thông số sinh thái (ánh sáng, độ ẩm, chu kỳ tưới, độc tính), tác nhân gây bệnh, cơ chế hại lá và biện pháp phòng ngừa.<br>4. Nhấn Lưu, hệ thống cập nhật trực tiếp lên cơ sở tri thức Cloud Firestore. |
+| **Các bước bổ sung** | Chuyên gia có thể biên soạn thêm bài viết cẩm nang chăm sóc và bật/tắt các quy tắc chuyên môn cho trợ lý ảo AI. |
+| **Các ngoại lệ** | Tên khoa học hoặc mã định danh bệnh bị trùng lặp với dữ liệu đã tồn tại. |
 | **Tham chiếu** | Bảng 2.4 |
 
-Bảng 2.10. Mô tả chi tiết chức năng quản lý từ điển thực vật và bệnh học
+*Bảng 2.10. Mô tả chi tiết chức năng quản lý từ điển thực vật và bệnh học*
 
-Hình 2.14. Biểu đồ tuần tự chức năng quản lý từ điển thực vật và bệnh học
+`[Chèn ảnh Biểu đồ tuần tự chức năng quản lý từ điển thực vật và bệnh học]`  
+*Hình 2.14. Biểu đồ tuần tự chức năng quản lý từ điển thực vật và bệnh học*
 
-2.2.4.2. Duyệt nhãn dữ liệu học máy (AI Lab)
+#### 2.2.4.2. Duyệt nhãn dữ liệu học máy (AI Lab)
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
 | **Tên chức năng** | Duyệt nhãn dữ liệu AI Lab |
-| **Điều kiện trước** | Đã đăng nhập với quyền Chuyên gia thực vật |
-| **Các bước thực hiện** | 1. Mở chức năng AI Lab duyệt dữ liệu.<br>2. Hệ thống hiển thị danh sách ảnh cây cần kiểm duyệt.<br>3. Chuyên gia chọn xác nhận nhãn đúng hoặc sửa lại nhãn chuẩn.<br>4. Hệ thống lưu trữ dữ liệu đã chuẩn hóa vào kho huấn luyện. |
-| **Các bước bổ sung** | Xóa bỏ các ảnh chụp bị mờ hoặc rác. |
-| **Các ngoại lệ** | Ảnh lỗi không hiển thị được. |
+| **Điều kiện trước** | Đã đăng nhập cổng Web Admin với quyền Chuyên gia thực vật hoặc Quản trị viên |
+| **Các bước thực hiện** | 1. Mở phân hệ AI Lab và chuyển đến mục Yêu cầu học chủ động.<br>2. Hệ thống hiển thị danh sách mẫu ảnh thực vật hoặc bệnh mới do người dùng báo cáo kèm nhãn dự đoán.<br>3. Chuyên gia đối chiếu ảnh thực tế, xác nhận nhãn chuẩn hoặc bổ sung hồ sơ loài cây mới vào từ điển.<br>4. Hệ thống lưu ảnh vào kho huấn luyện trên đám mây và cho phép tải gói dữ liệu `.zip` phục vụ tái huấn luyện mô hình. |
+| **Các bước bổ sung** | Cho phép kiểm thử trực tiếp ảnh mẫu qua AI Sandbox và loại bỏ các yêu cầu chứa ảnh mờ, ảnh rác. |
+| **Các ngoại lệ** | Mẫu ảnh bị lỗi liên kết hoặc thiếu thông tin nhãn chuẩn khi duyệt. |
 | **Tham chiếu** | Bảng 2.4, Bảng 2.10 |
 
-Bảng 2.11. Mô tả chi tiết chức năng duyệt nhãn dữ liệu AI Lab
+*Bảng 2.11. Mô tả chi tiết chức năng duyệt nhãn dữ liệu AI Lab*
 
-Hình 2.15. Biểu đồ tuần tự chức năng duyệt nhãn dữ liệu AI Lab
+`[Chèn ảnh Biểu đồ tuần tự chức năng duyệt nhãn dữ liệu AI Lab]`  
+*Hình 2.15. Biểu đồ tuần tự chức năng duyệt nhãn dữ liệu AI Lab*
 
-2.2.5. Chức năng dành cho quản trị viên hệ thống
+### 2.2.5. Chức năng dành cho quản trị viên hệ thống
 
-2.2.5.1. Quản lý người dùng và phân quyền RBAC
+Nhóm chức năng dành cho quản trị viên cấp cao cung cấp công cụ kiểm soát toàn diện tài khoản người dùng, thiết lập ma trận phân quyền truy cập và duy trì sự ổn định của toàn hệ thống.
+
+#### 2.2.5.1. Quản lý người dùng và phân quyền RBAC
 
 | Thuộc tính | Nội dung mô tả |
 | :--- | :--- |
-| **Tên chức năng** | Quản lý người dùng và phân quyền |
-| **Điều kiện trước** | Đã đăng nhập với quyền Quản trị viên hệ thống |
-| **Các bước thực hiện** | 1. Chọn chức năng Quản lý người dùng.<br>2. Hệ thống hiển thị danh sách tài khoản.<br>3. Quản trị viên chọn tài khoản để phân quyền hoặc khóa/mở khóa.<br>4. Hệ thống cập nhật quyền mới vào cơ sở dữ liệu. |
-| **Các bước bổ sung** | Tìm kiếm người dùng theo tên hoặc email. |
-| **Các ngoại lệ** | Không được tự khóa tài khoản quản trị đang đăng nhập. |
+| **Tên chức năng** | Quản lý người dùng và phân quyền RBAC |
+| **Điều kiện trước** | Đã đăng nhập cổng Web Admin với vai trò Quản trị viên hệ thống (`super_admin`) |
+| **Các bước thực hiện** | 1. Chọn phân hệ Quản lý người dùng hoặc Phân quyền & Tài khoản.<br>2. Hệ thống hiển thị danh sách khách hàng, tài khoản quản trị và ma trận phân quyền theo từng mô-đun chức năng.<br>3. Quản trị viên cấp mới tài khoản, gán vai trò, điều chỉnh quyền xem/tạo/sửa/xóa hoặc khóa/mở khóa tài khoản khi cần thiết.<br>4. Hệ thống cập nhật tức thì vào cơ sở dữ liệu và áp dụng đồng bộ ở cả giao diện lẫn API máy chủ. |
+| **Các bước bổ sung** | Tìm kiếm người dùng theo tên hoặc email; xem nhanh khu vườn, lịch sử quét và đơn hàng của từng tài khoản. |
+| **Các ngoại lệ** | Hệ thống ngăn chặn hành vi tự khóa hoặc tự hạ quyền của tài khoản quản trị viên cấp cao đang đăng nhập. |
 | **Tham chiếu** | Bảng 2.2 |
 
-Bảng 2.12. Mô tả chi tiết chức năng quản lý người dùng và phân quyền
+*Bảng 2.12. Mô tả chi tiết chức năng quản lý người dùng và phân quyền*
 
-Hình 2.16. Biểu đồ tuần tự chức năng quản lý người dùng và phân quyền
+`[Chèn ảnh Biểu đồ tuần tự chức năng quản lý người dùng và phân quyền]`  
+*Hình 2.16. Biểu đồ tuần tự chức năng quản lý người dùng và phân quyền*
 
-2.3. Thiết kế cơ sở dữ liệu
+## 2.3. Thiết kế cơ sở dữ liệu
 
-2.3.1. Biểu đồ lớp của bài toán
+Phần này trình bày thiết kế cấu trúc dữ liệu của hệ thống thông qua biểu đồ lớp thực thể và đặc tả chi tiết các tập hợp dữ liệu lưu trữ trên cơ sở dữ liệu đám mây.
 
-Hình 2.17. Biểu đồ phân lớp
+### 2.3.1. Biểu đồ lớp của bài toán
 
-2.3.2. Cơ sở dữ liệu
+Biểu đồ phân lớp dưới đây mô tả 10 lớp thực thể nghiệp vụ trung tâm cùng mối quan hệ liên kết giữa người dùng, lịch sử quét, khu vườn, nhật ký, tri thức thực vật – bệnh học, phiên tư vấn AI và đơn hàng vật tư.
 
-Hệ thống sử dụng Firebase Firestore làm cơ sở dữ liệu để lưu trữ và quản lý thông tin người dùng, từ điển cây cảnh, hồ sơ bệnh học, lịch sử nhận diện, khu vườn cá nhân, đơn hàng và các cấu hình hệ thống. Firebase Firestore là cơ sở dữ liệu NoSQL định dạng tài liệu (Document-oriented), dữ liệu được tổ chức theo mô hình Collection và Document thay vì các bảng quan hệ truyền thống. Dưới đây là cấu trúc các bảng (Collection) chính trong hệ thống:
+`[Chèn ảnh Biểu đồ phân lớp]`  
+*Hình 2.17. Biểu đồ phân lớp*
 
-2.3.2.1. Bảng người dùng
-- Tên bảng: Users
-- Mục đích: Dùng để lưu trữ thông tin tài khoản và vai trò người dùng trong hệ thống
+### 2.3.2. Cơ sở dữ liệu
 
-| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã người dùng | uid | String | PK | Khóa chính (Firebase Auth UID) |
-| 2 | Họ và tên | displayName | String | | Tên hiển thị người dùng |
-| 3 | Hộp thư điện tử | email | String | Unique | Email đăng ký |
-| 4 | Ảnh đại diện | photoUrl | String | | Đường dẫn ảnh đại diện |
-| 5 | Số điện thoại | phoneNumber | String | | Số điện thoại liên hệ |
-| 6 | Vai trò tài khoản | role | String | | user, staff, botanist, super_admin |
-| 7 | Trạng thái hoạt động | isActive | Boolean | | true: hoạt động, false: bị khóa |
-| 8 | Thời gian tạo | createdAt | Timestamp | | Thời điểm đăng ký |
+Hệ thống sử dụng **Firebase Firestore** làm cơ sở dữ liệu chính để lưu trữ và đồng bộ thời gian thực toàn bộ dữ liệu giữa ứng dụng di động, cổng Web Người dùng, cổng Web Quản trị và các dịch vụ máy chủ. Firebase Firestore là cơ sở dữ liệu NoSQL định dạng tài liệu (*Document-oriented*), tổ chức dữ liệu theo mô hình tập hợp (*Collection*) và tài liệu (*Document*) thay cho các bảng quan hệ truyền thống, giúp mở rộng linh hoạt cấu trúc thuộc tính của tri thức thực vật và dữ liệu cây trồng.
 
-Bảng 2.13. Bảng cơ sở dữ liệu người dùng (Users)
+Dựa trên Biểu đồ phân lớp (Hình 2.17), cấu trúc **10 tập hợp dữ liệu nghiệp vụ cốt lõi** được thiết kế từ Bảng 2.13 đến Bảng 2.22. Ngoài ra, hệ thống duy trì các tập hợp cấu hình phụ trợ gồm `UserGardens`, `AdminAccounts`, `PlantRequests`, `TrainingDataset`, `Vouchers`, `ProductReviews`, `InventoryTransactions`, `WeatherAdviceRules`, `HomeWeatherWidgets`, `SupportArticles`, `MenuItems` và `SystemConfig`.
 
-2.3.2.2. Bảng từ điển cây cảnh
-- Tên bảng: plants_info
-- Mục đích: Lưu trữ bách khoa toàn thư thực vật và hướng dẫn chăm sóc chuẩn hóa
+#### 2.3.2.1. Bảng người dùng
+* **Tên bảng (Collection):** `Users`
+* **Mục đích:** Lưu trữ thông tin hồ sơ tài khoản, sổ địa chỉ giao nhận và trạng thái truy cập của người dùng trong hệ thống.
 
 | STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Tên khoa học của cây | scientificName | String | PK | Khóa chính (VD: Monstera deliciosa) |
-| 2 | Tên tiếng Việt | name_vi | String | | Tên gọi phổ thông tiếng Việt |
-| 3 | Họ thực vật | family | String | | Họ thực vật sinh học |
-| 4 | Mô tả sinh học | description | String | | Đặc điểm hình thái |
-| 5 | Nhu cầu ánh sáng | light_requirement | String | | Nhu cầu quang hợp |
-| 6 | Chu kỳ tưới nước | watering_interval_days | Integer | | Số ngày giữa các lần tưới |
-| 7 | Độ ẩm khuyến nghị | optimal_humidity | String | | Dải độ ẩm thích hợp (%) |
-| 8 | Nhiệt độ lý tưởng | optimal_temperature | String | | Dải nhiệt độ môi trường |
-| 9 | Đường dẫn ảnh mẫu | image_url | String | | Ảnh đại diện loài cây |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã người dùng | `uid` | String | PK | Khóa chính (Firebase Auth UID) |
+| 2 | Họ và tên | `displayName` | String | | Tên hiển thị người dùng |
+| 3 | Hộp thư điện tử | `email` | String | Unique | Email đăng ký tài khoản |
+| 4 | Ảnh đại diện | `customPhotoUrl` | String | | Đường dẫn ảnh đại diện người dùng |
+| 5 | Số điện thoại | `phone` | String | | Số điện thoại liên hệ |
+| 6 | Sổ địa chỉ nhận hàng | `addresses` | Array | | Danh sách địa chỉ hành chính kèm tọa độ GPS |
+| 7 | Vai trò tài khoản | `role` | String | | `user` (đồng bộ phân quyền quản trị `staff`, `botanist`, `super_admin` qua `AdminAccounts`) |
+| 8 | Trạng thái hoạt động | `isActive` | Boolean | | `true`: hoạt động, `false`: bị khóa |
+| 9 | Thời gian tạo | `createdAt` | Timestamp | | Thời điểm đăng ký tài khoản |
 
-Bảng 2.14. Bảng thông tin cây cảnh (plants_info)
+*Bảng 2.13. Bảng cơ sở dữ liệu người dùng (Users)*
 
-2.3.2.3. Bảng hồ sơ bệnh học
-- Tên bảng: DiseasesInfo
-- Mục đích: Lưu trữ thông tin bệnh lý trên lá, tác nhân gây bệnh và phác đồ điều trị
-
-| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã bệnh học | id | String | PK | Anthracnose, Leaf_Spot, Powdery_Mildew... |
-| 2 | Tên bệnh tiếng Việt | nameVi | String | | Tên bệnh thông dụng |
-| 3 | Tên bệnh tiếng Anh | nameEn | String | | Tên bệnh chuẩn quốc tế |
-| 4 | Mức độ nguy hiểm | severity | String | | Bình thường, Cảnh báo, Nguy hiểm |
-| 5 | Tác nhân gây bệnh | pathogen | String | | Chủng nấm, vi khuẩn |
-| 6 | Triệu chứng nhận biết | symptoms | String | | Dấu hiệu bệnh trên lá |
-| 7 | Biện pháp canh tác | culturalControls | Array | | Biện pháp cắt tỉa, cách ly |
-| 8 | Thuốc điều trị sinh học | biologicalTreatments | Array | | Phác đồ vi sinh, hữu cơ |
-
-Bảng 2.15. Bảng hồ sơ bệnh học thực vật (DiseasesInfo)
-
-2.3.2.4. Bảng lịch sử nhận diện và chẩn đoán
-- Tên bảng: ScanHistory
-- Mục đích: Lưu trữ toàn bộ kết quả quét nhận diện loài cây và chẩn đoán bệnh lá
+#### 2.3.2.2. Bảng từ điển cây cảnh
+* **Tên bảng (Collection):** `plants_info`
+* **Mục đích:** Lưu trữ bách khoa toàn thư thực vật, đặc điểm nhận dạng và thông số sinh thái chăm sóc chuẩn hóa cho từng loài cây.
 
 | STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã lượt quét | scanId | String | PK | Định danh duy nhất |
-| 2 | Mã người dùng | userId | String | FK | Khóa ngoại liên kết Users |
-| 3 | Loại quét | type | String | | plant_discovery hoặc disease_diagnosis |
-| 4 | Kết quả dự đoán | prediction | String | | Tên loài hoặc bệnh dự đoán |
-| 5 | Kết quả tiếng Việt | predictionVi | String | | Tên tiếng Việt chuẩn |
-| 6 | Độ tin cậy mô hình | confidence | Double | | Tỷ lệ phần trăm tin cậy |
-| 7 | Mô hình sử dụng | modelUsed | String | | EfficientNetV2 B0, LLM |
-| 8 | Đường dẫn ảnh chụp | imageUrl | String | | Ảnh lưu trữ phục vụ AI Lab |
-| 9 | Thời gian quét | timestamp | Timestamp | | Thời điểm thực hiện |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Tên khoa học của cây | `scientificName` | String | PK | Khóa chính (VD: `Monstera deliciosa`) |
+| 2 | Tên tiếng Việt | `name_vi` | String | | Tên gọi phổ thông tiếng Việt |
+| 3 | Họ thực vật | `family` | String | | Họ thực vật sinh học |
+| 4 | Phân loại & nguồn gốc | `plant_type` | String | | Nhóm cây và xuất xứ |
+| 5 | Mức độ chăm sóc | `difficulty` | String | | Dễ, Trung bình, Khó |
+| 6 | Nhu cầu ánh sáng | `light` | String | | Yêu cầu ánh sáng quang hợp |
+| 7 | Chu kỳ tưới khuyến nghị | `water_frequency` | String | | Tần suất tưới tiêu chuẩn |
+| 8 | Nhiệt độ & độ ẩm lý tưởng | `temperature` | String | | Dải nhiệt độ và độ ẩm (`humidity`) thích hợp |
+| 9 | Đặc điểm nhận dạng & độc tính | `identification` | String | | Dấu hiệu hình thái và cảnh báo `toxicity` |
+| 10 | Mô tả & kiến thức chi tiết | `wiki_detail` | String | | Thông tin tóm tắt (`short_desc`) và bách khoa |
+| 11 | Đường dẫn ảnh mẫu | `imageUrl` | String | | Ảnh đại diện loài cây lưu trữ trên đám mây |
 
-Bảng 2.16. Bảng lịch sử quét (ScanHistory)
+*Bảng 2.14. Bảng thông tin cây cảnh (plants_info)*
 
-2.3.2.5. Bảng cây trồng trong vườn cá nhân
-- Tên bảng: MyGarden
-- Mục đích: Lưu trữ thông tin cây cảnh mà người dùng đưa vào chăm sóc
-
-| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã cây trong vườn | id | String | PK | Khóa chính |
-| 2 | Mã người dùng | userId | String | FK | Khóa ngoại liên kết Users |
-| 3 | Tên khoa học | scientificName | String | | Liên kết plants_info |
-| 4 | Tên tiếng Việt | nameVi | String | | Tên loài cây |
-| 5 | Tên gọi thân mật | nickname | String | | Tên do người dùng đặt |
-| 6 | Khu vực đặt cây | zone | String | | Phòng khách, Ban công, Sân vườn |
-| 7 | Chu kỳ tưới nước | waterFrequencyDays | Integer | | Số ngày cần tưới lại |
-| 8 | Lần tưới gần nhất | lastWatered | Timestamp | | Thời gian đã tưới |
-| 9 | Lần tưới tiếp theo | nextWatering | Timestamp | | Tính toán theo chu kỳ & thời tiết |
-| 10 | Trạng thái sức khỏe | healthStatus | String | | Khỏe mạnh, Đang theo dõi, Cần trị bệnh |
-
-Bảng 2.17. Bảng cây trong vườn cá nhân (MyGarden)
-
-2.3.2.6. Bảng nhật ký sinh trưởng cây trồng
-- Tên bảng: DiaryNotes
-- Mục đích: Lưu trữ nhật ký theo dõi quá trình phát triển của từng cây cảnh
+#### 2.3.2.3. Bảng hồ sơ bệnh học
+* **Tên bảng (Collection):** `DiseasesInfo`
+* **Mục đích:** Lưu trữ thông tin khoa học về các nhóm bệnh lý trên lá, tác nhân gây bệnh, cơ chế lây nhiễm và biện pháp phòng ngừa.
 
 | STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã ghi chép | noteId | String | PK | Khóa chính |
-| 2 | Mã cây cảnh | plantId | String | FK | Khóa ngoại liên kết MyGarden |
-| 3 | Tiêu đề nhật ký | title | String | | Tiêu đề bản ghi |
-| 4 | Nội dung ghi chú | note | String | | Diễn biến sinh trưởng |
-| 5 | Ảnh chụp theo dõi | imageUrl | String | | Ảnh cây tại thời điểm ghi |
-| 6 | Chiều cao cây | heightCm | Double | | Chiều cao đo được (cm) |
-| 7 | Thời gian ghi nhận | timestamp | Timestamp | | Thời điểm ghi chép |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã bệnh học | `id` | String | PK | `Healthy`, `Anthracnose`, `Leaf_Spot`, `Bacterial_Blight`, `Powdery_Mildew` |
+| 2 | Tên bệnh tiếng Việt | `nameVi` | String | | Tên bệnh phổ thông |
+| 3 | Tên bệnh tiếng Anh | `nameEn` | String | | Tên bệnh chuẩn quốc tế |
+| 4 | Mức độ nguy hiểm | `severity` | String | | An toàn, Trung bình, Cảnh báo, Nguy hiểm |
+| 5 | Tác nhân gây bệnh | `pathogen` | String | | Chủng nấm, vi khuẩn gây hại |
+| 6 | Cơ chế gây hại | `mechanism` | String | | Cơ chế xâm nhiễm và biểu hiện trên mô lá |
+| 7 | Điều kiện thuận lợi | `favorableConditions` | String | | Môi trường nhiệt độ, độ ẩm dễ bùng phát bệnh |
+| 8 | Biện pháp phòng ngừa | `prevention` | String | | Hướng dẫn canh tác, cắt tỉa và vệ sinh lá |
 
-Bảng 2.18. Bảng nhật ký sinh trưởng (DiaryNotes)
+*Bảng 2.15. Bảng hồ sơ bệnh học thực vật (DiseasesInfo)*
 
-2.3.2.7. Bảng phiên tương tác trợ lý ảo AI
-- Tên bảng: ChatSessions
-- Mục đích: Lưu trữ lịch sử hội thoại tư vấn giữa khách hàng và trợ lý ảo AI
-
-| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã phiên trò chuyện | sessionId | String | PK | Khóa chính |
-| 2 | Mã người dùng | userId | String | FK | Khóa ngoại liên kết Users |
-| 3 | Tiêu đề cuộc hội thoại | title | String | | Tóm tắt chủ đề trò chuyện |
-| 4 | Danh sách tin nhắn | messages | Array | | Mảng đối tượng tin nhắn |
-| 5 | Thời gian khởi tạo | createdAt | Timestamp | | Thời điểm bắt đầu |
-| 6 | Cập nhật gần nhất | updatedAt | Timestamp | | Thời điểm tin nhắn cuối |
-
-Bảng 2.19. Bảng phiên trò chuyện AI (ChatSessions)
-
-2.3.2.8. Bảng sản phẩm vật tư
-- Tên bảng: ShopProducts
-- Mục đích: Lưu trữ danh mục phân bón, đất trồng, thuốc bảo vệ thực vật và dụng cụ
+#### 2.3.2.4. Bảng lịch sử nhận diện và chẩn đoán
+* **Tên bảng (Collection):** `ScanHistory`
+* **Mục đích:** Lưu trữ toàn bộ kết quả quét nhận diện loài cây và chẩn đoán bệnh lá phục vụ người dùng tra cứu lại và hỗ trợ vòng lặp học chủ động.
 
 | STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã sản phẩm | id | String | PK | Khóa chính |
-| 2 | Tên sản phẩm | name | String | | Tên vật tư bày bán |
-| 3 | Danh mục phân loại | category | String | | Phân bón, Đất trồng, Dụng cụ... |
-| 4 | Giá bán niêm yết | price | Integer | | Đơn giá bán lẻ (VNĐ) |
-| 5 | Giá gốc trước giảm | originalPrice | Integer | | Giá tham chiếu (VNĐ) |
-| 6 | Đường dẫn hình ảnh | imageUrl | String | | Ảnh sản phẩm |
-| 7 | Mô tả chi tiết | description | String | | Thông tin thành phần, công dụng |
-| 8 | Hướng dẫn sử dụng | usageGuide | String | | Cách sử dụng trên cây |
-| 9 | Số lượng tồn kho | stock | Integer | | Số lượng còn lại trong kho |
-| 10 | Trạng thái hiển thị | visible | Boolean | | Hiển thị trên cửa hàng |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã lượt quét | `scanId` | String | PK | Định danh duy nhất tài liệu |
+| 2 | Mã người dùng | `userId` | String | FK | Khóa ngoại liên kết `Users` |
+| 3 | Loại quét | `type` | String | | `plant_discovery` hoặc `disease_diagnosis` |
+| 4 | Kết quả dự đoán | `prediction` | String | | Tên khoa học loài cây hoặc mã bệnh |
+| 5 | Kết quả tiếng Việt | `predictionVi` | String | | Tên hiển thị tiếng Việt chuẩn |
+| 6 | Độ tin cậy mô hình | `confidence` | Double | | Tỷ lệ phần trăm độ tự tin của AI |
+| 7 | Mô hình sử dụng | `modelUsed` | String | | `EfficientNetV2 B0` hoặc `Multimodal LLM` |
+| 8 | Trạng thái kiểm duyệt thực vật | `isValidPlant` | Boolean | | Kết quả xác thực từ CLIP Gatekeeper |
+| 9 | Đường dẫn ảnh chụp | `imageUrl` | String | | Ảnh quét lưu trữ phục vụ đối chiếu |
+| 10 | Thời gian quét | `timestamp` | Timestamp | | Thời điểm thực hiện quét |
 
-Bảng 2.20. Bảng thông tin sản phẩm (ShopProducts)
+*Bảng 2.16. Bảng lịch sử quét (ScanHistory)*
 
-2.3.2.9. Bảng đơn đặt hàng
-- Tên bảng: Orders
-- Mục đích: Lưu trữ thông tin đơn đặt hàng vật tư chăm sóc cây của khách hàng
-
-| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã đơn hàng | orderId | String | PK | Khóa chính |
-| 2 | Mã khách hàng | userId | String | FK | Khóa ngoại liên kết Users |
-| 3 | Danh sách mặt hàng | items | Array | | Danh sách sản phẩm, số lượng, giá |
-| 4 | Tổng giá trị đơn hàng | totalPrice | Integer | | Tổng tiền thanh toán (VNĐ) |
-| 5 | Phương thức thanh toán | paymentMethod | String | | COD, VNPAY, ZALOPAY |
-| 6 | Trạng thái thanh toán | paymentStatus | String | | unpaid, paid, refunded |
-| 7 | Trạng thái giao hàng | status | String | | pending, shipping, delivered, cancelled |
-| 8 | Địa chỉ giao nhận | shippingAddress | String | | Địa chỉ nhận hàng |
-| 9 | Số điện thoại nhận | phoneNumber | String | | SĐT người nhận |
-| 10 | Thời gian đặt hàng | createdAt | Timestamp | | Thời điểm tạo đơn |
-
-Bảng 2.21. Bảng đơn đặt hàng (Orders)
-
-2.3.2.10. Bảng bài viết cẩm nang chăm sóc
-- Tên bảng: PlantHandbook
-- Mục đích: Lưu trữ các bài viết hướng dẫn kỹ thuật trồng và cẩm nang nông học
+#### 2.3.2.5. Bảng cây trồng trong vườn cá nhân
+* **Tên bảng (Collection):** `MyGarden`
+* **Mục đích:** Lưu trữ hồ sơ từng chậu cây mà người dùng đang chăm sóc trong các khu vườn cá nhân cùng 3 chu kỳ chăm sóc độc lập.
 
 | STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Mã bài viết | id | String | PK | Khóa chính |
-| 2 | Tiêu đề bài viết | title | String | | Tên bài hướng dẫn |
-| 3 | Tóm tắt nội dung | summary | String | | Trích dẫn ngắn |
-| 4 | Nội dung chi tiết | content | String | | Nội dung định dạng Markdown/HTML |
-| 5 | Ảnh minh họa | imageUrl | String | | Ảnh bìa bài viết |
-| 6 | Chuyên mục | category | String | | Đất trồng, Ánh sáng, Trừ sâu bệnh |
-| 7 | Trạng thái xuất bản | published | Boolean | | true: đã đăng, false: nháp |
-| 8 | Tác giả biên soạn | author | String | | Chuyên gia thực vật thực hiện |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã cây trong vườn | `id` | String | PK | Khóa chính |
+| 2 | Mã người dùng | `userId` | String | FK | Khóa ngoại liên kết `Users` |
+| 3 | Mã khu vườn | `gardenId` | String | FK | Liên kết không gian vườn `UserGardens` |
+| 4 | Tên khoa học | `scientificName` | String | | Liên kết tra cứu tri thức `plants_info` |
+| 5 | Tên tiếng Việt | `nameVi` | String | | Tên loài cây |
+| 6 | Tên gọi thân mật | `nickname` | String | | Biệt danh riêng do người dùng đặt |
+| 7 | Khu vực đặt cây | `zone` | String | | Phòng khách, Ban công, Bàn làm việc, Sân thượng... |
+| 8 | Ảnh đại diện chậu cây | `imageUrl` | String | | Ảnh thực tế lưu trữ trên đám mây |
+| 9 | Chu kỳ & mốc tưới nước | `waterFrequencyDays` | Integer | | Số ngày/lần kèm `lastWatered`, `nextWatering` |
+| 10 | Chu kỳ bón phân | `fertilizeFrequencyDays` | Integer | | Số ngày/lần (`0` nếu tắt bón phân) kèm `lastFertilized`, `nextFertilizing` |
+| 11 | Chu kỳ kiểm tra & lau lá | `checkPestFrequencyDays` | Integer | | Số ngày/lần kèm `lastCleaned`, `nextCheckPest` |
+| 12 | Khung giờ nhắc nhở | `reminderTime` | String | | Giờ hẹn nhắc lịch (`07:00`, `09:30`, `17:30`, `20:00`) |
+| 13 | Trạng thái sức khỏe | `healthStatus` | String | | Khỏe mạnh, Cần chú ý, tên bệnh lý đang điều trị |
 
-Bảng 2.22. Bảng cẩm nang chăm sóc (PlantHandbook)
+*Bảng 2.17. Bảng cây trong vườn cá nhân (MyGarden)*
 
+#### 2.3.2.6. Bảng nhật ký sinh trưởng cây trồng
+* **Tên bảng (Collection):** `DiaryNotes` *(Subcollection nằm dưới `MyGarden/{plantId}/DiaryNotes`)*
+* **Mục đích:** Lưu trữ dòng thời gian nhật ký theo dõi quá trình sinh trưởng và lịch sử chăm sóc, chẩn đoán bệnh của từng chậu cây.
+
+| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã ghi chép | `noteId` | String | PK | Khóa chính tài liệu |
+| 2 | Mã cây cảnh | `plantId` | String | FK | Khóa ngoại liên kết `MyGarden` |
+| 3 | Loại nhật ký | `type` | String | | `system` (tự động ghi khi chăm sóc/chẩn đoán) hoặc `user` (người dùng tự viết) |
+| 4 | Nhãn mốc sinh trưởng | `tag` | String | | Đâm chồi, Ra hoa, Thay chậu, Chăm sóc, Chẩn đoán |
+| 5 | Tiêu đề nhật ký | `title` | String | | Tiêu đề bản ghi |
+| 6 | Nội dung ghi chú | `content` | String | | Diễn biến sinh trưởng hoặc ghi nhận bệnh án |
+| 7 | Bộ ảnh theo dõi | `imageUrls` | Array | | Danh sách đường dẫn ảnh tại thời điểm ghi |
+| 8 | Thời gian ghi nhận | `timestamp` | Timestamp | | Thời điểm tạo trang nhật ký |
+
+*Bảng 2.18. Bảng nhật ký sinh trưởng (DiaryNotes)*
+
+#### 2.3.2.7. Bảng phiên tương tác trợ lý ảo AI
+* **Tên bảng (Collection):** `ChatSessions`
+* **Mục đích:** Lưu trữ lịch sử các phiên hội thoại tư vấn chăm sóc cây và chẩn đoán sâu bệnh giữa khách hàng với trợ lý ảo AI.
+
+| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã phiên trò chuyện | `sessionId` | String | PK | Khóa chính |
+| 2 | Mã người dùng | `userId` | String | FK | Khóa ngoại liên kết `Users` |
+| 3 | Tiêu đề cuộc hội thoại | `title` | String | | Tiêu đề tự động tóm tắt theo ngữ cảnh |
+| 4 | Danh sách tin nhắn | `messages` | Array | | Mảng tin nhắn (vai trò, nội dung, thẻ sản phẩm/lịch gợi ý) |
+| 5 | Thời gian khởi tạo | `createdAt` | Timestamp | | Thời điểm bắt đầu phiên |
+| 6 | Cập nhật gần nhất | `updatedAt` | Timestamp | | Thời điểm tin nhắn cuối |
+
+*Bảng 2.19. Bảng phiên trò chuyện AI (ChatSessions)*
+
+#### 2.3.2.8. Bảng sản phẩm vật tư
+* **Tên bảng (Collection):** `ShopProducts`
+* **Mục đích:** Lưu trữ danh mục phân bón, giá thể, chế phẩm sinh học đặc trị và dụng cụ chăm sóc cây trong cửa hàng vật tư.
+
+| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã sản phẩm | `id` | String | PK | Khóa chính (VD: `nano-bac-tri-nam`) |
+| 2 | Tên sản phẩm | `name` | String | | Tên vật tư bày bán |
+| 3 | Danh mục phân loại | `category` | String | | Thuốc trị bệnh, Phân bón & Dưỡng, Dụng cụ, Đất trồng |
+| 4 | Giá bán niêm yết | `price` | Integer | | Đơn giá bán lẻ (VNĐ) |
+| 5 | Giá gốc tham chiếu | `originalPrice` | Integer | | Giá trước giảm (VNĐ) |
+| 6 | Đường dẫn hình ảnh | `imageUrl` | String | | Ảnh sản phẩm lưu trữ trên đám mây |
+| 7 | Mô tả & hướng dẫn | `description` | String | | Thông tin thành phần, công dụng và cách dùng (`usageGuide`) |
+| 8 | Bệnh lý chỉ định | `indications` | Array | | Danh sách bệnh cây phù hợp để AI kê đơn |
+| 9 | Số lượng tồn kho | `stock` | Integer | | Số lượng còn lại trong kho |
+| 10 | Lượt bán & đánh giá | `soldCount` | Integer | | Số lượng đã bán và điểm sao trung bình (`rating`) |
+| 11 | Trạng thái hiển thị | `visible` | Boolean | | `true`: đang bán, `false`: tạm ẩn |
+
+*Bảng 2.20. Bảng thông tin sản phẩm (ShopProducts)*
+
+#### 2.3.2.9. Bảng đơn đặt hàng
+* **Tên bảng (Collection):** `Orders`
+* **Mục đích:** Lưu trữ thông tin đơn đặt hàng vật tư chăm sóc cây, phương thức thanh toán và tiến trình giao vận của khách hàng.
+
+| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã đơn hàng | `orderId` | String | PK | Khóa chính đơn hàng |
+| 2 | Mã khách hàng | `userId` | String | FK | Khóa ngoại liên kết `Users` |
+| 3 | Danh sách mặt hàng | `items` | Array | | Danh sách sản phẩm, số lượng, đơn giá |
+| 4 | Giảm giá & mã khuyến mãi | `discountAmount` | Integer | | Số tiền giảm và `voucherCode` đã áp dụng |
+| 5 | Tổng giá trị đơn hàng | `totalPrice` | Integer | | Tổng tiền thanh toán cuối cùng (VNĐ) |
+| 6 | Phương thức thanh toán | `paymentMethod` | String | | `COD`, `ONLINE` (Thanh toán trực tuyến) |
+| 7 | Trạng thái thanh toán | `paymentStatus` | String | | `unpaid`, `paid` |
+| 8 | Trạng thái giao hàng | `status` | String | | `pending`, `shipping`, `completed`, `cancelled` |
+| 9 | Địa chỉ & SĐT nhận | `shippingAddress` | String | | Địa chỉ kèm tọa độ giao hàng và `recipientPhone` |
+| 10 | Trạng thái đánh giá | `isReviewed` | Boolean | | Đánh dấu khách hàng đã đánh giá đơn hàng |
+| 11 | Thời gian đặt hàng | `createdAt` | Timestamp | | Thời điểm khởi tạo đơn |
+
+*Bảng 2.21. Bảng đơn đặt hàng (Orders)*
+
+#### 2.3.2.10. Bảng bài viết cẩm nang chăm sóc
+* **Tên bảng (Collection):** `PlantHandbook`
+* **Mục đích:** Lưu trữ các bài viết chuyên môn về kỹ thuật trồng, xử lý giá thể, ánh sáng và phòng trừ sâu bệnh cho cây cảnh.
+
+| STT | Diễn giải | Tên trường | Kiểu | Ràng buộc | Ghi chú |
+| :---: | :--- | :--- | :--- | :---: | :--- |
+| 1 | Mã bài viết | `id` | String | PK | Khóa chính |
+| 2 | Tiêu đề bài viết | `title` | String | | Tên bài hướng dẫn |
+| 3 | Tóm tắt nội dung | `summary` | String | | Trích dẫn ngắn hiển thị ở thẻ bài viết |
+| 4 | Khối nội dung chi tiết | `blocks` | Array | | Mảng khối nội dung (tiêu đề, đoạn văn, cảnh báo, ảnh minh họa) |
+| 5 | Ảnh bìa bài viết | `coverImage` | String | | Đường dẫn ảnh bìa trên đám mây |
+| 6 | Chuyên mục | `category` | String | | Đất trồng, Ánh sáng, Tưới nước, Sâu bệnh... |
+| 7 | Trạng thái xuất bản | `status` | String | | `published` (hiển thị) hoặc `draft` (bản nháp) |
+| 8 | Tác giả & ngày tạo | `author` | String | | Tên người biên soạn kèm `createdAt` |
+
+*Bảng 2.22. Bảng cẩm nang chăm sóc (PlantHandbook)*
+
+---
+
+# CHƯƠNG 3. TRIỂN KHAI VÀ ĐÁNH GIÁ HỆ THỐNG
+
+Chương này trình bày quá trình cài đặt và triển khai hoàn chỉnh hệ thống nhận diện, chẩn đoán bệnh và hỗ trợ chăm sóc cây cảnh dựa trên các mô hình học sâu ở Chương 1 và bản thiết kế kiến trúc, cơ sở dữ liệu ở Chương 2. Hệ thống được xây dựng đồng bộ trên nền tảng công nghệ hiện đại gồm ứng dụng di động (Flutter, Dart), hệ thống web dành cho người dùng và quản trị viên (Next.js, TypeScript), máy chủ điều phối trung tâm (Spring Boot), dịch vụ suy luận AI (FastAPI, ONNX Runtime) và cơ sở dữ liệu thời gian thực Firebase Firestore.
+
+Nội dung chương tập trung làm rõ môi trường phát triển, định hướng thiết kế giao diện trực quan và kết quả xây dựng phần mềm trên cả hai phía người dùng lẫn quản trị. Qua đó, hệ thống hiện thực hóa trọn vẹn quy trình nghiệp vụ từ xác thực tài khoản, quét ảnh nhận diện loài cây và chẩn đoán bệnh lá đa tầng, quản lý khu vườn thích ứng thời tiết, viết nhật ký sinh trưởng, tư vấn cùng trợ lý ảo AI đến đặt mua vật tư trực tuyến, duyệt nhãn dữ liệu học máy và phân quyền quản trị tập trung.
+
+## 3.1. Môi trường phát triển
+
+Việc lựa chọn môi trường công nghệ và định hướng giao diện đóng vai trò nền tảng để đảm bảo khả năng suy luận AI nhanh chóng, đồng bộ dữ liệu ổn định và thống nhất trải nghiệm sử dụng giữa thiết bị di động với trình duyệt web.
+
+### 3.1.1. Công nghệ và công cụ
+
+Hệ thống được xây dựng dựa trên tổ hợp các công nghệ và công cụ sau:
+
+* **Flutter và ngôn ngữ Dart [10]:** Phát triển ứng dụng di động đa nền tảng với giao diện mượt mà, hỗ trợ chụp ảnh độ phân giải cao, quản lý khu vườn, nhắc lịch chăm sóc, trò chuyện trợ lý ảo AI và mua sắm vật tư.
+* **Next.js (React, TypeScript) và Tailwind CSS [11]:** Xây dựng hệ thống web gồm giao diện dành cho người dùng cuối và cổng quản trị hệ thống tích hợp phân quyền theo vai trò (RBAC).
+* **Python FastAPI [13] và ONNX Runtime [14]:** Xây dựng dịch vụ suy luận AI độc lập vận hành bộ lọc ảnh thực vật CLIP cùng cặp mô hình `EfficientNetV2 B0` định dạng `.onnx` nhận diện loài cây và chẩn đoán bệnh lá.
+* **Java Spring Boot [12]:** Xây dựng máy chủ điều phối trung tâm tiếp nhận yêu cầu tải ảnh, xác thực phiên người dùng, kết nối dịch vụ AI và ghi nhận lịch sử bất đồng bộ.
+* **Firebase (Authentication, Cloud Firestore, Cloud Messaging) [15]:** Cung cấp dịch vụ xác thực tài khoản, cơ sở dữ liệu NoSQL đồng bộ thời gian thực giữa ứng dụng di động và web, cùng dịch vụ thông báo đẩy (FCM).
+* **Mô hình ngôn ngữ lớn đa phương thức (Multimodal LLM) và các dịch vụ tích hợp:** Kết hợp API mô hình LLM phục vụ nhận diện thực vật thế giới mở và trợ lý hội thoại; tích hợp dịch vụ lưu trữ ảnh đám mây (CDN), API dữ liệu thời tiết thời gian thực và cổng thanh toán trực tuyến.
+* **Công cụ phát triển và huấn luyện:** Visual Studio Code, Google Colaboratory (hỗ trợ GPU Tesla T4), Git và GitHub.
+
+### 3.1.2. Lựa chọn giao diện cho bài toán
+
+Giao diện của ứng dụng di động và hệ thống web được thiết kế theo phong cách hiện đại, trực quan với tông màu xanh lá tự nhiên làm chủ đạo, hỗ trợ chế độ Sáng/Tối trên di động cùng bố cục thẻ thông tin rõ ràng để làm nổi bật hình ảnh thực vật và các chỉ số chăm sóc. Trên ứng dụng di động, thanh điều hướng phía dưới kết hợp nút quét ảnh trung tâm giúp rút ngắn thao tác tới tính năng chính, đồng thời phân tách rành mạch giữa luồng nhận diện loài cây mới tại màn hình quét và luồng chẩn đoán bệnh lá bên trong từng hồ sơ cây của khu vườn cá nhân.
+
+Trên nền tảng web, giao diện được thiết kế đáp ứng linh hoạt (Responsive Design) cho cả màn hình máy tính và thiết bị di động: phân hệ người dùng cuối sử dụng thanh điều hướng trên cùng và đồng bộ trực tiếp các thành phần như thẻ thời tiết, cẩm nang chăm sóc, trò chuyện trợ lý ảo đa phương thức, giỏ hàng và lịch sử đơn hàng với ứng dụng di động; trong khi phân hệ cổng quản trị áp dụng bố cục bảng điều khiển (Dashboard) có thanh menu bên trái phân nhóm theo vai trò (RBAC) cùng các trạng thái chờ và hộp thoại xác nhận cho những thao tác quan trọng.
+
+## 3.2. Xây dựng phần mềm
+
+Trên cơ sở các ca sử dụng và cơ sở dữ liệu đã thiết kế, hệ thống được triển khai thành các giao diện chức năng hoàn chỉnh phục vụ người dùng cuối trên ứng dụng di động, cổng web và đội ngũ vận hành trên cổng quản trị.
+
+### 3.2.1. Giao diện đăng ký, đăng nhập và đặt lại mật khẩu
+
+Giao diện xác thực được thiết kế đơn giản, rõ ràng trên cả di động và web, hỗ trợ đăng ký tài khoản mới (kèm kiểm tra khớp mật khẩu), đăng nhập bằng email/mật khẩu, đăng nhập liên kết một chạm và luồng quên mật khẩu gửi liên kết đặt lại về email. Hệ thống thực hiện kiểm tra hợp lệ dữ liệu đầu vào trước khi gửi xác thực và hiển thị trạng thái chờ cùng thông báo lỗi trực quan.
+
+`[Chèn ảnh ghép Giao diện đăng ký tài khoản trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.1. Giao diện đăng ký tài khoản trên nền tảng Web và di động*
+
+`[Chèn ảnh ghép Giao diện đăng nhập trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.2. Giao diện đăng nhập trên nền tảng Web và di động*
+
+### 3.2.2. Giao diện trang chủ và cẩm nang chăm sóc
+
+Trang chủ hiển thị thông tin thời tiết địa phương theo thời gian thực kèm thẻ gợi ý chăm sóc thích ứng theo điều kiện nhiệt độ, độ ẩm và gió. Bên dưới là danh sách việc cần làm trong ngày cho các chậu cây đến hạn và chuyên mục cẩm nang nông học với các bài viết về đất trồng, ánh sáng và phòng trừ sâu bệnh.
+
+`[Chèn ảnh ghép Giao diện trang chủ, thẻ thời tiết và cẩm nang trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.3. Giao diện trang chủ và cẩm nang chăm sóc trên nền tảng Web và di động*
+
+### 3.2.3. Giao diện nhận diện loài cây và từ điển thực vật
+
+Trước khi mở camera hoặc tải ảnh lên, giao diện hiển thị hướng dẫn chọn góc chụp rõ nét. Ảnh chụp sau khi qua bộ lọc chất lượng, bộ lọc CLIP và mô hình nhận diện sẽ trả về tên loài cây, độ tin cậy và hồ sơ từ điển thực vật (ánh sáng, lượng nước, nhiệt độ, độ ẩm, độc tính). Với loài chưa có trong từ điển, hệ thống cho phép gửi yêu cầu bổ sung dữ liệu hoặc lưu nhanh vào khu vườn.
+
+`[Chèn ảnh ghép Giao diện kết quả nhận diện và từ điển thực vật trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.4. Giao diện kết quả nhận diện và từ điển thực vật trên nền tảng Web và di động*
+
+### 3.2.4. Giao diện quản lý khu vườn và nhật ký sinh trưởng
+
+Người dùng có thể tạo nhiều không gian vườn (trong nhà, ngoài trời, văn phòng, nhà kính), lọc cây theo vị trí đặt và theo dõi 3 tác vụ độc lập cho từng cây: tưới nước, bón phân và kiểm tra sâu bệnh/lau lá. Toàn bộ thao tác chăm sóc và ghi chép cá nhân kèm hình ảnh được lưu thành dòng thời gian trong nhật ký sinh trưởng.
+
+`[Chèn ảnh ghép Giao diện quản lý khu vườn và lịch chăm sóc trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.5. Giao diện quản lý khu vườn và lịch chăm sóc trên nền tảng Web và di động*
+
+### 3.2.5. Giao diện chẩn đoán bệnh lý trên lá cây
+
+Từ màn hình chi tiết cây trong vườn, người dùng chụp hoặc tải ảnh cận cảnh phiến lá có dấu hiệu bất thường để hệ thống chẩn đoán nhóm bệnh. Màn hình báo cáo hiển thị tên bệnh, mức độ nguy hiểm, hồ sơ bệnh học (tác nhân, cơ chế gây hại, điều kiện phát sinh, phòng ngừa), kèm tùy chọn cập nhật bệnh án lên hồ sơ cây hoặc chuyển sang hỏi trợ lý ảo AI.
+
+`[Chèn ảnh ghép Giao diện báo cáo chẩn đoán bệnh lá trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.6. Giao diện báo cáo chẩn đoán bệnh lá trên nền tảng Web và di động*
+
+### 3.2.6. Giao diện tương tác trợ lý ảo AI
+
+Giao diện trò chuyện hỗ trợ phản hồi văn bản định dạng rõ ràng theo thời gian thực và lưu trữ các phiên hội thoại trên cơ sở dữ liệu. Trợ lý tự động tiếp nhận ngữ cảnh loài cây đang xem để tư vấn sát thực tế, tuân thủ ràng buộc chủ đề thực vật học và hỗ trợ đính kèm thẻ áp dụng lịch chăm sóc hoặc gợi ý vật tư đặc trị phù hợp.
+
+`[Chèn ảnh ghép Giao diện hội thoại trợ lý ảo AI trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.7. Giao diện tư vấn cùng trợ lý ảo AI trên nền tảng Web và di động*
+
+### 3.2.7. Giao diện cửa hàng vật tư, giỏ hàng và thanh toán
+
+Cửa hàng cung cấp danh mục vật tư phân theo loại, hỗ trợ tìm kiếm, xem tồn kho thực tế và đánh giá có ảnh từ khách hàng đã mua. Khi đặt hàng, người dùng chọn sản phẩm trong giỏ hàng, chọn địa chỉ từ sổ địa chỉ (hỗ trợ ghim vị trí bản đồ), áp dụng mã giảm giá và chọn thanh toán trực tuyến hoặc tiền mặt khi nhận hàng (COD), đồng thời theo dõi tiến trình giao hàng tại lịch sử đơn hàng.
+
+`[Chèn ảnh ghép Giao diện cửa hàng vật tư và chi tiết sản phẩm trên nền tảng Web và ứng dụng di động]`  
+*Hình 3.8. Giao diện cửa hàng vật tư và chi tiết sản phẩm trên nền tảng Web và di động*
+
+### 3.2.8. Giao diện tổng quan quản trị và giám sát hệ thống
+
+Trang tổng quan quản trị hiển thị số liệu thống kê người dùng, lượt quét AI, đơn hàng và doanh thu theo thời gian. Phân hệ giám sát kiểm tra trực tiếp trạng thái hoạt động của cơ sở dữ liệu, dịch vụ suy luận AI, máy chủ điều phối, dịch vụ lưu trữ đám mây và cổng thanh toán, kèm nhật ký thao tác quản trị.
+
+`[Chèn ảnh Giao diện tổng quan và giám sát sức khỏe hệ thống trên Web Admin]`  
+*Hình 3.9. Giao diện tổng quan và giám sát sức khỏe hệ thống trên Web Admin*
+
+### 3.2.9. Giao diện quản lý từ điển thực vật và hồ sơ bệnh học
+
+Phân hệ Tri thức thực vật trên cổng quản trị cho phép chuyên gia thực vật và quản trị viên tra cứu, thêm mới, chỉnh sửa thông số sinh thái của từng loài cây (ánh sáng, chu kỳ tưới, độ ẩm, nhiệt độ, độc tính) và cập nhật hồ sơ bệnh học (tác nhân gây hại, cơ chế lây nhiễm, điều kiện thuận lợi, biện pháp phòng ngừa). Mọi thay đổi sau khi lưu được đồng bộ tức thì lên cơ sở dữ liệu phục vụ người dùng cuối.
+
+`[Chèn ảnh Giao diện quản lý từ điển thực vật và hồ sơ bệnh học trên Web Admin]`  
+*Hình 3.10. Giao diện quản lý từ điển thực vật và hồ sơ bệnh học*
+
+### 3.2.10. Giao diện cấu hình quy tắc trợ lý ảo AI
+
+Trang cấu hình quy tắc trợ lý ảo trên cổng quản trị cho phép quản trị viên và chuyên gia thực vật thiết lập, chỉnh sửa và bật/tắt các quy tắc ràng buộc hành vi cho trợ lý ảo AI như giới hạn phạm vi chủ đề thực vật học, quy tắc từ chối câu hỏi ngoài lề, quy chuẩn định dạng phản hồi và kiểm soát danh sách vật tư được phép gợi ý.
+
+`[Chèn ảnh Giao diện cấu hình quy tắc trợ lý ảo AI trên Web Admin]`  
+*Hình 3.11. Giao diện cấu hình quy tắc trợ lý ảo AI*
+
+### 3.2.11. Giao diện quản trị sản phẩm, kho hàng và đơn hàng
+
+Phân hệ thương mại hỗ trợ quản lý danh mục sản phẩm, tải ảnh vật tư, tạo mã giảm giá, theo dõi phiếu biến động nhập/xuất tồn kho, duyệt và cập nhật trạng thái đơn hàng cũng như kiểm duyệt, phản hồi đánh giá của khách hàng.
+
+`[Chèn ảnh Giao diện quản lý sản phẩm, kho hàng và đơn hàng trên Web Admin]`  
+*Hình 3.12. Giao diện quản lý sản phẩm, kho hàng và đơn hàng*
+
+### 3.2.12. Giao diện quản lý người dùng
+
+Phân hệ quản lý người dùng cho phép quản trị viên theo dõi danh sách khách hàng đang sử dụng hệ thống, tìm kiếm nhanh theo tên hoặc email, kiểm tra trạng thái hoạt động, xem chi tiết khu vườn, lịch sử quét và đơn hàng của từng tài khoản cũng như thực hiện khóa hoặc mở khóa tài khoản khi cần thiết.
+
+`[Chèn ảnh Giao diện quản lý người dùng trên Web Admin]`  
+*Hình 3.13. Giao diện quản lý người dùng trên Web Admin*
+
+### 3.2.13. Giao diện phân quyền tài khoản nội bộ (RBAC)
+
+Phân hệ phân quyền cho phép quản trị viên cấp cao khởi tạo tài khoản quản trị nội bộ, gán vai trò phù hợp (Quản trị viên hệ thống, Chuyên gia thực vật, Nhân viên vận hành) và thiết lập ma trận phân quyền chi tiết đến từng thao tác (*Xem, Tạo, Sửa, Xóa*) cho từng mô-đun chức năng nhằm đảm bảo an toàn vận hành.
+
+`[Chèn ảnh Giao diện quản lý tài khoản nội bộ và ma trận phân quyền RBAC trên Web Admin]`  
+*Hình 3.14. Giao diện phân quyền tài khoản nội bộ (RBAC)*
+
+---
+
+# KẾT LUẬN
+
+Qua thời gian nghiên cứu lý thuyết, thu thập và chuẩn hóa dữ liệu thực vật, thực nghiệm đối chứng các kiến trúc học sâu và triển khai xây dựng hệ thống phần mềm đa nền tảng, đề tài *“Xây dựng ứng dụng trí tuệ nhân tạo nhận diện và chăm sóc cây cảnh”* đã hoàn thành toàn bộ các mục tiêu và nhiệm vụ đề ra. Quá trình thực hiện giúp giải quyết bài toán thực tiễn của người trồng cây cảnh đô thị trong việc định danh loài cây chính xác, phát hiện sớm bệnh lý trên lá và duy trì chế độ chăm sóc khoa học theo điều kiện thời tiết.
+
+Bên cạnh việc làm chủ quy trình huấn luyện và tối ưu hóa mô hình học sâu chuẩn ONNX kết hợp cùng bộ lọc tiền kiểm duyệt và mô hình ngôn ngữ lớn đa phương thức, đồ án đã hiện thực hóa thành công một hệ sinh thái phần mềm hoàn chỉnh gồm ứng dụng di động, hệ thống web người dùng – quản trị, dịch vụ suy luận AI và máy chủ điều phối trung tâm đồng bộ thời gian thực. Những nội dung dưới đây tổng kết lại các kết quả nổi bật đã đạt được, chỉ ra những hạn chế khách quan còn tồn tại trong quá trình thử nghiệm và đề xuất định hướng phát triển tiếp theo cho hệ thống.
+
+## 1. Kết quả đạt được
+
+Đề tài đã hoàn thành các mục tiêu nghiên cứu và xây dựng hệ thống theo đúng kế hoạch đặt ra:
+
+* **Về nghiên cứu học sâu:** Xây dựng hai bộ dữ liệu gồm **77.252 ảnh** (40 loài cây) và **2.307 ảnh** (5 nhóm bệnh lá); huấn luyện đối chứng ba kiến trúc mạng gọn nhẹ và lựa chọn **EfficientNetV2 B0** xuất sang chuẩn **ONNX**, đạt độ chính xác **90,00%** (438 FPS) cho nhận diện loài cây và **92,48%** (106 FPS) cho chẩn đoán bệnh lá; xây dựng thành công luồng suy luận đa tầng kết hợp kiểm tra độ sáng, bộ lọc CLIP, ONNX và Multimodal LLM.
+* **Về phát triển phần mềm:** Triển khai hoàn chỉnh hệ thống đa nền tảng gồm ứng dụng di động (Flutter), cổng web người dùng và quản trị (Next.js), dịch vụ suy luận AI (FastAPI) và máy chủ điều phối trung tâm (Spring Boot) đồng bộ qua Cloud Firestore với đầy đủ tính năng nhận diện, chẩn đoán, quản lý vườn thích ứng thời tiết, trợ lý ảo AI, thương mại vật tư và phân quyền RBAC.
+
+## 2. Hạn chế
+
+* Bộ mô hình ONNX chạy ngoại tuyến mới hỗ trợ cố định 40 loài cây cảnh và 5 nhóm bệnh lá; vẫn còn hiện tượng nhầm lẫn cục bộ giữa *Bệnh đốm lá nấm* và *Cháy bìa lá vi khuẩn* khi các vết tổn thương lan dày sát mép lá.
+* Các tính năng mở rộng như nhận diện thế giới mở, trợ lý hội thoại AI và cập nhật dữ liệu thời tiết thời gian thực phụ thuộc vào kết nối Internet ổn định.
+* Cổng thanh toán trực tuyến và hệ thống máy chủ hiện đang vận hành ở môi trường thử nghiệm phục vụ đánh giá đồ án.
+
+## 3. Hướng phát triển
+
+* Mở rộng bộ dữ liệu từ nguồn ảnh kiểm duyệt qua phân hệ AI Lab để nâng số lượng loài cây, bổ sung thêm các nhóm sâu hại và phân loại mức độ bệnh.
+* Nghiên cứu lượng tử hóa mô hình (*INT8 Quantization*) để chạy suy luận nhẹ trực tiếp trên thiết bị di động khi ngoại tuyến.
+* Tích hợp cổng thanh toán chính thức, đơn vị giao vận thực tế và kết nối cảm biến IoT (độ ẩm đất, ánh sáng) phục vụ tự động hóa chăm sóc khu vườn.
+
+---
 
 # TÀI LIỆU THAM KHẢO
 
@@ -1090,14 +1297,45 @@ Bảng 2.22. Bảng cẩm nang chăm sóc (PlantHandbook)
 
 [2] Yehui Tang, Kai Han, Jianyuan Guo, Chang Xu, Chao Xu, Yunhe Wang, GhostNetV2: Enhance Cheap Operation with Long-Range Attention, Advances in Neural Information Processing Systems (NeurIPS), 2022.
 
-[3] Sachin Mehta, Mohammad Rastegari, MobileViT: Light - weight, General-purpose, and Mobile-friendly Vision Transformer, International Conference on Learning Representations (ICLR), 2022.
+[3] Andrew Howard, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan, Weijun Wang, Yukun Zhu, Ruoming Pang, Vijay Vasudevan, Quoc V. Le, Hartwig Adam, Searching for MobileNetV3, Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2019.
 
-[4] Andrew Howard, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan, Weijun Wang, Yukun Zhu, Ruoming Pang, Vijay Vasudevan, Quoc V. Le, Hartwig Adam, Searching for MobileNetV3, Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2019.
+[4] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, Ilya Sutskever, Learning Transferable Visual Models From Natural Language Supervision, Proceedings of the 38th International Conference on Machine Learning (ICML), 2021.
 
-[5] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, Ilya Sutskever, Learning Transferable Visual Models From Natural Language Supervision, Proceedings of the 38th International Conference on Machine Learning (ICML), 2021.
+[5] Davinder Singh, Naman Jain, Pranjali Jain, Pratik Kayal, Sudhakar Kumawat, Nipun Batra, PlantDoc: A Dataset for Visual Plant Disease Detection, Proceedings of the 7th ACM IKDD CoDS and 25th COMAD, 2020.
 
-[6] Davinder Singh, Naman Jain, Pranjali Jain, Pratik Kayal, Sudhakar Kumawat, Nipun Batra, PlantDoc: A Dataset for Visual Plant Disease Detection, Proceedings of the 7th ACM IKDD CoDS and 25th COMAD, 2020 (Nguồn dữ liệu Kaggle: https://www.kaggle.com/datasets/nirmalsankalana/plantdoc-dataset).
+[6] Arya Shah, Mango Leaf Disease Dataset, Kaggle Dataset, 2022.
 
-[7] Arya Shah, **Mango Leaf Disease Dataset**, Kaggle, Link: https://www.kaggle.com/datasets/aryashah2k/mango-leaf-disease-dataset.
+[7] Nishad, Indoor Plant Disease Dataset, Roboflow Universe Dataset, 2023.
 
-[8] Nishad, **Indoor Plant Disease Dataset**, Roboflow Universe, Link: https://universe.roboflow.com/nishad-a6yze/indoor-plant-disease-dataset-odg74.
+[8] Ian Sommerville, Software Engineering, 10th Edition, Pearson, 2016.
+
+[9] Object Management Group (OMG), Unified Modeling Language (UML) Specification, Version 2.5.1, 2017.
+
+[10] Google LLC, Flutter & Dart Official Documentation, Google Developers.
+
+[11] Vercel Inc., Next.js App Router Official Documentation, Vercel.
+
+[12] VMware Tanzu / Broadcom, Spring Boot Reference Documentation, Spring Framework.
+
+[13] Sebastián Ramírez, FastAPI Framework Official Documentation.
+
+[14] Microsoft & ONNX Community, ONNX Runtime Official Documentation.
+
+[15] Google Firebase, Firebase Authentication, Cloud Firestore & Cloud Messaging Documentation.
+
+---
+
+# NHẬN XÉT CỦA GIẢNG VIÊN HƯỚNG DẪN
+
+.......................................................................................................................................
+
+.......................................................................................................................................
+
+.......................................................................................................................................
+
+.......................................................................................................................................
+
+Kết luận: Đồng ý / Không đồng ý cho sinh viên **Trần Ngọc Hải** bảo vệ đồ án trước Hội đồng.
+
+*Nghệ An, ngày ...... tháng ...... năm 2026*  
+**Giảng viên hướng dẫn**

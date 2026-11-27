@@ -13,7 +13,6 @@ export function AuthShell({ title, subtitle, children, quote }: { title: string;
         <div className="absolute inset-0 bg-gradient-to-t from-forest via-forest/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-12 text-forest-foreground">
           <p className="max-w-md text-3xl font-semibold leading-tight">{quote ?? "“Khu vườn là nơi thời gian chậm lại — và Floria giúp bạn không bỏ lỡ chiếc lá nào.”"}</p>
-          <p className="mt-4 text-sm text-forest-foreground/70">Floria · Modern Botanical Platform</p>
         </div>
       </div>
       <div className="flex flex-col bg-background">

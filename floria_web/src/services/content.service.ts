@@ -1,4 +1,4 @@
-import { env, isMock } from "@/config/env";
+﻿import { env, isMock } from "@/config/env";
 import { readDb, writeDb } from "@/mocks/user/db";
 import { setRuntimeDiseasesInfo } from "@/mocks/user/diseases";
 import { HOME_WEATHER_WIDGETS, PLANT_HANDBOOK } from "@/mocks/user/handbook";

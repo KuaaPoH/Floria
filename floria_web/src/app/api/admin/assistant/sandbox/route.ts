@@ -48,6 +48,42 @@ async function getProductCatalogBlock(disabledIds: Set<string>): Promise<string>
   }
 }
 
+type InlineImagePart = { inlineData: { mimeType: string; data: string } };
+
+async function imageToInlinePart(src: string): Promise<InlineImagePart | null> {
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("data:")) {
+    const commaIdx = trimmed.indexOf(",");
+    if (commaIdx === -1) return null;
+    const header = trimmed.slice(5, commaIdx);
+    const data = trimmed.slice(commaIdx + 1).trim();
+    if (!data) return null;
+    const mimeType = header.split(";")[0]?.trim() || "image/jpeg";
+    return { inlineData: { mimeType, data } };
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    try {
+      const res = await fetch(trimmed, { signal: AbortSignal.timeout(8_000) });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const buf = Buffer.from(await blob.arrayBuffer());
+      return {
+        inlineData: {
+          mimeType: blob.type || "image/jpeg",
+          data: buf.toString("base64"),
+        },
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     await verifyAdminRequest(req);
@@ -61,7 +97,8 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as {
       message?: string;
-      history?: Array<{ role: "user" | "model"; text: string }>;
+      images?: string[];
+      history?: Array<{ role: "user" | "model"; text: string; images?: string[] }>;
       name?: string;
       tone?: string;
       defaultModel?: string;
@@ -71,8 +108,12 @@ export async function POST(req: Request) {
     };
 
     const message = String(body.message ?? "").trim();
-    if (!message) {
-      return NextResponse.json({ error: "Vui lòng nhập câu hỏi kiểm thử." }, { status: 400 });
+    const images = Array.isArray(body.images)
+      ? body.images.map(String).map((s) => s.trim()).filter(Boolean).slice(0, 3)
+      : [];
+
+    if (!message && images.length === 0) {
+      return NextResponse.json({ error: "Vui lòng nhập câu hỏi hoặc đính kèm ảnh kiểm thử." }, { status: 400 });
     }
 
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
@@ -114,17 +155,67 @@ export async function POST(req: Request) {
       ? [body.defaultModel.trim(), ...GEMINI_MODELS.filter((m) => m !== body.defaultModel?.trim())]
       : GEMINI_MODELS;
 
+    const rawHistory = Array.isArray(body.history)
+      ? body.history
+          .filter((m) => m && (m.text?.trim() || (Array.isArray(m.images) && m.images.length > 0)))
+          .slice(-12)
+      : [];
+
+    // Giữ lại tối đa 2 lượt user gần nhất có ảnh để giữ ngữ cảnh mà không phình payload
+    let remainingHistoryImageTurns = 2;
+    const historyImageTurnsToKeep = new Set<number>();
+    for (let i = rawHistory.length - 1; i >= 0 && remainingHistoryImageTurns > 0; i--) {
+      const m = rawHistory[i];
+      if (m.role !== "model" && Array.isArray(m.images) && m.images.length > 0) {
+        historyImageTurnsToKeep.add(i);
+        remainingHistoryImageTurns -= 1;
+      }
+    }
+
+    const historyContents = await Promise.all(
+      rawHistory.map(async (m, idx) => {
+        const parts: Array<Record<string, unknown>> = [];
+        const textVal = String(m.text ?? "").trim();
+        if (textVal) {
+          parts.push({ text: textVal });
+        }
+        if (historyImageTurnsToKeep.has(idx) && Array.isArray(m.images)) {
+          for (const img of m.images.slice(0, 3)) {
+            const part = await imageToInlinePart(String(img));
+            if (part) parts.push(part);
+          }
+        }
+        if (parts.length === 0) {
+          parts.push({ text: "[Người dùng đã gửi ảnh cây trồng]" });
+        }
+        return {
+          role: m.role === "model" ? "model" : "user",
+          parts,
+        };
+      }),
+    );
+
+    const userParts: Array<Record<string, unknown>> = [];
+    userParts.push({
+      text: message || "Hãy nhận diện và tư vấn tình trạng cây trồng trong ảnh này.",
+    });
+
+    let attachedImageCount = 0;
+    for (const img of images) {
+      const part = await imageToInlinePart(img);
+      if (part) {
+        userParts.push(part);
+        attachedImageCount += 1;
+      }
+    }
+
+    if (!message && attachedImageCount === 0) {
+      return NextResponse.json({ error: "Ảnh đính kèm không hợp lệ." }, { status: 400 });
+    }
+
     const contents = [
-      ...(Array.isArray(body.history)
-        ? body.history
-            .filter((m) => m && m.text?.trim())
-            .slice(-12)
-            .map((m) => ({
-              role: m.role === "model" ? "model" : "user",
-              parts: [{ text: m.text }],
-            }))
-        : []),
-      { role: "user", parts: [{ text: message }] },
+      ...historyContents,
+      { role: "user", parts: userParts },
     ];
 
     for (const model of modelsToTry) {
@@ -133,12 +224,12 @@ export async function POST(req: Request) {
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
           {
             method: "POST",
-            signal: AbortSignal.timeout(12_000),
+            signal: AbortSignal.timeout(25_000),
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: fullSystemInstruction }] },
               contents,
-              generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+              generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
             }),
           },
         );
