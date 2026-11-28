@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CareScheduleCard } from "@/features/garden/CareScheduleCard";
 import { EditCareSchedulesDialog } from "@/features/garden/EditCareSchedulesDialog";
+import { ImageUploader } from "@/components/shared/image-uploader";
 import { computeEffectiveStatus, locationChips } from "@/features/garden/logic";
 import { PlantDiary } from "@/features/garden/PlantDiary";
 import { useDiseases, useGardens, usePlantMutations, usePlants, useScanHistory, useSchedules, useSpecies } from "@/hooks/queries";
@@ -45,7 +46,7 @@ export default function PlantDetailPage() {
   const [editSchedulesOpen, setEditSchedulesOpen] = useState(false);
   const [delOpen, setDelOpen] = useState(false);
   const plant = plantsQ.data?.find((p) => p.id === plantId);
-  const [form, setForm] = useState({ nickname: "", location: "", gardenId: "" });
+  const [form, setForm] = useState({ nickname: "", location: "", gardenId: "", image: "" });
 
   if (plantsQ.isLoading) return <LoadingState className="min-h-[60vh]" />;
   if (plantsQ.isError) return <PageContainer><ErrorState onRetry={() => plantsQ.refetch()} /></PageContainer>;
@@ -76,7 +77,7 @@ export default function PlantDetailPage() {
   const plantScans = scans.filter((s) => s.type === "diagnose" && s.plantId === plant.id).slice(0, 4);
 
   const openEdit = () => {
-    setForm({ nickname: plant.nickname, location: plant.location, gardenId: plant.gardenId });
+    setForm({ nickname: plant.nickname, location: plant.location, gardenId: plant.gardenId, image: plant.image });
     setEditOpen(true);
   };
 
@@ -244,9 +245,18 @@ export default function PlantDetailPage() {
       </Tabs>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="rounded-3xl sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl sm:max-w-md">
           <DialogHeader><DialogTitle>Chỉnh sửa cây</DialogTitle></DialogHeader>
           <div className="space-y-4">
+            <Field label="Ảnh cây" htmlFor="plant-img">
+              <ImageUploader
+                aspect="wide"
+                className="max-h-44"
+                label="Kéo thả hoặc chọn ảnh mới cho cây"
+                value={form.image}
+                onChange={(url) => setForm({ ...form, image: url })}
+              />
+            </Field>
             <Field label="Tên riêng" htmlFor="nn" error={form.nickname.trim() ? undefined : "Vui lòng nhập tên"}><Input id="nn" value={form.nickname} maxLength={40} onChange={(e) => setForm({ ...form, nickname: e.target.value })} /></Field>
             <Field label="Khu vườn" htmlFor="gd">
               <Select value={form.gardenId} onValueChange={(v) => setForm({ ...form, gardenId: v })}>
@@ -262,7 +272,15 @@ export default function PlantDetailPage() {
             <Button
               disabled={!form.nickname.trim() || !form.location.trim() || update.isPending}
               onClick={async () => {
-                await update.mutateAsync({ id: plant.id, patch: { nickname: form.nickname.trim(), location: form.location.trim(), gardenId: form.gardenId } });
+                await update.mutateAsync({
+                  id: plant.id,
+                  patch: {
+                    nickname: form.nickname.trim(),
+                    location: form.location.trim(),
+                    gardenId: form.gardenId,
+                    image: form.image.trim() || plant.image,
+                  },
+                });
                 toast.success("Đã cập nhật cây");
                 setEditOpen(false);
                 if (form.gardenId !== gardenId) router.push(`/garden/${form.gardenId}/plants/${plant.id}`);

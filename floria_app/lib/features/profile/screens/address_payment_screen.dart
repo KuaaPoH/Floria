@@ -227,6 +227,7 @@ class _AddressAndPaymentScreenState extends State<AddressAndPaymentScreen> {
             content: SizedBox(
               width: 480,
               child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 10, bottom: 4),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,

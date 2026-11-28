@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -5,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart' hide ChatSession;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../../core/services/ai_config_service.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/widgets/custom_image.dart';
 import '../../garden/providers/garden_provider.dart';
@@ -681,7 +683,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             if (gardens.isNotEmpty) {
               buffer.writeln("DANH SÁCH CÁC KHU VƯỜN CỦA NGƯỜI DÙNG (${gardens.length} khu vườn):");
               for (final g in gardens) {
-                buffer.writeln("- Khu vườn \"${g.name}\" (Môi trường: ${g.environment}, ID: ${g.id})");
+                buffer.writeln("- Khu vườn \"${g.name}\" (Môi trường: ${g.environment}, Ánh sáng: ${g.lightCondition}, ID: ${g.id})");
               }
             }
             if (plants.isNotEmpty) {
@@ -690,7 +692,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               for (final p in plants) {
                 final gName = gNameMap[p.gardenId] ?? "Khu vườn chính";
                 final pName = p.nickname.trim().isNotEmpty ? p.nickname : p.nameVi;
-                buffer.writeln("- \"$pName\" (${p.scientificName}) -> Thuộc khu vườn: \"$gName\", Vị trí cụ thể: ${p.zone}, Trạng thái: ${p.healthStatus}");
+                final due = <String>[
+                  if (p.isNeedsWater) "Cần tưới nước hôm nay",
+                  if (p.isNeedsFertilizer) "Cần bón phân hôm nay",
+                  if (p.isNeedsClean) "Cần kiểm tra sâu bệnh hôm nay",
+                ];
+                final noteText = p.notes.trim().isNotEmpty ? ", Ghi chú: ${p.notes.trim()}" : "";
+                buffer.writeln(
+                  "- \"$pName\" (${p.scientificName}) -> Khu vườn: \"$gName\", Vị trí: ${p.zone}, Trạng thái: ${p.healthStatus}, Chu kỳ: tưới ${p.waterFrequencyDays} ngày / bón phân ${p.fertilizeFrequencyDays} ngày / kiểm tra ${p.checkPestFrequencyDays} ngày${due.isNotEmpty ? ", Việc đến hạn: ${due.join(", ")}" : ""}$noteText",
+                );
               }
             }
             plantCtx = buffer.toString().trim();
@@ -734,19 +744,30 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         }
       }
 
-      // Khi stream xong: trích xuất các sản phẩm được kê đơn
-      final matches = productRegex.allMatches(accumulated);
+      // Khi stream xong: trích xuất các sản phẩm được kê đơn (nếu thẻ sản phẩm đang bật)
       final List<String> productIds = [];
-      for (final m in matches) {
-        if (m.group(1) != null) {
-          final pid = m.group(1)!.trim();
-          if (!productIds.contains(pid)) productIds.add(pid);
+      if (AiConfigService.enableProductTags) {
+        final matches = RegExp(r'\[RECOMMEND_PRODUCT:\s*([^\]]+)\]').allMatches(accumulated);
+        for (final m in matches) {
+          final rawIds = m.group(1) ?? '';
+          for (final pid in rawIds.split(RegExp(r'[,\s]+')).map((e) => e.trim()).where((e) => e.isNotEmpty)) {
+            if (!productIds.contains(pid)) productIds.add(pid);
+          }
+        }
+        for (final m in webProductRegex.allMatches(accumulated)) {
+          try {
+            final parsed = jsonDecode((m.group(1) ?? '').trim()) as Map<String, dynamic>;
+            final pid = (parsed['productId'] ?? '').toString().trim();
+            if (pid.isNotEmpty && !productIds.contains(pid)) {
+              productIds.add(pid);
+            }
+          } catch (_) {}
         }
       }
 
-      // Trích xuất đề xuất lịch chăm sóc từ AI
+      // Trích xuất đề xuất lịch chăm sóc từ AI (nếu thẻ lịch chăm sóc đang bật)
       CareScheduleProposal? proposedCare;
-      final careMatch = careRegex.firstMatch(accumulated);
+      final careMatch = AiConfigService.enableCareScheduleTags ? careRegex.firstMatch(accumulated) : null;
       if (careMatch != null) {
         final w = int.tryParse(careMatch.group(1) ?? '3') ?? 3;
         final f = int.tryParse(careMatch.group(2) ?? '20') ?? 20;

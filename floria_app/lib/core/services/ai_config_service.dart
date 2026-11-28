@@ -16,7 +16,11 @@ class AiConfigService {
   static String assistantTone = '';
   static String assistantDefaultModel = '';
   static String assistantSystemPrompt = '';
-  static List<String> assistantGuardrails = [];
+  static bool enableProductTags = true;
+  static bool enableCareScheduleTags = true;
+  static const String antiHallucinationGuardrail =
+      '[Cấm bịa đặt số liệu, giá bán & dữ liệu hệ thống]: TUYỆT ĐỐI KHÔNG tự suy đoán hoặc bịa đặt giá bán, giá gốc, chương trình giảm giá, mã voucher, số lượng tồn kho, quy cách đóng gói hay thông tin khu vườn của người dùng. Mọi con số về giá tiền, khuyến mãi, tồn kho và lịch chăm sóc PHẢI lấy chính xác 100% từ dữ liệu hệ thống cung cấp trong ngữ cảnh. Nếu sản phẩm hoặc thông tin người dùng hỏi không có trong danh sách dữ liệu, phải trả lời trung thực là hiện chưa có thông tin/sản phẩm đó trên hệ thống Floria.';
+  static List<String> assistantGuardrails = [antiHallucinationGuardrail];
   static List<String> disabledProductIds = [];
 
   static Future<void> loadOnAppStart() async {
@@ -59,10 +63,21 @@ class AiConfigService {
           'assistantSystemPrompt': assistantSystemPrompt,
           'assistantGuardrails': assistantGuardrails,
           'disabledProductIds': disabledProductIds,
+          'enableProductTags': enableProductTags,
+          'enableCareScheduleTags': enableCareScheduleTags,
         }),
       );
     } catch (e) {
       debugPrint('AiConfigService fallback to cached/default: $e');
+    }
+  }
+
+  static void _ensureAntiHallucinationRule() {
+    final hasRule = assistantGuardrails.any(
+      (r) => r.contains('bịa đặt giá') || r.contains('Cấm bịa đặt số liệu'),
+    );
+    if (!hasRule) {
+      assistantGuardrails = [...assistantGuardrails, antiHallucinationGuardrail];
     }
   }
 
@@ -96,6 +111,13 @@ class AiConfigService {
     if (data['disabledProductIds'] is List) {
       disabledProductIds = List<String>.from(data['disabledProductIds']);
     }
+    if (data['enableProductTags'] is bool) {
+      enableProductTags = data['enableProductTags'] as bool;
+    }
+    if (data['enableCareScheduleTags'] is bool) {
+      enableCareScheduleTags = data['enableCareScheduleTags'] as bool;
+    }
+    _ensureAntiHallucinationRule();
   }
 
   static void _applyAssistantMap(Map<String, dynamic> data) {
@@ -123,5 +145,12 @@ class AiConfigService {
           .map((e) => e.toString())
           .toList();
     }
+    if (data['enableProductTags'] is bool) {
+      enableProductTags = data['enableProductTags'] as bool;
+    }
+    if (data['enableCareScheduleTags'] is bool) {
+      enableCareScheduleTags = data['enableCareScheduleTags'] as bool;
+    }
+    _ensureAntiHallucinationRule();
   }
 }

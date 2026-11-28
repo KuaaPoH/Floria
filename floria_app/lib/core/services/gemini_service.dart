@@ -125,6 +125,135 @@ class GeminiService {
   }
 
   static List<String> _dynamicCatalogLines = [];
+  static String _cachedVouchersPrompt = '';
+  static String _cachedDiseasesPrompt = '';
+  static String _cachedPlantsKnowledgePrompt = '';
+  static DateTime? _lastKnowledgeLoadedAt;
+
+  static String _formatVnd(num amount) {
+    final rounded = amount.round().toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < rounded.length; i++) {
+      if (i > 0 && (rounded.length - i) % 3 == 0) {
+        buf.write('.');
+      }
+      buf.write(rounded[i]);
+    }
+    return '${buf.toString()}đ';
+  }
+
+  /// Tải & cache ngữ cảnh Vouchers, DiseasesInfo, plants_info từ Firestore để AI trả lời chuẩn xác
+  static Future<void> loadKnowledgeContextIfNeeded() async {
+    final now = DateTime.now();
+    if (_lastKnowledgeLoadedAt != null &&
+        now.difference(_lastKnowledgeLoadedAt!).inMinutes < 5 &&
+        (_cachedVouchersPrompt.isNotEmpty ||
+            _cachedDiseasesPrompt.isNotEmpty ||
+            _cachedPlantsKnowledgePrompt.isNotEmpty)) {
+      return;
+    }
+
+    try {
+      final db = FirebaseFirestore.instance;
+      final results = await Future.wait<QuerySnapshot<Map<String, dynamic>>?>([
+        db.collection('Vouchers').get().then<QuerySnapshot<Map<String, dynamic>>?>((s) => s).catchError((_) => null),
+        db.collection('DiseasesInfo').get().then<QuerySnapshot<Map<String, dynamic>>?>((s) => s).catchError((_) => null),
+        db.collection('plants_info').get().then<QuerySnapshot<Map<String, dynamic>>?>((s) => s).catchError((_) => null),
+      ]).timeout(const Duration(seconds: 4));
+
+      final vSnap = results[0];
+      if (vSnap != null) {
+        final vLines = <String>[];
+        for (final doc in vSnap.docs) {
+          final d = doc.data();
+          if (d['active'] == false || d['isActive'] == false) continue;
+          final type = (d['type'] ?? d['discountType'] ?? '').toString();
+          if (type == 'shipping') continue;
+          final expiresRaw = d['expiresAt'] ?? d['expiryDate'];
+          if (expiresRaw is String && expiresRaw.trim().isNotEmpty) {
+            final parsed = DateTime.tryParse(expiresRaw);
+            if (parsed != null && parsed.isBefore(now)) continue;
+          } else if (expiresRaw is Timestamp && expiresRaw.toDate().isBefore(now)) {
+            continue;
+          }
+          final code = (d['code'] ?? doc.id).toString().trim().toUpperCase();
+          if (code.isEmpty) continue;
+          final value = (d['value'] as num?) ?? (d['discountValue'] as num?) ?? 0;
+          final minOrder = (d['minOrder'] as num?) ?? (d['minOrderAmount'] as num?) ?? 0;
+          final maxDiscount = d['maxDiscount'] as num?;
+          final discountText = type == 'fixed'
+              ? 'giảm ${_formatVnd(value)}'
+              : 'giảm ${value.toStringAsFixed(value % 1 == 0 ? 0 : 1)}%${maxDiscount != null && maxDiscount > 0 ? ' (tối đa ${_formatVnd(maxDiscount)})' : ''}';
+          final minText = minOrder > 0
+              ? ', đơn tối thiểu ${_formatVnd(minOrder)}'
+              : ', không giới hạn đơn tối thiểu';
+          final desc = (d['description'] ?? d['title'] ?? '').toString().trim();
+          vLines.add('- Mã `$code`: $discountText$minText${desc.isNotEmpty ? ' — $desc' : ''}');
+        }
+        _cachedVouchersPrompt = vLines.join('\n');
+      }
+
+      final dSnap = results[1];
+      if (dSnap != null) {
+        final dLines = <String>[];
+        for (final doc in dSnap.docs) {
+          final d = doc.data();
+          final nameVi = (d['nameVi'] ?? d['name'] ?? doc.id).toString().trim();
+          if (nameVi.isEmpty) continue;
+          final severity = (d['severity'] ?? '').toString().trim();
+          final pathogen = (d['pathogen'] ?? d['agent'] ?? '').toString().trim();
+          final rawSymptoms = d['symptoms'];
+          final symptoms = rawSymptoms is List
+              ? rawSymptoms.map((e) => e.toString()).join('; ')
+              : (rawSymptoms ?? d['mechanism'] ?? '').toString().trim();
+          final rawSteps = d['treatmentSteps'] ?? d['treatment'];
+          final treatment = rawSteps is List
+              ? rawSteps.take(3).map((e) => e.toString()).join('; ')
+              : '';
+          final related = (d['relatedProductIds'] is List)
+              ? (d['relatedProductIds'] as List).map((e) => e.toString()).where((s) => s.isNotEmpty).join(', ')
+              : '';
+          final parts = [
+            if (severity.isNotEmpty) 'Mức độ: $severity',
+            if (pathogen.isNotEmpty) 'Tác nhân: $pathogen',
+            if (symptoms.isNotEmpty) 'Triệu chứng: ${symptoms.length > 110 ? symptoms.substring(0, 110) : symptoms}',
+            if (treatment.isNotEmpty) 'Xử lý: ${treatment.length > 130 ? treatment.substring(0, 130) : treatment}',
+            if (related.isNotEmpty) 'Vật tư gợi ý: $related',
+          ].join(' · ');
+          dLines.add('- $nameVi (${doc.id})${parts.isNotEmpty ? ': $parts' : ''}');
+        }
+        _cachedDiseasesPrompt = dLines.join('\n');
+      }
+
+      final pSnap = results[2];
+      if (pSnap != null) {
+        final pLines = <String>[];
+        for (final doc in pSnap.docs) {
+          final d = doc.data();
+          if (d['status'] == 'draft') continue;
+          final nameVi = (d['name_vi'] ?? d['viName'] ?? '').toString().trim();
+          final sci = (d['scientific_name'] ?? d['sciName'] ?? doc.id).toString().trim();
+          if (nameVi.isEmpty && sci.isEmpty) continue;
+          final light = (d['light'] ?? '').toString().trim();
+          final water = (d['water_frequency'] ?? d['watering'] ?? '').toString().trim();
+          final temp = (d['temperature'] ?? '').toString().trim();
+          final humidity = (d['humidity'] ?? '').toString().trim();
+          final toxicity = (d['toxicity'] ?? d['toxicityNote'] ?? '').toString().trim();
+          final parts = [
+            if (light.isNotEmpty) 'Ánh sáng: $light',
+            if (water.isNotEmpty) 'Tưới: $water',
+            if (temp.isNotEmpty) 'Nhiệt độ: $temp',
+            if (humidity.isNotEmpty) 'Độ ẩm: $humidity',
+            if (toxicity.isNotEmpty) 'Độc tính: $toxicity',
+          ].join(' · ');
+          pLines.add('- ${nameVi.isNotEmpty ? '$nameVi ($sci)' : sci}${parts.isNotEmpty ? ': $parts' : ''}');
+        }
+        _cachedPlantsKnowledgePrompt = pLines.join('\n');
+      }
+
+      _lastKnowledgeLoadedAt = now;
+    } catch (_) {}
+  }
 
   /// Cập nhật danh sách sản phẩm thật từ ShopProvider (visible == true, còn hàng)
   static void updateProductCatalog(List<dynamic> products) {
@@ -138,23 +267,48 @@ class GeminiService {
           continue;
         }
         final name = (p.name as String).trim();
+        final category = ((p.category as String?) ?? '').trim();
+        final price = ((p.formattedPrice as String?) ?? '').trim();
+        final origPrice = (p.formattedOriginalPrice as String?)?.trim();
+        final priceText = price.isNotEmpty
+            ? (origPrice != null && origPrice.isNotEmpty
+                ? 'Giá bán: $price (giá gốc $origPrice, đang giảm giá)'
+                : 'Giá bán: $price')
+            : 'Giá bán: Chưa cập nhật';
         final indications = (p.indications as List?)?.join(', ') ?? '';
+        final usageGuide = ((p.usageGuide as String?) ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
         final desc = ((p.shortDesc as String?)?.trim().isNotEmpty == true
                 ? p.shortDesc as String
                 : (p.description as String?) ?? '')
-            .trim();
+            .trim()
+            .replaceAll(RegExp(r'\s+'), ' ');
         final combined = [
+          if (category.isNotEmpty) 'Nhóm: $category',
+          priceText,
+          'Tồn kho: $stock',
           if (indications.isNotEmpty) 'Chỉ định: $indications',
-          if (desc.isNotEmpty) desc,
+          if (usageGuide.isNotEmpty)
+            'Cách dùng: ${usageGuide.length > 130 ? '${usageGuide.substring(0, 130)}...' : usageGuide}',
+          if (desc.isNotEmpty)
+            'Mô tả: ${desc.length > 120 ? '${desc.substring(0, 120)}...' : desc}',
         ].join(' · ');
-        final short = combined.length > 150 ? '${combined.substring(0, 150)}...' : combined;
-        lines.add('   - id: `$id` ➔ $name${short.isNotEmpty ? ' ($short)' : ''}');
+        lines.add('   - id: `$id` ➔ $name ($combined)');
       } catch (_) {}
     }
     _dynamicCatalogLines = lines;
   }
 
   static String _buildChatSystemPrompt(String? currentPlantContext) {
+    final filteredGuardrails = AiConfigService.assistantGuardrails.where((rule) {
+      if (!AiConfigService.enableProductTags && rule.contains('[RECOMMEND_PRODUCT')) {
+        return false;
+      }
+      if (!AiConfigService.enableCareScheduleTags && rule.contains('[CARE_SCHEDULE')) {
+        return false;
+      }
+      return true;
+    }).toList();
+
     final String corePersonaAndRules = [
       AiConfigService.assistantSystemPrompt.isNotEmpty
           ? AiConfigService.assistantSystemPrompt
@@ -163,20 +317,33 @@ class GeminiService {
         'Tên xưng hô: ${AiConfigService.assistantName}.',
       if (AiConfigService.assistantTone.isNotEmpty)
         'Giọng điệu: ${AiConfigService.assistantTone}.',
-      if (AiConfigService.assistantGuardrails.isNotEmpty)
-        'QUY TẮC AN TOÀN (GUARDRAILS BẮT BUỘC):\n${AiConfigService.assistantGuardrails.join('\n')}',
+      if (filteredGuardrails.isNotEmpty)
+        'QUY TẮC AN TOÀN (GUARDRAILS BẮT BUỘC):\n${filteredGuardrails.join('\n')}',
       'QUY TẮC ĐỊNH DẠNG BẮT BUỘC:\n- TUYỆT ĐỐI KHÔNG sử dụng emoji hay biểu tượng cảm xúc trong câu trả lời.\n- KHÔNG sử dụng ký tự tiêu đề Markdown (#, ##, ###). Trình bày ngắn gọn, rõ ràng bằng đoạn văn và gạch đầu dòng.',
     ].join('\n');
 
     final String catalogSection = _dynamicCatalogLines.isNotEmpty
-        ? '\nKHO SẢN PHẨM FLORIA HIỆN CÓ:\n${_dynamicCatalogLines.join('\n')}\nCÚ PHÁP ĐÍNH KÈM SẢN PHẨM (chỉ dùng khi thỏa quy tắc từ Admin):\n[RECOMMEND_PRODUCT: id_san_pham]'
+        ? '\nKHO SẢN PHẨM & BẢNG GIÁ FLORIA HIỆN CÓ:\n${_dynamicCatalogLines.join('\n')}'
+        : '';
+    final String vouchersSection = _cachedVouchersPrompt.isNotEmpty
+        ? '\nMÃ GIẢM GIÁ (VOUCHER) ĐANG HOẠT ĐỘNG:\n$_cachedVouchersPrompt'
+        : '';
+    final String diseasesSection = _cachedDiseasesPrompt.isNotEmpty
+        ? '\nHỒ SƠ BỆNH LÝ CÂY TRỒNG TRONG HỆ THỐNG:\n$_cachedDiseasesPrompt'
+        : '';
+    final String plantsSection = _cachedPlantsKnowledgePrompt.isNotEmpty
+        ? '\nTỪ ĐIỂN CÂY CẢNH TRONG HỆ THỐNG:\n$_cachedPlantsKnowledgePrompt'
         : '';
 
+    final String productTagInstruction = (AiConfigService.enableProductTags && _dynamicCatalogLines.isNotEmpty)
+        ? '\nTHẺ HÀNH ĐỘNG ĐỀ XUẤT SẢN PHẨM (CHỈ dùng khi cây bệnh/sâu hại nặng cần đặc trị HOẶC người dùng hỏi mua/tìm/lọc sản phẩm theo tầm giá, công dụng):\nGắn ở cuối câu trả lời đúng cú pháp:\n[RECOMMEND_PRODUCT: id_san_pham]'
+        : '\nTHẺ HÀNH ĐỘNG SẢN PHẨM ĐANG TẮT: TUYỆT ĐỐI KHÔNG chèn hoặc xuất ra thẻ [RECOMMEND_PRODUCT...] dưới bất kỳ hình thức nào.';
+    final String careTagInstruction = AiConfigService.enableCareScheduleTags
+        ? '\nTHẺ HÀNH ĐỘNG ĐỀ XUẤT LỊCH CHĂM SÓC (CHỈ dùng khi người dùng hỏi lịch/cách chăm sóc cây toàn diện):\nGắn ở cuối câu trả lời đúng cú pháp:\n[CARE_SCHEDULE: water=SO_NGAY_TUOI, fertilize=SO_NGAY_BON_PHAN, clean=SO_NGAY_KIEM_TRA]\nQuy ước số ngày: water (1-14), fertilize (7-60), clean (1-14); không viết tiêu đề cụt lủn ngay trước thẻ.'
+        : '\nTHẺ HÀNH ĐỘNG LỊCH CHĂM SÓC ĐANG TẮT: TUYỆT ĐỐI KHÔNG chèn hoặc xuất ra thẻ [CARE_SCHEDULE...] dưới bất kỳ hình thức nào.';
+
     return '''$corePersonaAndRules
-${currentPlantContext != null && currentPlantContext.isNotEmpty ? '\nNgữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}$catalogSection
-CÚ PHÁP ĐỀ XUẤT LỊCH CHĂM SÓC:
-[CARE_SCHEDULE: water=SO_NGAY_TUOI, fertilize=SO_NGAY_BON_PHAN, clean=SO_NGAY_LAU_LA]
-Quy ước số ngày: water (1-14), fertilize (7-60), clean (1-14).''';
+${currentPlantContext != null && currentPlantContext.isNotEmpty ? '\nNgữ cảnh hiện tại của người dùng: $currentPlantContext.' : ''}$catalogSection$vouchersSection$diseasesSection$plantsSection$productTagInstruction$careTagInstruction''';
   }
 
   static Future<void> saveModelName(String model) async {
@@ -468,6 +635,7 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
     }
 
     final primaryModel = await getModelName();
+    await loadKnowledgeContextIfNeeded();
 
     final systemInstruction = Content.system(_buildChatSystemPrompt(currentPlantContext));
 
@@ -532,6 +700,7 @@ QUY TẮC BẮT BUỘC: Chỉ trả về một khối JSON duy nhất hợp lệ
     }
 
     final primaryModel = await getModelName();
+    await loadKnowledgeContextIfNeeded();
     final systemPrompt = _buildChatSystemPrompt(currentPlantContext);
 
     // Chuẩn bị danh sách contents theo chuẩn REST API của Google Generative Language

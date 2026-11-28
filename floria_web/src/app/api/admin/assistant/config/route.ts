@@ -18,6 +18,8 @@ export interface AssistantConfig {
   systemPrompt: string;
   guardrails: AssistantGuardrail[];
   disabledProductIds?: string[];
+  enableProductTags?: boolean;
+  enableCareScheduleTags?: boolean;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -28,6 +30,8 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   language: "vi",
   defaultModel: "gemini-3.8-flash",
   disabledProductIds: [],
+  enableProductTags: true,
+  enableCareScheduleTags: true,
   systemPrompt:
     'Bạn là Trợ lý Cây trồng Floria (hoặc Trợ lý Floria) - chuyên gia nông nghiệp và thực vật học giàu kinh nghiệm, khách quan, tận tâm và gần gũi.\nNgôn ngữ trả lời: 100% tiếng Việt tự nhiên, ấm áp, chuẩn khoa học thực vật.\nXƯNG HÔ: Tự xưng là "Trợ lý Floria" (TUYỆT ĐỐI KHÔNG tự xưng là "Floria AI", "Bác sĩ AI" hay dùng từ "AI").',
   guardrails: [
@@ -37,6 +41,14 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
       category: "scope",
       ruleText:
         "CHỈ tư vấn cây cối, thực vật học, chăm sóc cây, sâu bệnh và vật tư Floria. TUYỆT ĐỐI TỪ CHỐI mọi câu hỏi/ảnh ngoài chủ đề (lập trình, toán, lịch sử, y tế người, nấu ăn, tài chính...). Khi từ chối KHÔNG đính kèm [RECOMMEND_PRODUCT] hay [CARE_SCHEDULE].",
+      enabled: true,
+    },
+    {
+      id: "gr_no_hallucination",
+      name: "Cấm bịa đặt số liệu, giá bán & dữ liệu hệ thống",
+      category: "scope",
+      ruleText:
+        "TUYỆT ĐỐI KHÔNG tự suy đoán hoặc bịa đặt giá bán, giá gốc, chương trình giảm giá, mã voucher, số lượng tồn kho, quy cách đóng gói hay thông tin khu vườn của người dùng. Mọi con số về giá tiền, khuyến mãi, tồn kho và lịch chăm sóc PHẢI lấy chính xác 100% từ dữ liệu hệ thống cung cấp trong ngữ cảnh. Nếu sản phẩm hoặc thông tin người dùng hỏi không có trong danh sách dữ liệu, phải trả lời trung thực là hiện chưa có thông tin/sản phẩm đó trên hệ thống Floria.",
       enabled: true,
     },
     {
@@ -52,7 +64,7 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
       name: "Quy tắc kê đơn thuốc / vật tư chặt chẽ",
       category: "care",
       ruleText:
-        "KHÔNG gắn [RECOMMEND_PRODUCT: id] nếu chỉ hỏi kiến thức cơ bản hoặc vấn đề sinh lý nhẹ. CHỈ gắn khi cây bệnh/sâu hại nặng cần đặc trị HOẶC người dùng chủ động hỏi mua thuốc/phân/đất.",
+        "KHÔNG gắn [RECOMMEND_PRODUCT: id] nếu chỉ hỏi kiến thức cơ bản hoặc vấn đề sinh lý nhẹ. CHỈ gắn khi cây bệnh/sâu hại nặng cần đặc trị HOẶC người dùng chủ động hỏi tìm sản phẩm, hỏi giá, lọc sản phẩm theo tầm giá/công dụng, hỏi mua thuốc/phân/đất/dụng cụ.",
       enabled: true,
     },
     {
@@ -82,14 +94,49 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   ],
 };
 
+function mergeDefaultGuardrails(existing: AssistantGuardrail[]): {
+  merged: AssistantGuardrail[];
+  changed: boolean;
+} {
+  let changed = false;
+  const list = existing.map((g) => ({ ...g }));
+  const existingIds = new Set(list.map((g) => g.id));
+
+  // Đồng bộ các quy tắc mặc định mới (như gr_no_hallucination) vào Firestore nếu chưa có
+  for (const defRule of DEFAULT_ASSISTANT_CONFIG.guardrails) {
+    if (!existingIds.has(defRule.id)) {
+      list.push(defRule);
+      changed = true;
+    } else if (defRule.id === "gr_prescribe") {
+      const idx = list.findIndex((g) => g.id === "gr_prescribe");
+      if (idx !== -1 && !list[idx].ruleText.includes("tầm giá")) {
+        list[idx] = { ...list[idx], ruleText: defRule.ruleText };
+        changed = true;
+      }
+    }
+  }
+
+  return { merged: list, changed };
+}
+
 export async function GET(req: Request) {
   try {
     await verifyAdminRequest(req);
-    const snap = await getAdminDb().collection("SystemConfig").doc("assistant_config").get();
+    const docRef = getAdminDb().collection("SystemConfig").doc("assistant_config");
+    const snap = await docRef.get();
     if (!snap.exists) {
       return NextResponse.json(DEFAULT_ASSISTANT_CONFIG);
     }
     const raw = snap.data() ?? {};
+    let guardrails: AssistantGuardrail[] = DEFAULT_ASSISTANT_CONFIG.guardrails;
+    if (Array.isArray(raw.guardrails)) {
+      const { merged, changed } = mergeDefaultGuardrails(raw.guardrails as AssistantGuardrail[]);
+      guardrails = merged;
+      if (changed) {
+        await docRef.set({ guardrails: merged }, { merge: true }).catch(() => {});
+      }
+    }
+
     return NextResponse.json({
       ...DEFAULT_ASSISTANT_CONFIG,
       name: typeof raw.name === "string" && raw.name ? raw.name : DEFAULT_ASSISTANT_CONFIG.name,
@@ -103,10 +150,12 @@ export async function GET(req: Request) {
         typeof raw.systemPrompt === "string" && raw.systemPrompt
           ? raw.systemPrompt
           : DEFAULT_ASSISTANT_CONFIG.systemPrompt,
-      guardrails: Array.isArray(raw.guardrails) ? raw.guardrails : DEFAULT_ASSISTANT_CONFIG.guardrails,
+      guardrails,
       disabledProductIds: Array.isArray(raw.disabledProductIds)
         ? raw.disabledProductIds.map((x) => String(x))
         : [],
+      enableProductTags: raw.enableProductTags !== false,
+      enableCareScheduleTags: raw.enableCareScheduleTags !== false,
       updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : undefined,
       updatedBy: typeof raw.updatedBy === "string" ? raw.updatedBy : undefined,
     });
@@ -165,6 +214,14 @@ export async function PUT(req: Request) {
       disabledProductIds: Array.isArray(body.disabledProductIds)
         ? body.disabledProductIds.map((x) => String(x))
         : (existing.disabledProductIds ?? []),
+      enableProductTags:
+        typeof body.enableProductTags === "boolean"
+          ? body.enableProductTags
+          : (existing.enableProductTags ?? true),
+      enableCareScheduleTags:
+        typeof body.enableCareScheduleTags === "boolean"
+          ? body.enableCareScheduleTags
+          : (existing.enableCareScheduleTags ?? true),
       updatedAt: new Date().toISOString(),
       updatedBy: admin.name,
     };

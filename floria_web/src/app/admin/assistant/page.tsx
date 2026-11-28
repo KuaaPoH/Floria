@@ -103,8 +103,23 @@ function parseAssistantReply(raw: string): {
   const prodRegex = /\[RECOMMEND_PRODUCT:\s*([^\]]+)\]/gi;
   let match: RegExpExecArray | null;
   while ((match = prodRegex.exec(raw)) !== null) {
-    const id = match[1].trim();
-    if (id && !productIds.includes(id)) productIds.push(id);
+    const ids = match[1]
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const id of ids) {
+      if (!productIds.includes(id)) productIds.push(id);
+    }
+  }
+
+  for (const m of raw.matchAll(/\[RECOMMEND_PRODUCT\]([\s\S]*?)\[\/RECOMMEND_PRODUCT\]/gi)) {
+    try {
+      const parsed = JSON.parse(m[1].trim()) as { productId?: string };
+      const id = String(parsed.productId ?? "").trim();
+      if (id && !productIds.includes(id)) productIds.push(id);
+    } catch {
+      // Bỏ qua nếu không phải JSON hợp lệ
+    }
   }
 
   let careSchedule: { water: string; fertilize: string; clean: string } | null = null;
@@ -115,7 +130,9 @@ function parseAssistantReply(raw: string): {
 
   const cleanText = raw
     .replace(/\[RECOMMEND_PRODUCT:\s*[^\]]+\]/gi, "")
+    .replace(/\[RECOMMEND_PRODUCT\][\s\S]*?\[\/RECOMMEND_PRODUCT\]/gi, "")
     .replace(/\[CARE_SCHEDULE:\s*[^\]]+\]/gi, "")
+    .replace(/\[CARE_SCHEDULE\][\s\S]*?\[\/CARE_SCHEDULE\]/gi, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
@@ -625,16 +642,31 @@ function ActionTagsTab({
     onSave({ ...config, disabledProductIds: Array.from(nextSet) });
   };
 
+  const isProductTagsEnabled = config?.enableProductTags !== false;
+  const isCareScheduleTagsEnabled = config?.enableCareScheduleTags !== false;
+
   const realTags = [
     {
+      key: "product",
       tag: "[RECOMMEND_PRODUCT: product_id]",
-      title: "Kê đơn sản phẩm từ Cửa hàng Floria",
-      desc: "Khi cây bị bệnh nặng hoặc người dùng hỏi mua vật tư, Trợ lý Floria gắn thẻ này để App tự động hiển thị thẻ sản phẩm kèm nút Mua ngay.",
+      title: "Kê đơn & gợi ý sản phẩm từ Cửa hàng Floria",
+      desc: "Khi cây bệnh cần đặc trị hoặc người dùng hỏi mua/lọc sản phẩm theo giá, Trợ lý Floria gắn thẻ này để hiển thị thẻ sản phẩm kèm giá thực tế và nút Mua ngay.",
+      enabled: isProductTagsEnabled,
+      onToggle: () => {
+        if (!config) return;
+        onSave({ ...config, enableProductTags: !isProductTagsEnabled });
+      },
     },
     {
-      tag: "[CARE_SCHEDULE: {...}]",
+      key: "care",
+      tag: "[CARE_SCHEDULE: water=..., fertilize=..., clean=...]",
       title: "Đề xuất & Áp dụng Lịch chăm sóc cây",
-      desc: "Khi người dùng hỏi lịch tưới/bón phân cho cây cụ thể, App bắt thẻ này để hiện nút 1 chạm áp dụng thẳng vào MyGarden.",
+      desc: "Khi người dùng hỏi lịch tưới/bón phân cho cây cụ thể, hệ thống bắt thẻ này để hiện nút 1 chạm áp dụng thẳng vào khu vườn cá nhân.",
+      enabled: isCareScheduleTagsEnabled,
+      onToggle: () => {
+        if (!config) return;
+        onSave({ ...config, enableCareScheduleTags: !isCareScheduleTagsEnabled });
+      },
     },
   ];
 
@@ -645,10 +677,18 @@ function ActionTagsTab({
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
         {realTags.map((t) => (
-          <div key={t.tag} className="card-surface space-y-2 p-5">
-            <div className="flex items-center gap-2">
-              <Tag className="size-4 text-forest" />
-              <h3 className="text-sm font-semibold">{t.title}</h3>
+          <div key={t.key} className="card-surface space-y-2 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Tag className="size-4 shrink-0 text-forest" />
+                <h3 className="text-sm font-semibold">{t.title}</h3>
+              </div>
+              <Switch
+                checked={t.enabled}
+                disabled={!canEdit || saving || !config}
+                onCheckedChange={t.onToggle}
+                aria-label={`Bật/tắt thẻ ${t.title}`}
+              />
             </div>
             <p className="inline-block rounded-md bg-muted px-2 py-1 font-mono text-xs text-forest">{t.tag}</p>
             <p className="text-xs text-muted-foreground">{t.desc}</p>
@@ -836,6 +876,8 @@ function TestingSandboxTab({
           systemPrompt: config?.systemPrompt,
           guardrails: config?.guardrails,
           disabledProductIds: config?.disabledProductIds,
+          enableProductTags: config?.enableProductTags !== false,
+          enableCareScheduleTags: config?.enableCareScheduleTags !== false,
         }),
       });
 
@@ -993,7 +1035,7 @@ function TestingSandboxTab({
                     <FormattedChatText text={parsed.cleanText} />
 
                     {/* Hiển thị Thẻ sản phẩm đề xuất có hình ảnh, tên và giá */}
-                    {parsed.productIds.length > 0 && (
+                    {config?.enableProductTags !== false && parsed.productIds.length > 0 && (
                       <div className="space-y-2 pt-1">
                         {parsed.productIds.map((pid) => {
                           const prod = productMap.get(pid);
@@ -1034,7 +1076,7 @@ function TestingSandboxTab({
                     )}
 
                     {/* Hiển thị Lịch chăm sóc đề xuất nếu có */}
-                    {parsed.careSchedule && (
+                    {config?.enableCareScheduleTags !== false && parsed.careSchedule && (
                       <div className="rounded-xl border bg-card p-3 text-xs">
                         <p className="font-semibold text-forest">Lịch chăm sóc đề xuất</p>
                         <p className="mt-1 text-muted-foreground">

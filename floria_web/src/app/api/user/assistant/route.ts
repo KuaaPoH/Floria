@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  ANTI_HALLUCINATION_FALLBACK_RULE,
+  buildActionTagsPromptBlock,
+  filterGuardrailsByActionTags,
+  getAssistantKnowledgeBlocks,
+} from "@/lib/server/assistant-context";
 import { getAdminDb, isFirebaseAdminConfigured } from "@/lib/server/firebase-admin";
 import { toIsoString } from "@/lib/server/firestore-utils";
 import { UserAuthError, verifyUserRequest } from "@/lib/server/user-auth";
@@ -168,10 +174,9 @@ export async function POST(req: Request) {
       const sd = sessionSnap.data() ?? {};
       const existingMsgs = Array.isArray(sd.messages) ? (sd.messages as Record<string, unknown>[]) : [];
 
-      // Đọc SystemConfig/assistant_config + ShopProducts + MyGarden + UserGardens của user
-      const [cfgSnap, prodSnap, gardenSnap, userGardensSnap] = await Promise.all([
+      // Đọc SystemConfig/assistant_config + MyGarden + UserGardens của user
+      const [cfgSnap, gardenSnap, userGardensSnap] = await Promise.all([
         db.collection("SystemConfig").doc("assistant_config").get().catch(() => null),
-        db.collection("ShopProducts").get().catch(() => null),
         db.collection("MyGarden").where("userId", "==", user.uid).get().catch(() => null),
         db.collection("UserGardens").where("userId", "==", user.uid).get().catch(() => null),
       ]);
@@ -180,34 +185,33 @@ export async function POST(req: Request) {
       const assistantName = String(cfg.name ?? "Trợ lý Floria");
       const tone = String(cfg.tone ?? "Thân thiện, chuyên môn thực vật rõ ràng");
       const defaultModel = String(cfg.defaultModel ?? "").trim();
+      const enableProductTags = cfg.enableProductTags !== false;
+      const enableCareScheduleTags = cfg.enableCareScheduleTags !== false;
       let basePrompt =
         typeof cfg.systemPrompt === "string" && cfg.systemPrompt.trim()
           ? cfg.systemPrompt.trim()
           : "Bạn là Trợ lý Floria — bác sĩ cây trồng AI. Chỉ tư vấn về thực vật, trồng cây, chăm sóc cây, sâu bệnh, môi trường trồng và làm vườn. Từ chối lịch sự các chủ đề ngoài phạm vi. Trả lời bằng tiếng Việt rõ ràng, thân thiện.";
 
-      const guardrails = Array.isArray(cfg.guardrails)
-        ? (cfg.guardrails as Array<{ name?: string; ruleText?: string; enabled?: boolean }>)
-          .filter((g) => g.enabled !== false && g.ruleText)
-          .map((g, i) => `${i + 1}. [${g.name ?? "Quy tắc"}]: ${g.ruleText}`)
-          .join("\n")
-        : "";
+      const rawGuardrails = Array.isArray(cfg.guardrails)
+        ? (cfg.guardrails as Array<{ id?: string; name?: string; ruleText?: string; enabled?: boolean }>)
+        : [];
+      const filteredGuardrails = filterGuardrailsByActionTags(rawGuardrails, {
+        enableProductTags,
+        enableCareScheduleTags,
+      });
+      const activeRulesList = filteredGuardrails
+        .filter((g) => g.enabled !== false && g.ruleText)
+        .map((g) => `[${g.name ?? "Quy tắc"}]: ${g.ruleText}`);
+      const hasAntiHallucination = filteredGuardrails.some(
+        (g) => g.id === "gr_no_hallucination" || String(g.ruleText ?? "").includes("bịa đặt giá"),
+      );
+      if (!hasAntiHallucination) {
+        activeRulesList.push(ANTI_HALLUCINATION_FALLBACK_RULE);
+      }
+      const guardrails = activeRulesList.map((rule, i) => `${i + 1}. ${rule}`).join("\n");
 
       const disabledIds = new Set(Array.isArray(cfg.disabledProductIds) ? cfg.disabledProductIds.map(String) : []);
-      const catalogLines = (prodSnap?.docs ?? [])
-        .filter((doc) => {
-          const pd = doc.data();
-          if (pd.visible === false || disabledIds.has(doc.id)) return false;
-          if (typeof pd.stock === "number" && pd.stock <= 0) return false;
-          return Boolean(String(pd.name ?? "").trim());
-        })
-        .slice(0, 24)
-        .map((doc) => {
-          const pd = doc.data();
-          const ind = Array.isArray(pd.indications) ? pd.indications.join(", ") : "";
-          const desc = String(pd.shortDesc ?? pd.description ?? "").slice(0, 120);
-          return `- id: "${doc.id}" -> ${String(pd.name)} (${[ind, desc].filter(Boolean).join(" · ")})`;
-        })
-        .join("\n");
+      const { catalogText, vouchersText, diseasesText, plantsText } = await getAssistantKnowledgeBlocks(disabledIds);
 
       // Xây dựng bản đồ khu vườn: gardenId -> gardenName
       const gardenMap = new Map<string, string>();
@@ -218,9 +222,20 @@ export async function POST(req: Request) {
         const gName = String(gd.name ?? "Khu vườn").trim();
         gardenMap.set(doc.id, gName);
         const env = String(gd.environment ?? "").trim();
+        const light = String(gd.lightCondition ?? "").trim();
         const desc = String(gd.description ?? "").trim();
-        userGardenList.push(`- Khu vườn "${gName}" (Mã vườn: ${doc.id}${env ? `, Môi trường: ${env}` : ""}${desc ? `, Ghi chú: ${desc}` : ""})`);
+        userGardenList.push(
+          `- Khu vườn "${gName}" (Mã vườn: ${doc.id}${env ? `, Môi trường: ${env}` : ""}${light ? `, Ánh sáng: ${light}` : ""}${desc ? `, Ghi chú: ${desc}` : ""})`,
+        );
       });
+
+      const parseDueFlag = (rawTs: unknown, freqDays: number): boolean => {
+        if (freqDays <= 0 || !rawTs) return false;
+        const iso = toIsoString(rawTs, "");
+        if (!iso) return false;
+        const ms = Date.parse(iso);
+        return Number.isFinite(ms) && ms - now <= 12 * 3600 * 1000;
+      };
 
       const gardenLines = (gardenSnap?.docs ?? [])
         .slice(0, 50)
@@ -232,23 +247,29 @@ export async function POST(req: Request) {
           const sciName = String(gd.scientificName ?? gd.nameVi ?? "");
           const zone = String(gd.zone ?? gd.location ?? "Trong nhà");
           const health = String(gd.healthStatus ?? "Khỏe mạnh");
-          return `- "${plantName}" (${sciName}) -> Thuộc khu vườn: "${resolvedGardenName}", Vị trí cụ thể trong vườn: ${zone}, Trạng thái: ${health}`;
+          const waterDays = Number(gd.waterFrequencyDays ?? 3);
+          const fertDays = Number(gd.fertilizeFrequencyDays ?? 20);
+          const pestDays = Number(gd.checkPestFrequencyDays ?? 3);
+          const dueTasks: string[] = [];
+          if (parseDueFlag(gd.nextWatering, waterDays)) dueTasks.push("Cần tưới nước hôm nay");
+          if (parseDueFlag(gd.nextFertilizing, fertDays)) dueTasks.push("Cần bón phân hôm nay");
+          if (parseDueFlag(gd.nextCheckPest, pestDays)) dueTasks.push("Cần kiểm tra sâu bệnh hôm nay");
+          const notes = String(gd.notes ?? "").trim();
+          return `- "${plantName}" (${sciName}) -> Khu vườn: "${resolvedGardenName}", Vị trí: ${zone}, Trạng thái: ${health}, Chu kỳ: tưới ${waterDays} ngày / bón phân ${fertDays} ngày / kiểm tra ${pestDays} ngày${dueTasks.length ? `, Việc đến hạn: ${dueTasks.join(", ")}` : ""}${notes ? `, Ghi chú: ${notes.slice(0, 80)}` : ""}`;
         })
         .join("\n");
 
-      const tagInstruction = `
-ĐỊNH DẠNG THẺ HÀNH ĐỘNG (chỉ dùng khi thực sự hữu ích):
-1. Nếu đề xuất sản phẩm trong kho Floria, thêm cuối câu trả lời:
-[RECOMMEND_PRODUCT]{"productId":"<id chính xác từ kho>","reason":"<lý do ngắn>"}[/RECOMMEND_PRODUCT]
-2. Nếu đề xuất chu kỳ chăm sóc mới (watering | fertilizing | inspection), thêm cuối câu trả lời:
-[CARE_SCHEDULE]{"plantName":"<tên cây>","careType":"watering","intervalDays":7,"preferredTime":"07:00","reason":"<lý do ngắn>"}[/CARE_SCHEDULE]`;
+      const tagInstruction = buildActionTagsPromptBlock({
+        enableProductTags,
+        enableCareScheduleTags,
+      });
 
       const gardensSection = userGardenList.length > 0
         ? `\nDANH SÁCH CÁC KHU VƯỜN CỦA NGƯỜI DÙNG (${userGardenList.length} khu vườn):\n${userGardenList.join("\n")}`
         : "";
 
       const gardenInstruction = gardenMap.size > 0
-        ? `\n(LƯU Ý ĐẶC BIỆT: Khi người dùng hỏi cây nằm ở khu vườn nào, hãy đối chiếu chính xác tên khu vườn thực tế của họ (${Array.from(gardenMap.values()).map((n) => `"${n}"`).join(", ")}) và vị trí cụ thể như ban công/phòng khách để trả lời chi tiết, chính xác từng cây thuộc khu vườn nào).`
+        ? `\n(LƯU Ý ĐẶC BIỆT: Khi người dùng hỏi cây nằm ở khu vườn nào, lịch chăm sóc hay cây nào cần tưới hôm nay, hãy đối chiếu chính xác tên khu vườn, ánh sáng, chu kỳ và việc đến hạn thực tế của họ để trả lời chi tiết).`
         : "";
 
       const plantsSection = gardenLines
@@ -262,7 +283,10 @@ export async function POST(req: Request) {
         guardrails ? `\nQUY TẮC AN TOÀN (GUARDRAILS BẮT BUỘC):\n${guardrails}` : "",
         gardensSection,
         plantsSection,
-        catalogLines ? `\nKHO SẢN PHẨM FLORIA HIỆN CÓ:\n${catalogLines}` : "",
+        catalogText ? `\nKHO SẢN PHẨM & BẢNG GIÁ FLORIA HIỆN CÓ:\n${catalogText}` : "",
+        vouchersText ? `\nMÃ GIẢM GIÁ (VOUCHER) ĐANG HOẠT ĐỘNG:\n${vouchersText}` : "",
+        diseasesText ? `\nHỒ SƠ BỆNH LÝ CÂY TRỒNG TRONG HỆ THỐNG:\n${diseasesText}` : "",
+        plantsText ? `\nTỪ ĐIỂN CÂY CẢNH TRONG HỆ THỐNG:\n${plantsText}` : "",
         tagInstruction,
       ]
         .filter(Boolean)
@@ -342,14 +366,36 @@ export async function POST(req: Request) {
         recommendedProductIds: [],
       };
 
+      let sanitizedReply = reply;
+      if (!enableProductTags) {
+        sanitizedReply = sanitizedReply
+          .replace(/\[RECOMMEND_PRODUCT:\s*[^\]]+\]/gi, "")
+          .replace(/\[RECOMMEND_PRODUCT\][\s\S]*?\[\/RECOMMEND_PRODUCT\]/gi, "")
+          .trim();
+      }
+      if (!enableCareScheduleTags) {
+        sanitizedReply = sanitizedReply
+          .replace(/\[CARE_SCHEDULE:\s*[^\]]+\]/gi, "")
+          .replace(/\[CARE_SCHEDULE\][\s\S]*?\[\/CARE_SCHEDULE\]/gi, "")
+          .trim();
+      }
+
       // Trích xuất productId gợi ý để đồng bộ trường recommendedProductIds với Flutter App
       const recIds: string[] = [];
-      for (const match of reply.matchAll(/\[RECOMMEND_PRODUCT\]([\s\S]*?)\[\/RECOMMEND_PRODUCT\]/g)) {
-        try {
-          const parsed = JSON.parse(match[1].trim()) as { productId?: string };
-          if (parsed.productId) recIds.push(parsed.productId);
-        } catch {
-          // ignore
+      if (enableProductTags) {
+        for (const match of sanitizedReply.matchAll(/\[RECOMMEND_PRODUCT:\s*([^\]]+)\]/gi)) {
+          for (const pid of match[1].split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean)) {
+            if (!recIds.includes(pid)) recIds.push(pid);
+          }
+        }
+        for (const match of sanitizedReply.matchAll(/\[RECOMMEND_PRODUCT\]([\s\S]*?)\[\/RECOMMEND_PRODUCT\]/gi)) {
+          try {
+            const parsed = JSON.parse(match[1].trim()) as { productId?: string };
+            const pid = String(parsed.productId ?? "").trim();
+            if (pid && !recIds.includes(pid)) recIds.push(pid);
+          } catch {
+            // ignore
+          }
         }
       }
 
@@ -359,8 +405,8 @@ export async function POST(req: Request) {
         id: `m_a_${aiNow}`,
         isUser: false,
         role: "assistant",
-        text: reply,
-        content: reply,
+        text: sanitizedReply,
+        content: sanitizedReply,
         images: [],
         timestamp: aiNow,
         createdAt: aiIso,

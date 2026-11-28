@@ -570,7 +570,7 @@ class GardenProvider extends ChangeNotifier {
     }
   }
 
-  // Cập nhật thông tin chi tiết của cây: Tên biệt danh, Vị trí, Tần suất tưới, Giờ nhắc, Tình trạng sức khỏe, Ghi chú, Chu kỳ bón phân, Chu kỳ kiểm tra sâu bệnh
+  // Cập nhật thông tin chi tiết của cây: Tên biệt danh, Vị trí, Tần suất tưới, Giờ nhắc, Tình trạng sức khỏe, Ghi chú, Chu kỳ bón phân, Chu kỳ kiểm tra sâu bệnh, Ảnh đại diện
   Future<bool> updatePlantInfo(
     String plantId, {
     required String nickname,
@@ -581,6 +581,7 @@ class GardenProvider extends ChangeNotifier {
     int? fertilizeFrequencyDays,
     int? checkPestFrequencyDays,
     String? notes,
+    String? imageUrl,
   }) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -591,33 +592,58 @@ class GardenProvider extends ChangeNotifier {
 
       final plant = _plants[plantIndex];
       final nextDate = plant.lastWatered.add(Duration(days: waterFrequencyDays));
+      final resolvedNickname = nickname.trim().isNotEmpty ? nickname.trim() : plant.nameVi;
+      final resolvedZone = zone.trim().isNotEmpty ? zone.trim() : 'Phòng khách';
 
       final Map<String, dynamic> updateData = {
-        'nickname': nickname.trim().isNotEmpty ? nickname.trim() : plant.nameVi,
-        'zone': zone.trim().isNotEmpty ? zone.trim() : 'Phòng khách',
+        'nickname': resolvedNickname,
+        'zone': resolvedZone,
         'waterFrequencyDays': waterFrequencyDays,
         'reminderTime': reminderTime,
         'healthStatus': healthStatus,
         'nextWatering': Timestamp.fromDate(nextDate),
       };
 
+      DateTime nextFert = plant.nextFertilizing;
       if (fertilizeFrequencyDays != null) {
         updateData['fertilizeFrequencyDays'] = fertilizeFrequencyDays;
-        final nextFert = fertilizeFrequencyDays > 0
+        nextFert = fertilizeFrequencyDays > 0
             ? plant.lastFertilized.add(Duration(days: fertilizeFrequencyDays))
             : plant.lastFertilized.add(const Duration(days: 3650));
         updateData['nextFertilizing'] = Timestamp.fromDate(nextFert);
       }
 
+      DateTime nextClean = plant.nextCheckPest;
       if (checkPestFrequencyDays != null) {
         updateData['checkPestFrequencyDays'] = checkPestFrequencyDays;
-        final nextClean = plant.lastCleaned.add(Duration(days: checkPestFrequencyDays));
+        nextClean = plant.lastCleaned.add(Duration(days: checkPestFrequencyDays));
         updateData['nextCheckPest'] = Timestamp.fromDate(nextClean);
       }
 
       if (notes != null) {
         updateData['notes'] = notes.trim();
       }
+
+      final trimmedImage = imageUrl?.trim();
+      if (trimmedImage != null && trimmedImage.isNotEmpty) {
+        updateData['imageUrl'] = trimmedImage;
+      }
+
+      _plants[plantIndex] = plant.copyWith(
+        nickname: resolvedNickname,
+        zone: resolvedZone,
+        waterFrequencyDays: waterFrequencyDays,
+        reminderTime: reminderTime,
+        healthStatus: healthStatus,
+        nextWatering: nextDate,
+        fertilizeFrequencyDays: fertilizeFrequencyDays ?? plant.fertilizeFrequencyDays,
+        nextFertilizing: fertilizeFrequencyDays != null ? nextFert : plant.nextFertilizing,
+        checkPestFrequencyDays: checkPestFrequencyDays ?? plant.checkPestFrequencyDays,
+        nextCheckPest: checkPestFrequencyDays != null ? nextClean : plant.nextCheckPest,
+        notes: notes != null ? notes.trim() : plant.notes,
+        imageUrl: (trimmedImage != null && trimmedImage.isNotEmpty) ? trimmedImage : plant.imageUrl,
+      );
+      notifyListeners();
 
       await _firestore.collection(plantsCollection).doc(plantId).update(updateData);
       return true;

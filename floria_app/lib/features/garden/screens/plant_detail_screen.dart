@@ -1,6 +1,7 @@
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'plant_diary_screen.dart';
@@ -14,6 +15,7 @@ import '../../chatbot/screens/ai_assistant_screen.dart';
 import '../models/garden_plant.dart';
 import '../providers/garden_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/storage_service.dart';
 
 class PlantDetailScreen extends StatelessWidget {
   final Map<String, dynamic>? plant;
@@ -1292,6 +1294,8 @@ class PlantDetailScreen extends StatelessWidget {
     if (fertilizeDays <= 0) fertilizeDays = 20;
     int checkPestDays = plantItem.checkPestFrequencyDays;
     String reminderTime = plantItem.reminderTime;
+    Uint8List? pickedImageBytes;
+    bool isSaving = false;
 
     final List<String> zoneSuggestions = [
       "Phòng khách",
@@ -1372,6 +1376,97 @@ class PlantDetailScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
+
+                    // 0. Ảnh đại diện cây
+                    Text(
+                      context.tr("Ảnh đại diện cây:", "Plant photo:"),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: pickedImageBytes != null
+                              ? Image.memory(
+                                  pickedImageBytes!,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                )
+                              : CustomImage(
+                                  imageUrl: plantItem.imageUrl ?? '',
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: isSaving
+                                    ? null
+                                    : () async {
+                                        final file = await ImagePicker().pickImage(
+                                          source: ImageSource.camera,
+                                          maxWidth: 1200,
+                                          imageQuality: 85,
+                                        );
+                                        if (file == null) return;
+                                        final bytes = await file.readAsBytes();
+                                        if (modalContext.mounted) {
+                                          setModalState(() => pickedImageBytes = bytes);
+                                        }
+                                      },
+                                icon: const Icon(Icons.camera_alt_outlined, size: 17),
+                                label: Text(
+                                  context.tr("Chụp ảnh", "Camera"),
+                                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: c.primaryText,
+                                  side: BorderSide(color: c.border),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: isSaving
+                                    ? null
+                                    : () async {
+                                        final file = await ImagePicker().pickImage(
+                                          source: ImageSource.gallery,
+                                          maxWidth: 1200,
+                                          imageQuality: 85,
+                                        );
+                                        if (file == null) return;
+                                        final bytes = await file.readAsBytes();
+                                        if (modalContext.mounted) {
+                                          setModalState(() => pickedImageBytes = bytes);
+                                        }
+                                      },
+                                icon: const Icon(Icons.photo_library_outlined, size: 17),
+                                label: Text(
+                                  context.tr("Thư viện", "Gallery"),
+                                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: c.primaryText,
+                                  side: BorderSide(color: c.border),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
                     // 1. Tên biệt danh
                     Text(
@@ -1865,51 +1960,82 @@ class PlantDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          final newName = nameCtrl.text.trim();
-                          final newNotes = noteCtrl.text.trim();
-                          Navigator.pop(ctx);
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                final newName = nameCtrl.text.trim();
+                                final newNotes = noteCtrl.text.trim();
+                                String? uploadedImageUrl;
 
-                          final success = await gardenProvider.updatePlantInfo(
-                            plantItem.id,
-                            nickname: newName.isNotEmpty ? newName : plantItem.nameVi,
-                            zone: selectedZone,
-                            waterFrequencyDays: frequencyDays,
-                            fertilizeFrequencyDays: enableFertilizer ? fertilizeDays : 0,
-                            checkPestFrequencyDays: checkPestDays,
-                            reminderTime: reminderTime,
-                            healthStatus: selectedHealth,
-                            notes: newNotes,
-                          );
+                                if (pickedImageBytes != null) {
+                                  setModalState(() => isSaving = true);
+                                  uploadedImageUrl = await StorageService.uploadToCloud(pickedImageBytes!);
+                                  if (uploadedImageUrl == null) {
+                                    if (modalContext.mounted) {
+                                      setModalState(() => isSaving = false);
+                                    }
+                                    if (context.mounted) {
+                                      AppToast.show(
+                                        context,
+                                        context.tr("Không thể tải ảnh mới lên, vui lòng thử lại.", "Unable to upload new photo, please try again."),
+                                        isError: true,
+                                      );
+                                    }
+                                    return;
+                                  }
+                                }
 
-                          if (context.mounted) {
-                            if (success) {
-                              _showActionToast(
-                                context,
-                                title: "${context.tr("Đã cập nhật cây", "Updated plant")} '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
-                                subtitle: context.tr("Thông tin và lịch chăm sóc mới đã được lưu thành công.", "Care information and new schedule have been saved successfully."),
-                                icon: Icons.check_circle_rounded,
-                                iconColor: AppToast.accentColor(context),
-                              );
-                            } else {
-                              AppToast.show(
-                                context,
-                                gardenProvider.errorMessage ?? context.tr("Có lỗi khi cập nhật cây.", "Error updating plant."),
-                                isError: true,
-                              );
-                            }
-                          }
-                        },
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+
+                                final success = await gardenProvider.updatePlantInfo(
+                                  plantItem.id,
+                                  nickname: newName.isNotEmpty ? newName : plantItem.nameVi,
+                                  zone: selectedZone,
+                                  waterFrequencyDays: frequencyDays,
+                                  fertilizeFrequencyDays: enableFertilizer ? fertilizeDays : 0,
+                                  checkPestFrequencyDays: checkPestDays,
+                                  reminderTime: reminderTime,
+                                  healthStatus: selectedHealth,
+                                  notes: newNotes,
+                                  imageUrl: uploadedImageUrl,
+                                );
+
+                                if (context.mounted) {
+                                  if (success) {
+                                    _showActionToast(
+                                      context,
+                                      title: "${context.tr("Đã cập nhật cây", "Updated plant")} '${newName.isNotEmpty ? newName : plantItem.nameVi}'",
+                                      subtitle: context.tr("Thông tin và lịch chăm sóc mới đã được lưu thành công.", "Care information and new schedule have been saved successfully."),
+                                      icon: Icons.check_circle_rounded,
+                                      iconColor: AppToast.accentColor(context),
+                                    );
+                                  } else {
+                                    AppToast.show(
+                                      context,
+                                      gardenProvider.errorMessage ?? context.tr("Có lỗi khi cập nhật cây.", "Error updating plant."),
+                                      isError: true,
+                                    );
+                                  }
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: c.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        child: Text(
-                          context.tr("Lưu thay đổi", "Save changes"),
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
-                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : Text(
+                                context.tr("Lưu thay đổi", "Save changes"),
+                                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 12),

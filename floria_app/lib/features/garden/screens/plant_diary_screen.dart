@@ -383,49 +383,66 @@ class _PlantDiaryScreenState extends State<PlantDiaryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header thẻ: Ngày giờ + Tag + Nút xóa (nếu là bài người dùng)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDate(entry.timestamp),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: c.textMuted,
-                          ),
-                        ),
-                        Row(
+                    Builder(
+                      builder: (context) {
+                        final rawTag = entry.tag.trim();
+                        final displayTag = rawTag == 'Về vườn'
+                            ? context.tr('Về vườn', 'Welcome')
+                            : (rawTag.toLowerCase() == 'kiểm tra sâu bệnh & lau lá'
+                                ? context.tr('Kiểm tra sâu bệnh', 'Pest check')
+                                : rawTag);
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Color(entry.tagBgColor),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                entry.tag == 'Về vườn'
-                                    ? context.tr('Về vườn', 'Welcome')
-                                    : entry.tag,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(entry.tagTextColor),
-                                ),
+                            Text(
+                              _formatDate(entry.timestamp),
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: c.textMuted,
                               ),
                             ),
-                            if (entry.isUser) ...[
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
-                                onPressed: () => _confirmDeleteEntry(context, entry),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                tooltip: context.tr("Xóa trang nhật ký", "Delete diary entry"),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Color(entry.tagBgColor),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        displayTag,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(entry.tagTextColor),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (entry.isUser) ...[
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
+                                      onPressed: () => _confirmDeleteEntry(context, entry),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      tooltip: context.tr("Xóa trang nhật ký", "Delete diary entry"),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
+                            ),
                           ],
-                        ),
-                      ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 10),
 

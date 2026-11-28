@@ -12,6 +12,21 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
+const USER_HINT_KEY = "floria_user_hint";
+
+function syncUserHint(hasUser: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (hasUser) {
+      localStorage.setItem(USER_HINT_KEY, "1");
+    } else {
+      localStorage.removeItem(USER_HINT_KEY);
+    }
+  } catch {
+    // Bỏ qua nếu trình duyệt chặn localStorage
+  }
+}
+
 export const useAuth = create<AuthState>((set, get) => ({
   user: null,
   status: "idle",
@@ -19,13 +34,16 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (get().status !== "idle") return;
     set({ status: "loading" });
     const user = await authService.currentUser().catch(() => null);
+    syncUserHint(Boolean(user));
     set({ user, status: user ? "authenticated" : "anonymous" });
   },
   setUser(user) {
+    syncUserHint(Boolean(user));
     set({ user, status: user ? "authenticated" : "anonymous" });
   },
   async logout() {
     await authService.logout();
+    syncUserHint(false);
     set({ user: null, status: "anonymous" });
   },
 }));

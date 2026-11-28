@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, BookOpen, ChevronDown, Leaf, LogOut, Megaphone, Menu, Package, ScanLine, Search, Settings, ShoppingBag, Sprout, User as UserIcon } from "lucide-react";
@@ -252,15 +252,70 @@ function UserMenu() {
   );
 }
 
+const USER_ONLY_PREFIXES = ["/dashboard", "/garden", "/orders", "/profile", "/checkout", "/assistant"];
+const WEB_MENUS_CACHE_KEY = "floria_web_menus_cache_v1";
+const USER_HINT_KEY = "floria_user_hint";
+
+type CachedWebMenuItem = {
+  id: string;
+  title: string;
+  titleEn?: string;
+  route: string;
+  icon?: string;
+  module?: string;
+  order?: number;
+};
+
 /** PublicHeader and UserHeader share this shell; the variant follows the auth state. */
 export function SiteHeader() {
   const t = useT(common);
   const lang = useLang();
+  const pathname = usePathname() ?? "/";
   const status = useAuth((s) => s.status);
-  const authed = status === "authenticated";
   const { data: catalog } = useCatalog();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authedHint, setAuthedHint] = useState(false);
+  const [cachedMenus, setCachedMenus] = useState<CachedWebMenuItem[] | null>(null);
+
+  const isUserRoute = USER_ONLY_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
+  // Đọc hint & cache menu trước khi trình duyệt vẽ frame đầu để tránh nháy từ 5 sang 6 mục
+  useLayoutEffect(() => {
+    try {
+      setAuthedHint(localStorage.getItem(USER_HINT_KEY) === "1");
+      const rawMenus = localStorage.getItem(WEB_MENUS_CACHE_KEY);
+      if (rawMenus) {
+        const parsed = JSON.parse(rawMenus);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCachedMenus(parsed as CachedWebMenuItem[]);
+        }
+      }
+    } catch {
+      // Bỏ qua nếu trình duyệt chặn localStorage
+    }
+  }, []);
+
+  useEffect(() => {
+    if (catalog?.webMenus && catalog.webMenus.length > 0) {
+      setCachedMenus(catalog.webMenus);
+      try {
+        localStorage.setItem(WEB_MENUS_CACHE_KEY, JSON.stringify(catalog.webMenus));
+      } catch {
+        // Bỏ qua lỗi quota
+      }
+    }
+  }, [catalog?.webMenus]);
+
+  const authed =
+    status === "authenticated"
+      ? true
+      : status === "anonymous"
+        ? false
+        : isUserRoute || authedHint;
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -269,7 +324,7 @@ export function SiteHeader() {
   }, []);
 
   const nav = useMemo<ResolvedNavItem[]>(() => {
-    const remote = catalog?.webMenus;
+    const remote = catalog?.webMenus && catalog.webMenus.length > 0 ? catalog.webMenus : cachedMenus;
     if (remote && remote.length > 0) {
       return remote
         .filter((item) => {
@@ -288,7 +343,7 @@ export function SiteHeader() {
       label: t(item.key),
       exact: item.exact,
     }));
-  }, [authed, catalog?.webMenus, lang, t]);
+  }, [authed, cachedMenus, catalog?.webMenus, lang, t]);
 
   return (
     <header className={cn("sticky top-0 z-40 transition-all duration-300", scrolled ? "border-b bg-background/85 backdrop-blur-xl" : "bg-background/60 backdrop-blur-sm")}>

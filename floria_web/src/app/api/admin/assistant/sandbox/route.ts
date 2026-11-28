@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { AdminAuthError, verifyAdminRequest } from "@/lib/server/admin-auth";
-import { getAdminDb } from "@/lib/server/firebase-admin";
+import {
+  ANTI_HALLUCINATION_FALLBACK_RULE,
+  buildActionTagsPromptBlock,
+  filterGuardrailsByActionTags,
+  getAssistantKnowledgeBlocks,
+} from "@/lib/server/assistant-context";
 import type { AssistantGuardrail } from "../config/route";
 
 const GEMINI_MODELS = [
@@ -11,42 +16,6 @@ const GEMINI_MODELS = [
   "gemini-3.1-flash-lite-preview",
   "gemini-3.6-flash",
 ];
-
-const CATALOG_CACHE_TTL_MS = 2 * 60_000;
-let catalogCache: { text: string; expiresAt: number } | null = null;
-
-async function getProductCatalogBlock(disabledIds: Set<string>): Promise<string> {
-  if (!catalogCache || catalogCache.expiresAt <= Date.now()) {
-    try {
-      const snap = await getAdminDb().collection("ShopProducts").get();
-      const items: Array<{ id: string; line: string }> = [];
-      for (const doc of snap.docs) {
-        const d = doc.data() ?? {};
-        if (d.visible === false) continue;
-        if (typeof d.stock === "number" && d.stock <= 0) continue;
-        const name = String(d.name ?? "").trim();
-        if (!name) continue;
-        const indications = Array.isArray(d.indications) ? d.indications.join(", ") : "";
-        const desc = String(d.shortDesc || d.description || "").trim();
-        const info = [indications ? `Chỉ định: ${indications}` : "", desc].filter(Boolean).join(" · ");
-        const short = info.length > 140 ? `${info.slice(0, 140)}...` : info;
-        items.push({ id: doc.id, line: `- id: \`${doc.id}\` ➔ ${name}${short ? ` (${short})` : ""}` });
-      }
-      catalogCache = { text: JSON.stringify(items), expiresAt: Date.now() + CATALOG_CACHE_TTL_MS };
-    } catch {
-      return "";
-    }
-  }
-  try {
-    const parsed = JSON.parse(catalogCache.text) as Array<{ id: string; line: string }>;
-    return parsed
-      .filter((x) => !disabledIds.has(x.id))
-      .map((x) => x.line)
-      .join("\n");
-  } catch {
-    return "";
-  }
-}
 
 type InlineImagePart = { inlineData: { mimeType: string; data: string } };
 
@@ -105,6 +74,8 @@ export async function POST(req: Request) {
       systemPrompt?: string;
       guardrails?: AssistantGuardrail[];
       disabledProductIds?: string[];
+      enableProductTags?: boolean;
+      enableCareScheduleTags?: boolean;
     };
 
     const message = String(body.message ?? "").trim();
@@ -126,22 +97,41 @@ export async function POST(req: Request) {
       );
     }
 
-    const activeRules = (body.guardrails ?? [])
+    const enableProductTags = body.enableProductTags !== false;
+    const enableCareScheduleTags = body.enableCareScheduleTags !== false;
+
+    const guardrailsInput = filterGuardrailsByActionTags(body.guardrails ?? [], {
+      enableProductTags,
+      enableCareScheduleTags,
+    });
+    const activeRuleItems = guardrailsInput
       .filter((g) => g.enabled)
-      .map((g, i) => `${i + 1}. [${g.name}]: ${g.ruleText}`)
-      .join("\n");
+      .map((g) => `[${g.name}]: ${g.ruleText}`);
+    const hasAntiHallucination = guardrailsInput.some(
+      (g) => g.id === "gr_no_hallucination" || String(g.ruleText ?? "").includes("bịa đặt giá"),
+    );
+    if (!hasAntiHallucination) {
+      activeRuleItems.push(ANTI_HALLUCINATION_FALLBACK_RULE);
+    }
+    const activeRules = activeRuleItems.map((rule, i) => `${i + 1}. ${rule}`).join("\n");
 
     const disabledSet = new Set(Array.isArray(body.disabledProductIds) ? body.disabledProductIds : []);
-    const catalogText = await getProductCatalogBlock(disabledSet);
+    const { catalogText, vouchersText, diseasesText, plantsText } = await getAssistantKnowledgeBlocks(disabledSet);
+    const tagInstruction = buildActionTagsPromptBlock({
+      enableProductTags,
+      enableCareScheduleTags,
+    });
 
     const fullSystemInstruction = [
       body.systemPrompt || 'Bạn là Trợ lý Floria - chuyên gia cây trồng.',
       body.name ? `Tên xưng hô: ${body.name}.` : "",
       body.tone ? `Giọng điệu: ${body.tone}.` : "",
       activeRules ? `\nQUY TẮC AN TOÀN (GUARDRAILS BẮT BUỘC):\n${activeRules}` : "",
-      catalogText
-        ? `\nKHO DƯỢC PHẨM & VẬT TƯ FLORIA (nếu kê đơn, ghi [RECOMMEND_PRODUCT: id] ở dòng cuối):\n${catalogText}`
-        : "",
+      catalogText ? `\nKHO SẢN PHẨM & BẢNG GIÁ FLORIA HIỆN CÓ:\n${catalogText}` : "",
+      vouchersText ? `\nMÃ GIẢM GIÁ (VOUCHER) ĐANG HOẠT ĐỘNG:\n${vouchersText}` : "",
+      diseasesText ? `\nHỒ SƠ BỆNH LÝ CÂY TRỒNG TRONG HỆ THỐNG:\n${diseasesText}` : "",
+      plantsText ? `\nTỪ ĐIỂN CÂY CẢNH TRONG HỆ THỐNG:\n${plantsText}` : "",
+      tagInstruction,
     ]
       .filter(Boolean)
       .join("\n");
